@@ -6,14 +6,16 @@
 #'
 #' @param inputs_folder The location of the folder containing folders for each drainage region of interest (01-11, as defined by the WSC). Defaults to "choose", which opens file explorer to let you select the location. NOTE: This should contain one or more folders named ONLY with the two-digit drainage region code, i.e. folder names 09, 10, etc.
 #' @param save_path The path to the folder in which you wish to save the resultant ESRI shapefile. For hydrology this is likely G:/water/Hydrology/Data/BasinPolygons; parameter defaults to "choose".
-#' @param limit_stns Specify stations here if you wish to narrow the geographic scope of the output. Useful if your end-use is of defined geographic scope and can benefit from smaller file size. One list element with a name of the form stns_XX is required for each drainage region you wish to limit. Preset for Yukon, set to NULL to use all stations.
+#' @param active_only TRUE to retain only active stations; default FALSE retains discontinued stations as well.
+#' @param limit_stns Specify stations if you wish to narrow the geographic scope of the output. Useful if your end-use is only within a section of a drainage region and you wish to limit file size. Format: one list element with a name of form stns_XX composed of a vector of station IDs for each drainage region you wish to limit. Preset for Yukon, set to NULL to use all stations present in the inputs_folder
 #'
-#' @return Two ESRI shapefiles (points + polygons).
+#' @return Two ESRI shapefiles (points + polygons) saved in the directory you specified.
 #' @export
 #'
 
 WSC_drainages <- function(inputs_folder = "choose",
                           save_path = "choose",
+                          active_only = FALSE,
                           limit_stns = list(stns_08 = c("08AB001", "08AC002", "08AC001", "08AA003", "08AA011", "08AA010", "08AA009", "08AA005", "08AA012", "08AA007", "08AA008"), stns_10 = c("10MB004", "10MA003", "10MA005", "10MA002", "10MA004", "10MA001", "10MB003", "10MC002", "10MC007", "10MD003", "10MD001", "10ED001", "10DB001", "10BE001", "10BE009", "10AC005", "10EB013", "10AA001", "10AA005", "10AA006", "10AD002", "10AA004", "10AB001"))
 )
 {
@@ -24,7 +26,7 @@ WSC_drainages <- function(inputs_folder = "choose",
     inputs_folder <- as.character(utils::choose.dir(caption="Select Inputs Folder"))
   }
   if (save_path == "choose") {
-    print("Select the folder where you want the watershed shapefile saved.")
+    print("Select the folder where you want the watershed shapefiles saved.")
     save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
   }
   temp <- tempdir(check=TRUE)
@@ -60,22 +62,36 @@ WSC_drainages <- function(inputs_folder = "choose",
   shapefiles <- shapefiles[!startsWith(shapefiles, "rs-graphics")] #Excludes that pesky file created by tempdir
 
   #rbind polygons together
-  poly <- sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[1], 1, 7),"_DrainageBasin_BassinDeDrainage"))
-  for (i in 2:length(shapefiles)){
-    poly <- rbind(poly, sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[i], 1, 7),"_DrainageBasin_BassinDeDrainage")))
-  }
+  tryCatch({
+    poly <- sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[1], 1, 7),"_DrainageBasin_BassinDeDrainage"))
+    for (i in 2:length(shapefiles)){
+      poly <- rbind(poly, sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[i], 1, 7),"_DrainageBasin_BassinDeDrainage")))
+    }
+    poly <- poly[!duplicated(data.frame(poly)),] #root out duplicates
+    if (active_only == TRUE){#Retain only active stations
+      poly <- dplyr::filter(poly, Status == "active")
+    }
+    #Write to file
+    sf::write_sf(poly, dsn = save_path, layer = "WSC_watersheds_polygons", driver = "ESRI Shapefile")
+  }, error = function(e) {
+    print("The polygons could not be combined. Check that the inputs folder contains only folder(s) containing folders for each WSC station, each containing shapefiles for the station in question.")
+  })
+
   #rbind points together
-  points <- sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[1], 1, 7),"_PourPoint_PointExutoire"))
-  for (i in 2:length(shapefiles)){
-    points <- rbind(points, sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[i], 1, 7),"_PourPoint_PointExutoire")))
-  }
-
-  #root out duplicates
-  poly <- poly[!duplicated(data.frame(poly)),]
-  points <- points[!duplicated(data.frame(points)),]
-
-
-  #Write to file
-  sf::write_sf(poly, dsn = save_path, layer = "WSC_watersheds_polygons", driver = "ESRI Shapefile")
-  sf::write_sf(points, dsn = save_path, layer = "WSC_watersheds_points", driver = "ESRI Shapefile")
+  tryCatch({
+    points <- sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[1], 1, 7),"_PourPoint_PointExutoire"))
+    for (i in 2:length(shapefiles)){
+      points <- rbind(points, sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[i], 1, 7),"_PourPoint_PointExutoire")))
+      print(paste0("The polygons shapefile has been saved in ", save_path))
+    }
+    points <- points[!duplicated(data.frame(points)),] #root out duplicates
+    if (active_only == TRUE){#Retain only active stations
+      points <- dplyr::filter(points, Status == "active")
+    }
+    #Write to file
+    sf::write_sf(points, dsn = save_path, layer = "WSC_watersheds_points", driver = "ESRI Shapefile")
+    print(paste0("The points shapefile has been saved in ", save_path))
+  }, error = function(e) {
+    print("The points could not be combined. Check that the inputs folder contains only folder(s) containing folders for each WSC station, each containing shapefiles for the station in question.")
+  })
 }
