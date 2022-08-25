@@ -42,10 +42,12 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   available <- available %>% dplyr::mutate(cutoff = substr(.data$link, 20,23),
                                            valid = as.POSIXct(substr(.data$link, 45,54), format = "%Y%m%d%H", tz="UTC")
                                            )
+
   last_available_01 <- max(dplyr::filter(available, cutoff == "0100")$valid)
   last_available_07 <- max(dplyr::filter(available, cutoff == "0700")$valid)
   first_available_01 <- min(dplyr::filter(available, cutoff == "0100")$valid)
   first_available_07 <- min(dplyr::filter(available, cutoff == "0700")$valid)
+
 
   #Make to nearest available time (correct times if they specify a yet-to-exist or no longer present file)
   if (start > last_available_01){
