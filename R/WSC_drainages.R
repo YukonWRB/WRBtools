@@ -30,7 +30,9 @@ WSC_drainages <- function(inputs_folder = "choose",
     save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
   }
   temp <- tempdir(check=TRUE)
-  suppressWarnings(file.remove(list.files(temp, full.names = TRUE)))
+  suppressWarnings(dir.create(paste0(temp, "/files")))
+  temp <- paste0(temp, "/files")
+
 
   #Get all the files in a single folder
   for (i in list.dirs(inputs_folder, full.names = FALSE, recursive=FALSE)){
@@ -57,41 +59,45 @@ WSC_drainages <- function(inputs_folder = "choose",
 
 
   ###### Combine all points and polys into two shapefile #####
-  #Get all the layer names, (no file extensions)
+  #Get all the shapefile names, (no file extensions)
   shapefiles <- unique(gsub("\\..*", "", list.files(temp)))
   shapefiles <- shapefiles[!startsWith(shapefiles, "rs-graphics")] #Excludes that pesky file created by tempdir
+  shapefiles <- shapefiles[!startsWith(shapefiles, "test")] #This is only to make test work, as the "test" is created in the tempdir!
 
   #rbind polygons together
   tryCatch({
-    poly <- sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[1], 1, 7),"_DrainageBasin_BassinDeDrainage"))
+    poly <- sf::st_zm(sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[1], 1, 7),"_DrainageBasin_BassinDeDrainage"))) #st_zm is there because doing rbind on many polygons sometimes causes an error where it is looking for a z-dimension. No idea why.
     for (i in 2:length(shapefiles)){
-      poly <- rbind(poly, sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[i], 1, 7),"_DrainageBasin_BassinDeDrainage")))
+      poly <- rbind(poly, sf::st_zm(sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[i], 1, 7),"_DrainageBasin_BassinDeDrainage"))))
     }
     poly <- poly[!duplicated(data.frame(poly)),] #root out duplicates
     if (active_only == TRUE){#Retain only active stations
-      poly <- dplyr::filter(poly, Status == "active")
+      poly <- poly[poly$Status =="active", ]
     }
     #Write to file
-    sf::write_sf(poly, dsn = save_path, layer = "WSC_watersheds_polygons", driver = "ESRI Shapefile")
+    suppressMessages(sf::write_sf(poly, dsn = save_path, layer = "WSC_watersheds_polygons", driver = "ESRI Shapefile"))
+    print(paste0("The polygons shapefile has been saved in ", save_path))
   }, error = function(e) {
     print("The polygons could not be combined. Check that the inputs folder contains only folder(s) containing folders for each WSC station, each containing shapefiles for the station in question.")
   })
 
   #rbind points together
   tryCatch({
-    points <- sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[1], 1, 7),"_PourPoint_PointExutoire"))
+    points <- sf::st_zm(sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[1], 1, 7),"_PourPoint_PointExutoire")))
     for (i in 2:length(shapefiles)){
-      points <- rbind(points, sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[i], 1, 7),"_PourPoint_PointExutoire")))
-      print(paste0("The polygons shapefile has been saved in ", save_path))
+      points <- rbind(points, sf::st_zm(sf::read_sf(dsn=temp, layer=paste0(substr(shapefiles[i], 1, 7),"_PourPoint_PointExutoire"))))
     }
     points <- points[!duplicated(data.frame(points)),] #root out duplicates
     if (active_only == TRUE){#Retain only active stations
-      points <- dplyr::filter(points, Status == "active")
+      points <- points[points$Status == "active", ]
     }
     #Write to file
-    sf::write_sf(points, dsn = save_path, layer = "WSC_watersheds_points", driver = "ESRI Shapefile")
+    suppressMessages(sf::write_sf(points, dsn = save_path, layer = "WSC_watersheds_points", driver = "ESRI Shapefile"))
     print(paste0("The points shapefile has been saved in ", save_path))
   }, error = function(e) {
     print("The points could not be combined. Check that the inputs folder contains only folder(s) containing folders for each WSC station, each containing shapefiles for the station in question.")
   })
-}
+  suppressWarnings(invisible(file.remove(list.files(tempdir(), full.names=TRUE))))
+  unlink(temp, recursive=TRUE)
+
+} #End of function

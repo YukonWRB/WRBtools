@@ -5,10 +5,12 @@
 #' CaPA outputs precipitation estimates valid at  00, 06, 12 and 18 UTC for the 6-hour rasters. The start and end times you specify will be automatically adjusted to the nearest or most recent match. Note that there is a 1-hour delay in the issuing of CaPA outputs, so that the 00 output is issued at 01, the 06 output at 07, etc.
 #'
 #' Start and end times are automatically converted to UTC if supplied as class "character"; input times/dates of class POSIXct if you wish to specify a time zone.
+#'
+#' Be aware that your requested time period may not be realized when requesting an end time close to the current time. This will occur if ECCC experiences an unusual delay in the issuance of the 1-hour raster. These are normally issued well ahead 1 hour and 10 minutes of the valid date, issues may arise is they are delayed by more than 1 hour and 12 minutes.
 
 #' @param start The start of the time period for which you want HRDPA rasters, up to one month prior to today. Use format "yyyy-mm-dd hh:mm" (character vector) in local time. See details for more info.
 #' @param end The end of the time period for which you want HRDPA rasters. Other details as per start.
-#' @param clip The two-digit abbreviation(s) as per [Canadian Census](https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/tab/index-eng.cfm?ID=t1_8) for the province(s) with which to clip the HRDPA. A 300 km buffer is added beyond the provincial boundaries.
+#' @param clip The two-digit abbreviation(s) as per [Canadian Census](https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/tab/index-eng.cfm?ID=t1_8) for the province(s) with which to clip the HRDPA. A 300 km buffer is added beyond the provincial boundaries. Set to NULL for no clip
 #' @param save_path The path to the directory (folder) where the raster(s) should be saved. Default "choose" lets you select your folder, or enter the path as a character string. Any necessary rasters already in the save path will not be downloaded again.
 #'
 #' @return One of more rasters of precipitation amounts over 6 hour periods saved where specified. The date/time stamp in the file name refers to the end of the 6-hour valid period. Output is not assigned to an object, load the raster from the save_path if desired.
@@ -26,12 +28,12 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   }
 
   ###Determine the sequence of files within the start:end window, compare against what exists in save_path, make list of files to dl.
-  start <- as.POSIXct(start)
+  start <- as.POSIXct(start) + 60*60*4.8 #Assuming that rasters are issued a bit more than one hour post valid time, this sets the start time so that the 6 hours before the requested start time is not included.
   end <- as.POSIXct(end)
   attr(start, "tzone") <- "UTC"
   attr(end, "tzone") <- "UTC"
-  start <- lubridate::round_date(start, "6 hours")
-  end <- lubridate::round_date(end, "6 hours")
+  start <- lubridate::floor_date(start, "6 hours")
+  end <- lubridate::floor_date(end, "6 hours")
 
   #Get the list of available files
   available <- xml2::read_html("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/") #6 hour products for first day
@@ -43,10 +45,10 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
                                            valid = as.POSIXct(substr(.data$link, 45,54), format = "%Y%m%d%H", tz="UTC")
                                            )
 
-  last_available_01 <- max(dplyr::filter(available, cutoff == "0100")$valid)
-  last_available_07 <- max(dplyr::filter(available, cutoff == "0700")$valid)
-  first_available_01 <- min(dplyr::filter(available, cutoff == "0100")$valid)
-  first_available_07 <- min(dplyr::filter(available, cutoff == "0700")$valid)
+  last_available_01 <- max(dplyr::filter(available, .data$cutoff == "0100")$valid)
+  last_available_07 <- max(dplyr::filter(available, .data$cutoff == "0700")$valid)
+  first_available_01 <- min(dplyr::filter(available, .data$cutoff == "0100")$valid)
+  first_available_07 <- min(dplyr::filter(available, .data$cutoff == "0700")$valid)
 
 
   #Make to nearest available time (correct times if they specify a yet-to-exist or no longer present file)
@@ -64,25 +66,29 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   }
   #now make the sequence
   sequence <- as.character(seq.POSIXt(start, end, by= "6 hour"))
-
+  #Add trailing hour:minutes for the midnights
+  for (i in 1:length(sequence)){
+    if(nchar(sequence[i]) < 13){
+      sequence[i] <- paste0(sequence[i], " 00")
+    }
+  }
 
   #Make clip polygon
-  clip = c("YT", "NT")
-  clip <- dplyr::filter(data$prov_buff, PREABBR %in% clip)
-  clip <- terra::vect(clip)
-
+  if (!is.null(clip)){
+    clip <- data$prov_buff[data$prov_buff$PREABBR %in% clip, ]
+    clip <- terra::vect(clip)
+  }
 
   #Download the HRDPAs within the time window, save to disc. Don't re-dl files except to replace 1-hour-post raster with 7-hour-post
-  clipped = FALSE #So that clip doesn'thappen each and every time
+  clipped <- FALSE #So that clip happens the first time around
   for (i in sequence){
-    name <- paste0("HRDPA_6hrs_07_", substr(i, 1, 13), ".tiff")
+    name <- paste0(ifelse(is.null(clip)==FALSE, "clipped_", ""), "HRDPA_6hrs_07_", substr(i, 1, 13), ".tiff")
     name <- gsub(" ", "", name)
     name <- gsub("-", "", name)
 
     #Only download if raster doesn't already exist
     if (!(name %in% list.files(save_path))){
       if (RCurl::url.exists(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0700cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"))){ #First try downloading all 7-hour post files
-
         raster <- terra::rast(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0700cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"))
       } else { #...but if one is missing because data requested is too recent, get the 1-hour file
         name <- sub("07", "01", name)
@@ -90,12 +96,16 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
       }
 
       if (clipped == FALSE){
-        clip <- terra::project(clip, raster) #project vector to crs of the raster
-        clipped = TRUE
+        if (!is.null(clip)){
+          clip <- terra::project(clip, raster) #project vector to crs of the raster
+        }
+        clipped <- TRUE #So that clip doesn't happen after the first iteration
       }
       raster <- raster$`SFC=Ground or water surface; Total precipitation [kg/(m^2)]`
-      raster <- terra::mask(raster, clip) #Makes NA values beyond the boundary of clip
-      raster <- terra::trim(raster) #Trims the NA values
+      if (!is.null(clip)){
+        raster <- terra::mask(raster, clip) #Makes NA values beyond the boundary of clip
+        raster <- terra::trim(raster) #Trims the NA values
+      }
 
       terra::writeRaster(raster, paste0(save_path, "\\", name), overwrite=TRUE)
     }

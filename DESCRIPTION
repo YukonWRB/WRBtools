@@ -1,4 +1,4 @@
-Package: WRButils
+Package: WRBtools
 Title: Utility functions for the Yukon Water Resources Branch
 Version: 0.0.0.9000
 Authors@R: 
@@ -6,24 +6,26 @@ Authors@R:
            comment = c(ORCID = "0000-0002-5093-9185"))
 Description: What the package does (one paragraph).
 License: AGPL (>= 3) + file LICENSE
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+Depends: 
+    R (>= 2.10),
+    sf
 Imports:
-    sf,
     dplyr,
     lubridate,
+    magrittr,
     RCurl,
+    rlang,
     rvest,
     stringr,
     terra,
     xml2,
-    magrittr
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+VignetteBuilder: 
+    knitr
 Config/testthat/edition: 3
-VignetteBuilder: knitr
-Depends: 
-    R (>= 2.10)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.1
