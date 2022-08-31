@@ -1,4 +1,4 @@
-#Shortcut script for (re)creating
+#Shortcut script for (re)creating sysdata.rda
 
 prov_buff <- sf::read_sf(dsn = "G:/water/Common_GW_SW/Data/Clip_polygons", layer = "Provinces_buffered_300km")
 #WSC_polygons <- sf::read_sf(dsn = "G:/water/Common_GW_SW/Data/WSC_basins", layer = "WSC_watersheds_polygons")
