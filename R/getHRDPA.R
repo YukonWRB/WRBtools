@@ -8,10 +8,10 @@
 #'
 #' Be aware that your requested time period may not be realized when requesting an end time close to the current time. This will occur if ECCC experiences an unusual delay in the issuance of the 1-hour raster. These are normally issued well ahead 1 hour and 10 minutes of the valid date, issues may arise is they are delayed by more than 1 hour and 12 minutes.
 
-#' @param start The start of the time period for which you want HRDPA rasters, up to one month prior to today. Use format "yyyy-mm-dd hh:mm" (character vector) in local time. See details for more info.
-#' @param end The end of the time period for which you want HRDPA rasters. Other details as per start.
+#' @param start The start of the time period for which you want HRDPA rasters, up to one month prior to today. Use format `"yyyy-mm-dd hh:mm"` (character vector) in local time. See details for more info.
+#' @param end The end of the time period for which you want HRDPA rasters. Other details as per `start`.
 #' @param clip The two-digit abbreviation(s) as per [Canadian Census](https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/tab/index-eng.cfm?ID=t1_8) for the province(s) with which to clip the HRDPA. A 300 km buffer is added beyond the provincial boundaries. Set to NULL for no clip
-#' @param save_path The path to the directory (folder) where the raster(s) should be saved. Default "choose" lets you select your folder, or enter the path as a character string. Any necessary rasters already in the save path will not be downloaded again.
+#' @param save_path The path to the directory (folder) where the raster(s) should be saved. Default `"choose"` lets you select your folder, or enter the path as a character string. Any necessary rasters already in the save path will not be downloaded again.
 #'
 #' @return One of more rasters of precipitation amounts over 6 hour periods saved where specified. The date/time stamp in the file name refers to the end of the 6-hour valid period. Output is not assigned to an object, load the raster from the save_path if desired.
 #' @export
@@ -74,6 +74,7 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   }
 
   #Make clip polygon
+  extent <- clip
   if (!is.null(clip)){
     clip <- data$prov_buff[data$prov_buff$PREABBR %in% clip, ]
     clip <- terra::vect(clip)
@@ -82,7 +83,7 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   #Download the HRDPAs within the time window, save to disc. Don't re-dl files except to replace 1-hour-post raster with 7-hour-post
   clipped <- FALSE #So that clip happens the first time around
   for (i in sequence){
-    name <- paste0(ifelse(is.null(clip)==FALSE, "clipped_", ""), "HRDPA_6hrs_07_", substr(i, 1, 13), ".tiff")
+    name <- paste0(ifelse(is.null(clip)==FALSE, paste0("clipped_", paste(extent, collapse="_"), "_"), ""), "HRDPA_6hrs_07_", substr(i, 1, 13), ".tiff")
     name <- gsub(" ", "", name)
     name <- gsub("-", "", name)
 
