@@ -74,7 +74,7 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   }
 
   #Make clip polygon
-  extent <- clip
+  extent <- paste(clip, collapse="_")
   if (!is.null(clip)){
     clip <- data$prov_buff[data$prov_buff$PREABBR %in% clip, ]
     clip <- terra::vect(clip)
@@ -83,7 +83,7 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   #Download the HRDPAs within the time window, save to disc. Don't re-dl files except to replace 1-hour-post raster with 7-hour-post
   clipped <- FALSE #So that clip happens the first time around
   for (i in sequence){
-    name <- paste0(ifelse(is.null(clip)==FALSE, paste0("clipped_", paste(extent, collapse="_"), "_"), ""), "HRDPA_6hrs_07_", substr(i, 1, 13), ".tiff")
+    name <- paste0(ifelse(is.null(clip)==FALSE, paste0("clipped_", extent, "_"), ""), "HRDPA_6hrs_07_", substr(i, 1, 13), ".tiff")
     name <- gsub(" ", "", name)
     name <- gsub("-", "", name)
 
@@ -100,7 +100,7 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
         if (!is.null(clip)){
           clip <- terra::project(clip, raster) #project vector to crs of the raster
         }
-        clipped <- TRUE #So that clip doesn't happen after the first iteration
+        clipped <- TRUE #So that project doesn't happen after the first iteration
       }
       raster <- raster$`SFC=Ground or water surface; Total precipitation [kg/(m^2)]`
       if (!is.null(clip)){
@@ -119,7 +119,7 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
       #Check if a 7-hour file with same date/time exists, delete if TRUE
       match.name <- sub(01,07,i)
       if (file.exists(paste0(save_path, "/", match.name))){
-        file.remove(paste0(save_path, "/", match.name))
+        file.remove(paste0(save_path, "/", i))
       }
     }
   } #End of clean-up
