@@ -1,16 +1,16 @@
 
 #' Retrieve HRDPS rasters
 #'
-#' Utility function to retrieve gridded predictions output from the [HRDPS model] (https://weather.gc.ca/grib/grib2_HRDPS_HR_e.html). In current form will delete all old files in the save directory.
+#' Utility function to retrieve gridded predictions output from the [HRDPS model](https://weather.gc.ca/grib/grib2_HRDPS_HR_e.html). In current form will delete all old files in the save directory.
 #'
 #' @param clip The two-digit abbreviation(s) as per [Canadian Census](https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/tab/index-eng.cfm?ID=t1_8) for the province(s) with which to clip the HRDPA. A 300 km buffer is added beyond the provincial boundaries. Set to NULL for no clip
 #' @param save_path The path to the directory (folder) where the rasters should be saved. A new sub-directory will be created based on the `param` selected if not already present. Default `"choose"` lets you select your folder (do not choose the one named after the `param`), or enter the path as a character string.
 #' @param param The HRDPS parameter you wish to download, from the list of published abbreviations at [https://weather.gc.ca/grib/HRDPS_HR/HRDPS_ps2p5km_PNONZERO_deterministic_e.html](https://weather.gc.ca/grib/HRDPS_HR/HRDPS_ps2p5km_PNONZERO_deterministic_e.html). Defaults to accumulated precipitation at the surface.
 #'
-#' @return Up to 48 rasters representing the HRDPS modelled output for the parameter selected.
+#' @return Up to 48 rasters representing the HRDPS modeled output for the parameter selected.
 #' @export
 #'
-#' @examples
+
 getHRDPS <- function(clip = c("YT"),
                      save_path = "choose",
                      param = "APCP_SFC_0")
@@ -18,7 +18,7 @@ getHRDPS <- function(clip = c("YT"),
   #Save path
   if (save_path == "choose") {
     print("Select the path to the folder where you want to save the raster(s).")
-    save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
+    save_path <- as.character(utils::choose.dir(caption = "Select Save Folder"))
   }
 
   suppressWarnings(dir.create(paste0(save_path, "\\", param)))
