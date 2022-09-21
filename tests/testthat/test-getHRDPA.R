@@ -1,4 +1,4 @@
-test_that("four raster are downloaded and saved as tiffs", {
+test_that("four raster are downloaded and saved as tiffs when using default parameters", {
   suppressWarnings(file.remove(list.files(tempdir(), full.names = TRUE)))
   existing <- list.files(tempdir(), pattern = "\\.tiff$")
   getHRDPA(save_path=tempdir())
@@ -24,7 +24,7 @@ test_that("clipped file is smaller than full (clip worked)", {
   expect_equal((diff > 1000000), TRUE)
 })
 
-test_that ("same number of clipped and not clipped files are created",{
+test_that ("same number of clipped and not clipped files are created if both are called separately",{
   suppressWarnings(file.remove(list.files(tempdir(), full.names = TRUE)))
 
   existingClipped <- list.files(tempdir(), pattern = "^clipped*") #in case anything remains after file.remove
