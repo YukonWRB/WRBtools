@@ -66,12 +66,12 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   }
   #now make the sequence
   sequence <- as.character(seq.POSIXt(start, end, by= "6 hour"))
-  #Add trailing hour:minutes for the midnights
-  for (i in 1:length(sequence)){
-    if(nchar(sequence[i]) < 13){
-      sequence[i] <- paste0(sequence[i], " 00")
-    }
-  }
+  # #Add trailing hour:minutes for the midnights
+  # for (i in 1:length(sequence)){
+  #   if(nchar(sequence[i]) < 13){
+  #     sequence[i] <- paste0(sequence[i], " 00")
+  #   }
+  # }
 
   #Make clip polygon
   extent <- paste(clip, collapse="_")
@@ -93,22 +93,27 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
         raster <- terra::rast(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0700cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"))
       } else { #...but if one is missing because data requested is too recent, get the 1-hour file
         name <- sub("07", "01", name)
-        raster <- terra::rast(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0100cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"))
-      }
-
-      if (clipped == FALSE){
-        if (!is.null(clip)){
-          clip <- terra::project(clip, raster) #project vector to crs of the raster
+        if (!(name %in% list.files(save_path))){ #But don't re-download it if it already exists!
+          raster <- terra::rast(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0100cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"))
         }
-        clipped <- TRUE #So that project doesn't happen after the first iteration
-      }
-      raster <- raster$`SFC=Ground or water surface; Total precipitation [kg/(m^2)]`
-      if (!is.null(clip)){
-        raster <- terra::mask(raster, clip) #Makes NA values beyond the boundary of clip
-        raster <- terra::trim(raster) #Trims the NA values
       }
 
-      terra::writeRaster(raster, paste0(save_path, "\\", name), overwrite=TRUE)
+      if (exists("raster")){
+        if (clipped == FALSE){
+          if (!is.null(clip)){
+            clip <- terra::project(clip, raster) #project vector to crs of the raster
+          }
+          clipped <- TRUE #So that project doesn't happen after the first iteration
+        }
+        raster <- raster$`SFC=Ground or water surface; Total precipitation [kg/(m^2)]`
+        if (!is.null(clip)){
+          raster <- terra::mask(raster, clip) #Makes NA values beyond the boundary of clip
+          raster <- terra::trim(raster) #Trims the NA values
+        }
+
+        terra::writeRaster(raster, paste0(save_path, "\\", name), overwrite=TRUE)
+        rm(raster)
+      }
     }
   } #End of DL sequence
 
