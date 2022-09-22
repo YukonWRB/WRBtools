@@ -66,12 +66,12 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   }
   #now make the sequence
   sequence <- as.character(seq.POSIXt(start, end, by= "6 hour"))
-  # #Add trailing hour:minutes for the midnights
-  # for (i in 1:length(sequence)){
-  #   if(nchar(sequence[i]) < 13){
-  #     sequence[i] <- paste0(sequence[i], " 00")
-  #   }
-  # }
+  #Add trailing hour:minutes for the midnights
+  for (i in 1:length(sequence)){
+    if(nchar(sequence[i]) < 13){
+      sequence[i] <- paste0(sequence[i], " 00")
+    }
+  }
 
   #Make clip polygon
   extent <- paste(clip, collapse="_")
