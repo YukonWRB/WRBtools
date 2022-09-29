@@ -9,9 +9,9 @@
 #'
 #' @param ts_name The timeseries name, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `Wlevel_bgs.Calculated`.
 #'
-#' @param start The first day for which you want information (local time). Whole days only. Times requested prior to the actual timeseries start will be adjusted to match available data.
+#' @param start The first day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries start will be adjusted to match available data.
 #'
-#' @param end The last day for which you want information (local time). Whole days only. Times requested prior to the actual timeseries end will be adjusted to match available data.
+#' @param end The last day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries end will be adjusted to match available data.
 #'
 #' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.
 #'
