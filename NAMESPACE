@@ -2,6 +2,7 @@
 
 export("%>%")
 export(WSC_drainages)
+export(aq_download)
 export(getHRDPA)
 export(getHRDPS)
 importFrom(magrittr,"%>%")

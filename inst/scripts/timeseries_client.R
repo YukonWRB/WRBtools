@@ -1,0 +1,630 @@
+# Load dependencies
+require(jsonlite)
+require(httr)
+
+# Create a simple AQUARIUS Time-Series API client.
+timeseriesClient <- setRefClass("timeseriesClient",
+                                fields = list(
+                                  version = "character",
+                                  publishUri = "character",
+                                  acquisitionUri = "character",
+                                  provisioningUri = "character",
+                                  legacyPublishUri = "character",
+                                  legacyAcquisitionUri = "character",
+                                  isLegacy = "logical"),
+                                methods = list(
+
+                                  connect = function(hostname, username, password) {
+                                    # Auto-configure the proxy by default
+                                    .self$configureProxy()
+
+                                    # Support schemeless and schemed hosts for convenience
+                                    prefix <- "http://"
+                                    if (startsWith(hostname, "http://") || startsWith(hostname, "https://")) {
+                                      url <- parse_url(hostname)
+                                      hostname <- paste0(url$scheme, "://", url$hostname)
+                                      prefix <- ""
+                                    }
+
+                                    # Grab the version of the AQTS server
+                                    r <- GET(paste0(prefix, hostname, "/AQUARIUS/apps/v1/version"))
+                                    stop_for_status(r, "detecting AQTS version")
+
+                                    j <- fromJSON(content(r, "text"))
+                                    version <<- j$ApiVersion
+
+                                    # Anything earlier than 14.3 is considered legacy code
+                                    isLegacy <<- .self$isVersionLessThan("14.3")
+
+                                    # Compose the base URI for all API endpoints
+                                    publishUri <<- paste0(prefix, hostname, "/AQUARIUS/Publish/v2")
+                                    acquisitionUri <<- paste0(prefix, hostname, "/AQUARIUS/Acquisition/v2")
+                                    provisioningUri <<- paste0(prefix, hostname, "/AQUARIUS/Provisioning/v1")
+
+                                    if (isLegacy) {
+                                      legacyPublishUri <<- paste0(prefix, hostname, "/AQUARIUS/Publish/AquariusPublishRestService.svc")
+                                      legacyAcquisitionUri <<- paste0(prefix, hostname, "/AQUARIUS/AQAcquisitionService.svc")
+                                    }
+
+                                    # Try to authenticate using the supplied credentials
+                                    credentials <- list(Username = username, EncryptedPassword = password)
+
+                                    if (isLegacy) {
+                                      # Authenticate via the older operation, so that a session cookie is set
+                                      r <- GET(paste0(publishUri, "/GetAuthToken"), query = credentials)
+                                    } else {
+                                      # Authenticate via the preferred endpoint
+                                      r <- POST(paste0(publishUri, "/session"), body = credentials, encode = "json")
+                                    }
+                                    stop_for_status(r, "authenticate with AQTS")
+                                  },
+
+
+                                  disconnect = function() {
+
+                                    if (isLegacy) {
+                                      # 3.X doesn't support proper disconnection, so just abandon the session below
+                                    } else {
+                                      # Delete the session immediately, like we should
+                                      r <- DELETE(paste0(publishUri, "/session"))
+                                      stop_for_status(r, "disconnect from AQTS")
+                                    }
+
+                                    # Abandon all session cookies associated with the connection
+                                    handle_reset(publishUri)
+                                  },
+
+
+                                  configureProxy = function() {
+                                    if (length(Sys.getenv("R_DISABLE_FIDDLER")[0]) > 0 || Sys.info()['sysname'] != "Windows")
+                                      return()
+
+                                    # Check if Fiddler is running
+                                    taskCheck <- system('tasklist /FI "IMAGENAME eq Fiddler.exe"', intern = TRUE)
+
+                                    if (length(taskCheck) < 4)
+                                      return()
+
+                                    # Fiddler is running, so enable the proxy
+                                    message("Auto-routing all web requests through Fiddler.")
+                                    message('To disable this behaviour, call Sys.setenv(http_proxy="") or set the R_DISABLE_FIDDLER environment variable.')
+                                    Sys.setenv(http_proxy = "http://localhost:8888")
+                                  },
+
+
+                                  isVersionLessThan = function(targetVersion, sourceVersion) {
+                                    if (missing(sourceVersion)) {
+                                      sourceVersion <- version
+                                    }
+
+                                    # Create the vectors of integers using this local sanitizing function
+                                    createIntegerVector <- function(versionText) {
+
+                                      if (versionText == "0.0.0.0") {
+                                        # Force unreleased developer builds to act as latest-n-greatest
+                                        versionText <- "9999.99"
+                                      }
+
+                                      # Convert the text into a vector of integers
+                                      v <- as.integer(strsplit(versionText, ".", fixed = TRUE)[[1]])
+
+                                      if (length(v) > 0 && v[1] >= 14 && v[1] <= 99) {
+                                        # Adjust the leading component to match the 20xx.y release convention
+                                        v[1] = v[1] + 2000
+                                      }
+
+                                      v
+                                    }
+
+                                    # Convert to vectors of integers
+                                    target <- createIntegerVector(targetVersion)
+                                    source <- createIntegerVector(sourceVersion)
+
+                                    # Take the differnce of the common parts
+                                    minlength <- min(length(target), length(source))
+
+                                    diff <- head(target, minlength) - head(source, minlength)
+
+                                    if (all(diff == 0)) {
+                                      # All the common parts are identical
+                                      length(source) < length(target)
+                                    } else {
+                                      # Assume not less than
+                                      lessThan <- FALSE
+
+                                      for (d in diff) {
+                                        if (d < 0) {
+                                          break
+                                        } else if (d > 0) {
+                                          lessThan <- TRUE
+                                          break
+                                        }
+                                      }
+
+                                      lessThan
+                                    }
+                                  },
+
+
+                                  getTimeSeriesUniqueId = function(timeSeriesIdentifier) {
+                                    if (isLegacy | !grepl("@", timeSeriesIdentifier)) {
+                                      # It's not in Param.Label@Location format, so just leave it as-is
+                                      timeSeriesIdentifier
+                                    } else {
+                                      # Parse out the location identifier
+                                      location <- .self$getLocationIdentifier(timeSeriesIdentifier)
+
+                                      # Ask for all the time-series at that location
+                                      r <- GET(paste0(publishUri, "/GetTimeSeriesDescriptionList"), query = list(LocationIdentifier = location))
+                                      stop_for_status(r, paste("retrieve time-series at location", location))
+
+                                      # Find the unique ID by matching the full identifier
+                                      j <- fromJSON(content(r, "text"))
+                                      uniqueId <- j$TimeSeries$UniqueId[which(j$TimeSeries$Identifier == timeSeriesIdentifier)]
+
+                                      if (length(uniqueId) <= 0) {
+                                        # Throw on the brakes
+                                        stop("Can't find time-series '", timeSeriesIdentifier, "' in location '", location, "'.")
+                                      }
+
+                                      uniqueId
+                                    }
+                                  },
+
+
+                                  getLocationIdentifier = function(timeSeriesIdentifier) {
+                                    if (!grepl("@", timeSeriesIdentifier)) {
+                                      stop(timeSeriesIdentifier, " is not a <Parameter>.<Label>@<Location> time-series identifier")
+                                    }
+
+                                    strsplit(timeSeriesIdentifier, "@")[[1]][[2]]
+                                  },
+
+
+                                  parseIso8601 = function(isoText) {
+                                    # Wow. Parsing true ISO 8061 timestamps (which AQTS outputs) in R is hard.
+                                    #
+                                    # Parsing them **efficiently** and correctly when dealing with thousands of points is even harder!
+                                    #
+                                    # There are many packages claiming to be compliant with ISO 8601.
+                                    # But most are only compliant-ish(TM), failing to deal with timezones and UTC offsets
+                                    #
+                                    # R's strptime() method has a %z conversion specifier for timezone offsets.
+                                    #
+                                    # But %z only suports RFC 822 offset in: <sign><4-digits>
+                                    #
+                                    #  +HHMM (+1400 max)
+                                    #  -HHMM (-1400 max)
+                                    #
+                                    # AQTS uses ISO 8601 offsets, either "Z" or <sign><2-digit-hour>:<2-digit-minute>
+                                    #
+                                    #  Z      (UTC assumed)
+                                    #  +HH:MM (+14:00 max)
+                                    #  -HH:MM (-12:00 min)
+                                    #
+                                    # This function can process roughly 10K timestamps/sec.
+                                    # By comparison, the popular-and-otherwise-correct lubridate library is 60x slower at ~ 150 timestamps per second
+                                    len <- nchar(isoText)
+
+                                    if (TRUE %in% (substr(isoText, len - 2, len - 2) == ":")) {
+                                      # The most common scenario from AQTS output: A truly correct ISO 8601 timestamp with a numeric UTC offset
+                                      # Strip out the colon separating the UTC offset, since that is what %z requires
+                                      isoText <- paste0(substr(isoText, 1, len - 3), substr(isoText, len - 1, len))
+                                    } else if (TRUE %in% (substr(isoText, len, len) == "Z")) {
+                                      # Second most likely scenario from AQTS output: The "Z" representing a UTC time
+                                      # Convert the unsupported UTC shorthand into an offset with no effect
+                                      isoText <- paste0(substr(isoText, 1, len - 1), "+0000")
+                                    }
+
+                                    as.POSIXct(strptime(isoText, "%Y-%m-%dT%H:%M:%OS%z", "UTC"))
+                                  },
+
+
+                                  formatIso8601 = function(datetime) {
+                                    isoText <- strftime(datetime, "%Y-%m-%dT%H:%M:%OS%z", "UTC")
+
+                                    len <- nchar(isoText)
+
+                                    if (substr(isoText, len, len) != "Z") {
+                                      # Inject the missing colon in the zone offset, so "+HHMM" becomes "+HH:MM"
+                                      isoText = paste0(substr(isoText, 1, len - 2), ":", substr(isoText, len - 1, len))
+                                    }
+
+                                    isoText
+                                  },
+
+
+                                  getUtcOffsetText = function(utcOffset) {
+                                    isNegative <- FALSE
+                                    totalMinutes <- as.integer(utcOffset * 60)
+
+                                    if (totalMinutes < 0) {
+                                      isNegative = TRUE
+                                      totalMinutes = -totalMinutes
+                                    }
+
+                                    hours = as.integer(totalMinutes / 60)
+                                    minutes = as.integer(totalMinutes %% 60)
+
+                                    sprintf("%s%02d:%02d", if (isNegative) "-" else "+", hours, minutes)
+                                  },
+
+
+                                  getLocationData = function(locationIdentifier) {
+                                    locationData <- fromJSON(content(stop_for_status(
+                                      GET(paste0(publishUri, "/GetLocationData"), query = list(LocationIdentifier = locationIdentifier))
+                                      , paste("get location data for", locationIdentifier)), "text"))
+                                  },
+
+
+                                  getRatings = function(locationIdentifier, queryFrom, queryTo, inputParameter, outputParameter) {
+
+                                    if (missing(locationIdentifier))  { locationIdentifier = NULL }
+                                    if (missing(inputParameter))      { inputParameter = NULL }
+                                    if (missing(outputParameter))     { outputParameter = NULL }
+                                    if (missing(queryFrom))           { queryFrom = NULL }
+                                    if (missing(queryTo))             { queryTo = NULL }
+
+                                    # Coerce native R dates to an ISO 8601 string
+                                    if (is.double(queryFrom)) { queryFrom <- .self$formatIso8601(queryFrom) }
+                                    if (is.double(queryTo))   { queryTo   <- .self$formatIso8601(queryTo) }
+
+                                    # Build the rating model query
+                                    q <- list(
+                                      LocationIdentifier = locationIdentifier,
+                                      InputParameter = inputParameter,
+                                      OutputParameter = outputParameter,
+                                      QueryFrom = queryFrom,
+                                      QueryTo = queryTo)
+                                    q <- q[!sapply(q, is.null)]
+
+                                    # Get the rating models for the time period
+                                    ratingModels <- fromJSON(content(stop_for_status(
+                                      GET(paste0(.self$publishUri, "/GetRatingModelDescriptionList"), query = q)
+                                      , paste("get rating models for", locationIdentifier)), "text"))$RatingModelDescriptions
+
+                                    # Get the rating curves active in those models
+                                    ratingCurveRequests <- lapply(ratingModels$Identifier, function(identifier) {
+                                      r <- list(
+                                        RatingModelIdentifier = identifier,
+                                        QueryFrom = queryFrom,
+                                        QueryTo = queryTo)
+                                      r <- r[!sapply(r, is.null)]
+                                    })
+
+                                    ratingCurves <- .self$sendBatchRequests(.self$publishUri, "RatingCurveListServiceRequest", "/GetRatingCurveList", ratingCurveRequests)
+                                    ratingModels$Curves <- ratingCurves$RatingCurves
+
+                                    ratingModels
+                                  },
+
+
+                                  getRatingModelOutputValues = function(ratingModelIdentifier, inputValues, effectiveTime, applyShifts) {
+
+                                    if (missing(effectiveTime)) { effectiveTime <- NULL }
+                                    if (missing(applyShifts))   { applyShifts <- NULL }
+
+                                    # Coerce native R dates to an ISO 8601 string
+                                    if (is.double(effectiveTime)) { effectiveTime <- .self$formatIso8601(effectiveTime) }
+
+                                    # Build the query
+                                    q <- list(
+                                      RatingModelIdentifier = ratingModelIdentifier,
+                                      InputValues = .self$toJSV(inputValues),
+                                      EffectiveTime = effectiveTime,
+                                      ApplyShifts = applyShifts
+                                    )
+                                    q <- q[!sapply(q, is.null)]
+
+                                    # Get the output values of the rating curve
+                                    outputValues <- fromJSON(content(stop_for_status(
+                                      GET(paste0(.self$publishUri, "/GetRatingModelOutputValues"), query = q)
+                                      , paste("get rating model output values for", ratingModelIdentifier)), "text"))$OutputValues
+
+                                  },
+
+
+
+                                  getFieldVisits = function(locationIdentifier, queryFrom, queryTo, activityType) {
+
+                                    if (missing(locationIdentifier))  { locationIdentifier = NULL }
+                                    if (missing(queryFrom))           { queryFrom = NULL }
+                                    if (missing(queryTo))             { queryTo = NULL }
+                                    if (missing(activityType))        { activityType = NULL }
+
+                                    # Coerce native R dates to an ISO 8601 string
+                                    if (is.double(queryFrom)) { queryFrom <- .self$formatIso8601(queryFrom) }
+                                    if (is.double(queryTo))   { queryTo   <- .self$formatIso8601(queryTo) }
+
+                                    # Build the field visit query
+                                    q <- list(
+                                      LocationIdentifier = locationIdentifier,
+                                      QueryFrom = queryFrom,
+                                      QueryTo = queryTo)
+                                    q <- q[!sapply(q, is.null)]
+
+                                    # Get the filed visits descriptions for the time period
+                                    visits <- fromJSON(content(stop_for_status(
+                                      GET(paste0(.self$publishUri, "/GetFieldVisitDescriptionList"), query = q)
+                                      , paste("get field visits for", locationIdentifier)), "text"))$FieldVisitDescriptions
+
+                                    # Get the activities performed during those visits
+                                    visitDataRequests <- lapply(visits$Identifier, function(identifier) {
+                                      r <- list(
+                                        FieldVisitIdentifier = identifier,
+                                        DiscreteMeasurementActivity = activityType)
+                                      r <- r[!sapply(r, is.null)]
+                                    })
+
+                                    visitData <- .self$sendBatchRequests(.self$publishUri, "FieldVisitDataServiceRequest", "/GetFieldVisitData", visitDataRequests)
+                                    visits$Details <- visitData
+
+                                    visits
+                                  },
+
+
+                                  getMetadataChangeTransactionList = function(timeSeriesIdentifier, queryFrom, queryTo) {
+
+                                    if (missing(queryFrom))     { queryFrom <- NULL }
+                                    if (missing(queryTo))       { queryTo <- NULL }
+
+                                    # Coerce native R dates to an ISO 8601 string
+                                    if (is.double(queryFrom)) { queryFrom <- timeseries$formatIso8601(queryFrom) }
+                                    if (is.double(queryTo))   { queryTo   <- timeseries$formatIso8601(queryTo) }
+
+                                    # Build the query
+                                    q <- list(
+                                      TimeSeriesUniqueId = .self$getTimeSeriesUniqueId(timeSeriesIdentifier),
+                                      QueryFrom = queryFrom,
+                                      QueryTo = queryTo
+                                    )
+                                    q <- q[!sapply(q, is.null)]
+
+                                    # Get metadata transaction list
+                                    metadataChangeList <- fromJSON(content(stop_for_status(
+                                      GET(paste0(.self$publishUri, "/GetMetadataChangeTransactionList"), query = q)
+                                      , paste("get metadata change list for", timeSeriesIdentifier)), "text"))
+
+                                    metadataChangeList
+                                  },
+
+
+                                  toJSV = function(item) {
+                                    if (is.list(item)) {
+                                      if (is.null(names(item))) {
+
+                                        # Treat lists without names like a vector
+                                        item = .self$toJSV(unlist(item))
+                                      } else {
+
+                                        # List the key value pairs
+                                        n = names(item)
+                                        v = unlist(item)
+                                        item <- .self$toJSV(sapply(seq_along(item), function (i) paste0(n[i], ":", v[i])))
+                                      }
+                                    } else if (is.vector(item)) {
+
+                                      # Commas separate arrays
+                                      item <- paste0(item, collapse = ",")
+                                    }
+
+                                    item
+                                  },
+
+
+                                  getTimeSeriesDescriptions = function(locationIdentifier, parameter, publish, computationIdentifier, computationPeriodIdentifier, extendedFilters) {
+
+                                    if (missing(locationIdentifier))          { locationIdentifier = NULL }
+                                    if (missing(parameter))                   { parameter = NULL }
+                                    if (missing(publish))                     { publish = NULL }
+                                    if (missing(computationIdentifier))       { computationIdentifier = NULL }
+                                    if (missing(computationPeriodIdentifier)) { computationPeriodIdentifier = NULL }
+                                    if (missing(extendedFilters))             { extendedFilters = NULL }
+
+                                    q <- list(
+                                      LocationIdentifier = locationIdentifier,
+                                      Parameter = parameter,
+                                      Publish = publish,
+                                      ComputationIdentifier = computationIdentifier,
+                                      ExtendedFilters = .self$toJSV(extendedFilters))
+                                    q <- q[!sapply(q, is.null)]
+
+                                    # Get all the time series at the location
+                                    timeSeries <- fromJSON(content(stop_for_status(
+                                      GET(paste0(timeseries$publishUri, "/GetTimeSeriesDescriptionList"), query = q)
+                                      , paste("get time-series descriptions for", locationIdentifier)), "text"))$TimeSeriesDescriptions
+                                  },
+
+
+                                  getTimeSeriesData = function(timeSeriesIds, queryFrom, queryTo, outputUnitIds, includeGapMarkers) {
+                                    if (.self$isVersionLessThan("17.2")) {
+                                      # Throw on the brakes if the server is too old
+                                      stop("Time aligned data is not available before AQTS 2017.2. Connected server version=", version)
+                                    }
+
+                                    if (is.character(timeSeriesIds)) {
+                                      # Coerce a single timeseries ID string into a vector
+                                      timeSeriesIds <- c(timeSeriesIds)
+                                    }
+
+                                    uniqueIds <- lapply(timeSeriesIds, .self$getTimeSeriesUniqueId)
+
+                                    if (missing(queryFrom))     { queryFrom <- NULL }
+                                    if (missing(queryTo))       { queryTo <- NULL }
+                                    if (missing(outputUnitIds)) { outputUnitIds <- NULL }
+                                    if (missing(includeGapMarkers)) { includeGapMarkers <- NULL }
+
+                                    # Coerce native R dates to an ISO 8601 string
+                                    if (is.double(queryFrom)) { queryFrom <- .self$formatIso8601(queryFrom) }
+                                    if (is.double(queryTo))   { queryTo   <- .self$formatIso8601(queryTo) }
+
+                                    q <- list(
+                                      TimeSeriesUniqueIds = .self$toJSV(uniqueIds),
+                                      TimeSeriesOutputUnitIds = .self$toJSV(outputUnitIds),
+                                      QueryFrom = queryFrom,
+                                      QueryTo = queryTo,
+                                      IncludeGapMarkers = includeGapMarkers)
+                                    q <- q[!sapply(q, is.null)]
+
+                                    r <- GET(paste0(publishUri, "/GetTimeSeriesData"), query = q)
+                                    stop_for_status(r, paste("get time-aligned data for", length(uniqueIds), "time-series"))
+
+                                    j <- fromJSON(content(r, "text"))
+                                  },
+
+
+                                  getTimeSeriesCorrectedData = function (timeSeriesIdentifier, queryFrom, queryTo, getParts, includeGapMarkers) {
+
+                                    if (missing(queryFrom))         { queryFrom <- NULL }
+                                    if (missing(queryTo))           { queryTo <- NULL }
+                                    if (missing(getParts))          { getParts <- NULL }
+                                    if (missing(includeGapMarkers)) { includeGapMarkers <- NULL }
+
+                                    # Coerce native R dates to an ISO 8601 string
+                                    if (is.double(queryFrom)) { queryFrom <- .self$formatIso8601(queryFrom) }
+                                    if (is.double(queryTo))   { queryTo   <- .self$formatIso8601(queryTo) }
+
+                                    # Build the query
+                                    if (isLegacy) {
+                                      q <- list(
+                                        TimeSeriesIdentifier = timeSeriesIdentifier,
+                                        QueryFrom = queryFrom,
+                                        QueryTo = queryTo,
+                                        GetParts = getParts,
+                                        IncludeGapMarkers = includeGapMarkers)
+                                    } else {
+                                      q <- list(
+                                        TimeSeriesUniqueId = .self$getTimeSeriesUniqueId(timeSeriesIdentifier),
+                                        QueryFrom = queryFrom,
+                                        QueryTo = queryTo,
+                                        GetParts = getParts,
+                                        IncludeGapMarkers = includeGapMarkers)
+                                    }
+                                    q <- q[!sapply(q, is.null)]
+
+                                    data <- fromJSON(content(stop_for_status(
+                                      GET(paste0(.self$publishUri, "/GetTimeSeriesCorrectedData"), query = q)
+                                      , paste("get corrected data for", timeSeriesIdentifier)), "text"))
+
+                                  },
+
+
+                                  uploadExternalReport = function(locationDataOrIdentifier, path, title, deleteDuplicateReports) {
+                                    if (.self$isVersionLessThan("17.3")) {
+                                      # Throw on the brakes if the server is too old
+                                      stop("Uploading external reports is not available before AQTS 2017.3. Connected server version=", version)
+                                    }
+
+                                    if (missing(title)) {
+                                      stop("A report title is required.")
+                                    }
+
+                                    if (!file.exists(path)) {
+                                      stop("Can't upload non-existent file '", path, "'")
+                                    }
+
+                                    if (missing(deleteDuplicateReports)) {
+                                      # Delete duplicate reports by default
+                                      deleteDuplicateReports = TRUE
+                                    }
+
+                                    locationData <- locationDataOrIdentifier
+
+                                    if (!is.list(locationData) || is.null(locationData$UniqueId)) {
+                                      # We don't know the location unique ID, so look it up from the identifier string
+                                      locationData <- .self$getLocationData(locationDataOrIdentifier)
+                                    }
+
+                                    if (deleteDuplicateReports) {
+
+                                      reports = .self$getReportList()$Reports
+
+                                      if (length(reports)) {
+                                        for (row in 1:nrow(reports)) {
+
+                                          if (reports[row, "IsTransient"]) {
+                                            # Ignore transient reports
+                                            next
+                                          }
+
+                                          if (reports[row, "Title"] != title) {
+                                            # Ignore permanent reports whose title does not match
+                                            next
+                                          }
+
+                                          .self$deleteReport(reports[row, "ReportUniqueId"])
+                                        }
+                                      }
+                                    }
+
+                                    # Upload the file to the location
+                                    r <- POST(paste0(acquisitionUri, "/locations/", locationData$UniqueId, "/attachments/reports"),
+                                              body = list(uploadedFile = upload_file(path), Title = title))
+                                    stop_for_status(r, paste("upload external report to location", locationData$Identifier))
+
+                                    j <- fromJSON(content(r, "text"))
+
+                                  },
+
+
+                                  getReportList = function() {
+
+                                    r <- GET(paste0(publishUri, "/GetReportList"))
+                                    stop_for_status(r, "get report list")
+
+                                    j <- fromJSON(content(r, "text"))
+                                  },
+
+
+                                  deleteReport = function(reportUniqueId) {
+                                    r <- DELETE(paste0(acquisitionUri, "/attachments/reports/", reportUniqueId))
+                                    stop_for_status(r, paste("delete report", reportUniqueId))
+                                  },
+
+
+                                  sendBatchRequests = function(endpoint, operationName, operationRoute, requests, batchSize, verb) {
+
+                                    if (missing(batchSize)) { batchSize <- 100 }
+                                    if (missing(verb))      { verb <- "GET" }
+
+                                    if (batchSize > 500)    { batchSize <- 500 }
+
+                                    if (isLegacy) {
+                                      # No batch support in 3.X, so just perform each request sequentially
+                                      lapply(requests, function(request) {
+                                        # TODO: Support more that GET requests
+                                        fromJSON(content(stop_for_status(
+                                          GET(paste0(.self$publishUri, operationRoute), query = request)
+                                          , paste(operationRoute)), "text"))
+                                      })
+
+                                    } else {
+
+                                      # Compose the special batch-operation URL supported by ServiceStack
+                                      url = paste0(endpoint, "/json/reply/", operationName, "[]")
+
+                                      # Split the requests into batch-sized chunks
+                                      requestBatches <- split(requests, ceiling(seq_along(requests) / batchSize))
+
+                                      # Create a local function to request each batch of requests, using the verb as an override to the POST
+                                      batchPost <- function(batchOfRequests, index) {
+                                        offset <- batchSize * index
+                                        r <- POST(url, body = batchOfRequests, encode = "json", add_headers("X-Http-Method-Override" = verb))
+                                        stop_for_status(r, paste("receive", length(batchOfRequests), "batch", operationRoute, "responses at offset", offset))
+
+                                        # Return the batch of responses
+                                        responses <- fromJSON(content(r, "text"))
+                                      }
+
+                                      # Call the operation in batches
+                                      responseBatches <- mapply(batchPost, requestBatches, seq_along(requestBatches) - 1, SIMPLIFY = FALSE)
+
+                                      # Flatten the list of response data frames into a single data frame
+                                      rbind_pages(responseBatches)
+                                    }
+                                  }
+                                )
+)
+
+# Create a client in the global namespace
+timeseries = timeseriesClient()
