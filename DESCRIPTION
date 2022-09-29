@@ -21,7 +21,6 @@ Imports:
     xml2,
     crayon,
     tidyr,
-    methods
 Suggests: 
     knitr,
     rmarkdown,
