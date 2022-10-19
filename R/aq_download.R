@@ -6,18 +6,12 @@
 #'
 #'
 #' @param loc_id The location ID, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `29EA001` or `YOWN-0804`.
-#'
 #' @param ts_name The timeseries name, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `Wlevel_bgs.Calculated`.
-#'
 #' @param start The first day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries start will be adjusted to match available data.
-#'
 #' @param end The last day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries end will be adjusted to match available data.
-#'
 #' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.
-#'
-#' @param server The URL for your organization's Aquarius web server. Default for the Yukon Water Resources Branch.
-#'
-#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are UTC.
+#' @param server The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.
+#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are adjusted according to the `tz` parameter.
 #'
 #' @export
 
@@ -29,6 +23,7 @@ aq_download <- function(loc_id,
                         server = "https://yukon.aquaticinformatics.net/AQUARIUS"
 )
 {
+
   source(system.file("scripts",  "timeseries_client.R", package = "WRBtools")) #This loads the code dependencies
 
   #Make a data.frame with grade numbers and meanings because AQ doesn't supply them
@@ -134,7 +129,6 @@ aq_download <- function(loc_id,
 
   ts <- tidyr::fill(ts, c(grade_level, grade_description, approval_level, approval_description), .direction = "down")
 
-  name <- paste0(ts_name, "@", loc_id)
   list <- list(metadata = metadata,
              timeseries = ts,
              approvals = approvals,

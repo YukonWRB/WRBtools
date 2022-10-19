@@ -4,7 +4,7 @@ Version: 1.1.0-0
 Authors@R: 
     person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-5093-9185"))
-Description: What the package does (one paragraph).
+Description: Utility functions for use across the Yukon Water Resources Branch disciplines.
 License: AGPL (>= 3) + file LICENSE
 Depends: 
     R (>= 2.10),

@@ -36,7 +36,7 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   end <- lubridate::floor_date(end, "6 hours")
 
   #Get the list of available files
-  available <- xml2::read_html("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/") #6 hour products for first day
+  available <- xml2::read_html("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/") #6 hour products
   available <- rvest::html_elements(available, xpath='//*[contains(@href, ".grib2")]') %>%
     rvest::html_attr("href")
   available <- as.data.frame(as.character(available))
