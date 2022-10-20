@@ -11,7 +11,7 @@
 #' @param end The last day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries end will be adjusted to match available data.
 #' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.
 #' @param server The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.
-#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are adjusted according to the `tz` parameter.
+#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are in UTC.
 #'
 #' @export
 
