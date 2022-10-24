@@ -31,16 +31,17 @@ aq_download <- function(loc_id,
                             description = c("GW RECOVERY", "WL BLW", "HW-MISS", "MISSING DATA", "OBSTRUCT", "EST-WI", "Unusable", "Unspecified", "Undefined", "ICE", "E", "C", "B", "A", "do not use - Est. Poor", "do not use - Poor", "Qun(>15%)", "Qun(<15%)", "Qun(<7%)", "do not use - Fair", "do not use - Est. Good", "do not use - formerly Good", "do not use - HW-MISS", "MET MISSING", "MET FREEZE", "MET CUML-GAP", "MET POOR", "MET EST-EXTERNAL", "MET EST-GAP", "MET SNOW", "MET FILL-DUPL", "MET FAIR", "MET GOOD"))
   #Make the Aquarius configuration
   config = list(
-    # Aquarius server credentials
-    server=server, username=login[1], password=login[2],
-    # time series name@location EX: Wlevel_btoc.Calculated@YOWN-XXXX
+    server = server,
+    username=login[1],
+    password=login[2],
     timeSeriesName=paste0(ts_name, "@", loc_id),
-    # Analysis time period
     eventPeriodStartDay = start,
     eventPeriodEndDay = end)
 
   # Connect to Aquarius server
-  timeseries$connect(config$server, config$username, config$password)
+  timeseries$connect(config$server,
+                     config$username,
+                     config$password)
   on.exit(timeseries$disconnect())
 
   # Get the location metadata
