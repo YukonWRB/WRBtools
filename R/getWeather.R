@@ -71,6 +71,7 @@ getWeather <- function(station,
 
   #download the data
   suppressWarnings(dir.create(paste0(tempdir(), "/", station$Station.ID)))
+  on.exit(unlink(paste0(tempdir(), "/", station$Station.ID), recursive = TRUE))
   pb <- utils::txtProgressBar(min = 0,
                               max = length(DateSequence),
                               style = 3,
