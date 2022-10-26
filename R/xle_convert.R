@@ -4,140 +4,101 @@
 # Prevents user error and standardizes file naming, units, and UTC offsets.
 
 
-# IMPORTANT NOTES:
-# You should run (source) this script by hitting CTRL + SHIFT + S once you have
-# added your user inputs below. The console (window below) may prompt you to confirm
-# your station location. Do as it says and everything will be fine.
-
-
-# Output:
-#   Creates a single csv with the following columns:
-#     Date          (in format yyyy-dd-mm)
-#     Time          (in format HH:mm:ss)
-#     ms            (miliseconds)
-#     LEVEL         (in m if levelogger data, in kPa if barologger data)
-#     TEMPERATURE   (in degrees C)
-#     CONDUCTIVITY  (ONLY IF data is levelogger data, in µS/cm)
-
-
-
-
-logger_convert <- function(target,
-                           save_path)
+#' Convert Solinst logger files to csv format
+#'
+#' @param xle_file The file you wish to convert. Default "choose" allows you to point to the file.
+#' @param location The ID of the well in the form "YOWN-1500".
+#' @param save_path The location where the csv file should be saved.
+#' @param YOWN_master The location to the YOWN master spreadsheet.
+#'
+#' @return A csv of the logger data, ready for export to Aquarius or for general use.
+#' @export
+#'
+logger_convert <- function(xle_file = "choose",
+                           location,
+                           save_path = "choose",
+                           YOWN_master = "//env-fs/env-data/corp/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/2_SPREADSHEETS/1_YOWN_MASTER_TABLE/MASTER for R - remember to update.xlsx"
+                           )
 {
-  library(tidyverse)
-  library(lubridate)
-  library(XML)
-  library(fuzzyjoin)
-  library(readxl)
-  library(sjmisc)
-  library(stringr)
 
-  # Set the path to the common folder containing the .xle of interest, the YOWN Master table,
-  # and the final output location of the .csv file (the working directory).
-  common_folder <- "G:\\water\\Groundwater\\2_YUKON_OBSERVATION_WELL_NETWORK"
+  if (xle_file == "choose"){
+    print("Select the path to the logger file.")
+    xle_file <- as.character(utils::choose.files(caption="Select logger file"))
+  }
+  if (save_path == "choose"){
+    print("Select the path to the folder where you want this data saved.")
+    save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
+  }
+  # Set directories
+  filepath_to_master <- YOWN_master
 
-  # Set master and common folder directories
-  # Set path to the most recent YOWN MASTER excel file starting from the common_folder set above, with extension.
-  filepath_to_master <- "2_SPREADSHEETS\\1_YOWN_MASTER_TABLE\\2022 YOWN\\220101 2022_YOWN_MASTER.xlsx"
-
-  # Set working directory
-  setwd(common_folder)
-
-  # Set your logger's location, format YOWN-XXXX STATIONNAME. The script will check
-  # this location against the YOWN Master table to ensure consistency, and will check
-  # against the location saved to the .xle logger file.
-
-  user_location <- "YOWN-1916 Swift River"
+  user_location <- location #The script will check this location against the YOWN Master table to ensure consistency, and will check against the location saved to the .xle logger file
 
 
   # NAME CHECK AND CORRECTION AGAINST MASTER SPREADSHEET
   # Read in master sheet
-  yown_stn_names <- filter(read_excel(filepath_to_master, sheet = 1),
-                           !is.na(`YOWN Code`), !is.na(`Name`))
+  yown_stn_names <- dplyr::filter(openxlsx::read.xlsx(filepath_to_master, sheet = 1),
+                           !is.na(`YOWN.Code`), !is.na(`Name`))
   possible_names <- c()
   for (i in 1:nrow(yown_stn_names)) {
 
-    user_code <- str_extract(user_location, "YOWN-....")
-    user_name <- str_remove(user_location, "YOWN-....")
+    user_code <- stringr::str_extract(user_location, "YOWN-....")
+    user_name <- stringr::str_remove(user_location, "YOWN-....")
+    if (nchar(user_name) == 0){
+      user_name <- "no match"
+    }
 
-    # If the YOWN-xxxx provided by user matches a row in the master xlsx
-    # OR if the station name provided matches loosely with a row,
-    # save that station's code and name in possible_names
-    if (grepl(user_code, yown_stn_names$`YOWN Code`[i]) |
+    # If the YOWN-xxxx provided by user matches a row in the master xlsx OR if the station name provided matches loosely with a row, save that station's code and name in possible_names
+    if (grepl(user_code, yown_stn_names$`YOWN.Code`[i]) |
         agrepl(user_name, yown_stn_names$Name[i])) {
-      possible_names <- c(possible_names, paste(yown_stn_names$`YOWN Code`[i],
+      possible_names <- c(possible_names, paste(yown_stn_names$`YOWN.Code`[i],
                                                 yown_stn_names$Name[i]))
     }
   }
 
-  # Now correct_name is a list (with 0, 1, or more elements) which corresponds
-  # to the different entries in the master spreadsheet that resembled the
-  # location you inputted. Here, either select the position of the element
-  # in correct_name that matches with the location you desire, or take this time
-  # to input the correct location (format: YOWN-XXXX STATIONNAME). See master xlsx
+  # Now correct_name is a list (with 0, 1, or more elements) which corresponds to the different entries in the master spreadsheet that resembled the location you inputted. Here, either select the position of the element in correct_name that matches with the location you desire, or take this time to input the correct location (format: YOWN-XXXX STATIONNAME).
+  if (length(possible_names) > 1){
+    print("Stations in the YOWN Master sheet that matched your input:")
+    for (i in 1:length(possible_names)) {
+      cat("Position ", i, " :", possible_names[i], "\n")
+    }
 
-  ##  USER HANDLE CODE BELOW. USER INTERACTION NEEDED ##
+    choice <- readline(prompt =
+                         writeLines(paste("\nChoose the correct name by selecting",
+                                          "its position in the list.",
+                                          "\nIf the available options are not",
+                                          "correct, type in the correct name",
+                                          "(format: YOWN-XXXX STATIONNAME)"
+                         )))
 
-  print("Stations in the YOWN Master sheet that matched your input:")
-  for (i in 1:length(possible_names)) {
-    cat("Position ", i, " :", possible_names[i], "\n")
+    # This regex expression returns true only if "choice" is a digit, false otherwise
+    if (grepl("^[[:digit:]]+$", choice)) {
+      user_location <- possible_names[as.numeric(choice)]
+      print("Location has been updated to match format in master spreadsheet")
+    } else {
+      user_location <- choice
+      print("New name has been inputted by user")
+    }
   }
-
-  choice <- readline(prompt =
-                       writeLines(paste("\nChoose the correct name by selecting",
-                                        "its position in the list (possible_names)",
-                                        "\nIf the available options are not",
-                                        "correct, type in the correct name",
-                                        "(format: YOWN-XXXX STATIONNAME)"
-                       )))
-
-  # This regex expression return true only if "choice" is a digit, false otherwise
-  if (grepl("^[[:digit:]]+$", choice)) {
-    # Are choosing position in list
-    user_location <- possible_names[as.numeric(choice)]
-    print("Location has been updated to match format in master spreadsheet")
-  } else {
-    user_location <- choice
-    print("New name has been inputted by user")
-  }
-
-  rm(choice, filepath_to_master, possible_names, user_code, user_name)
-
-  #Set the path to the .xle file of interest starting from the common_folder set above, with extension.
-  xle_input <- str_sub(choose.files(default = paste0(common_folder, "\\1_YOWN_SITES\\1_ACTIVE WELLS\\", user_location, "\\Logger files and notes\\chooseyourfile"), caption = "Select .xle file for input"), start = 55L)
-
-  #Set the path to the folder starting from the common folder in which the  new file should be placed (likely same as
-  #.xle file location but could be different). Create the folder if it doesn't exist.
-  csv_output <- paste0("\\1_YOWN_SITES\\1_ACTIVE WELLS\\", user_location, "\\Logger files and notes\\", (str_sub(xle_input, start = (30 + nchar(user_location) + 23), end = (30 + nchar(user_location) + 26))))
 
   # CONVERT XLE TO XML ###########################################################
 
-  # As far as Lana sees, encodings of .xle files are either UTF-8 or Windows-1252
-  # (Where Windows-1252 is the same as ANSI)
-  # Looks like files with a micro character are ANSI, but others can be too
-  # To see the encoding of an xle, open it in Notepad
-  # The text at the bottom Right of the Notepad window (footer!) gives encoding
+  # As far as Lana sees, encodings of .xle files are either UTF-8 or Windows-1252 (Where Windows-1252 is the same as ANSI)
 
-  tryCatch( {result <- xmlParse(file = xle_input, encoding = "UTF-8") },
+  tryCatch( {result <- XML::xmlParse(file = xle_file, encoding = "UTF-8") },
             error=function(e) {"Encoding is not UTF-8"})
 
   # If UTF-8 encoding works, running the ANSI encoding will give bad output
   # Only try ANSI encoding if UTF-8 cannot be applied
   # Note that ANSI encoding still yields ÂµS/cm rather than µS/cm
   if (!exists("result")) {
-    tryCatch( {result <- xmlParse(file = xle_input, encoding = "Windows-1252") },
+    tryCatch( {result <- XML::xmlParse(file = xle_file, encoding = "Windows-1252") },
               error = function(e) {"Encoding not Windows-1252/ANSI or UTF-8 and this script will not work."})
   }
 
-  xml_data <- xmlToList(result)
-
-  rm(xle_input)
-
-  # FORMAT DATA ###################################################################
+  xml_data <- XML::xmlToList(result)
 
   #### Set up proper header names and units. Perform unit conversions where needed
-
   # Get each measurement's header name, parameter name and unit. Store in "check"
   check <- data.frame(header_name = character(), # Specify empty vectors
                       section_name = character(),
@@ -148,7 +109,7 @@ logger_convert <- function(target,
   # Populate "check"
   for (i in 1:length(xml_data)) {
     name <- names(xml_data)[i]
-    if (str_detect(name, "Ch._data_header")) {
+    if (stringr::str_detect(name, "Ch._data_header")) {
       check[j,] <- list(xml_data[[name]][["Identification"]],
                         name,
                         xml_data[[name]][["Unit"]])
@@ -182,24 +143,20 @@ logger_convert <- function(target,
                                 "unit_current" = c("psi", "m", "mbar"),
                                 "multiplier" = c(6.89467, (1/0.101972), 0.1))
 
-  # Instrument_type either contains "LTC" (are working with levelogger)
-  # OR "LT" (are working with barologger)
+  # Instrument_type either contains "LTC" (are working with levelogger) OR "LT" (are working with barologger)
   Instrument_type <- xml_data[["Instrument_info"]][["Instrument_type"]]
 
-  # NOTE FOR GHISLAIN: 2019 onwards usually has levelogger files = LTC,
-  # barologger files = LT. That is the basis for the if statement in this loop, as
-  # well as the "proper_LTC/BL". Pls check if applicable
-  # Make sure that that's an accurate assumption pls
-  if (str_contains(Instrument_type, "LTC")) {
+  # NOTE FOR GHISLAIN: 2019 onwards usually has levelogger files = LTC, barologger files = LT. That is the basis for the if statement in this loop, as well as the "proper_LTC/BL".
+  if (grepl("LTC", Instrument_type)) {
     # Are working with LTC Instrument -> levelogger
     Instrument_type <- "LTC"
     check <- proper_LTC %>%
       # Do left join on approximate match bw parameter & parameter name from .xle
       # Necessary because of occasional typos in logger file
-      stringdist_left_join(check, by = c("parameter" = "header_name"),
+      fuzzyjoin::stringdist_left_join(check, by = c("parameter" = "header_name"),
                            max_dist = 2, ignore_case = TRUE) %>%
-      select(parameter, section_name, unit_proper, unit_current) %>%
-      left_join(conversions_LTC,
+      dplyr::select(parameter, section_name, unit_proper, unit_current) %>%
+      dplyr::left_join(conversions_LTC,
                 by = c("parameter", "unit_proper", "unit_current"))
 
   } else if (grepl("LT[^(LTC)]", Instrument_type)) {
@@ -209,10 +166,10 @@ logger_convert <- function(target,
     check <- proper_BL %>%
       # Do left join on approximate match bw parameter & parameter name from .xle
       # Necessary because of occasional typos in logger file
-      stringdist_left_join(check, by = c("parameter" = "header_name"),
+      fuzzyjoin::stringdist_left_join(check, by = c("parameter" = "header_name"),
                            max_dist = 2, ignore_case = TRUE) %>%
-      select(parameter, section_name, unit_proper, unit_current) %>%
-      left_join(conversions_BL,
+      dplyr::select(parameter, section_name, unit_proper, unit_current) %>%
+      dplyr::left_join(conversions_BL,
                 by = c("parameter", "unit_proper", "unit_current"))
 
   } else {
@@ -221,37 +178,17 @@ logger_convert <- function(target,
 
   }
 
-  # Here "check" looks like (approximately)
-  # parameter    | section_name    | unit_proper | unit_current | multiplier
-  # ------------------------------------------------------------------------
-  # LEVEL        | Ch1_data_header | m           | m            | NA
-  # TEMPERATURE  | Ch2_data_header | °C          | °C           | NA
-  # CONDUCTIVITY | Ch3_data_header | µS/cm       | mS/cm        | 1000
-
   # Store the logged data
-  df <- xmlToDataFrame(nodes = xmlChildren(xmlRoot(result)[["Data"]]))
-  df$Date <- format(as_date(df$Date), "%Y-%m-%d")
+  df <- XML::xmlToDataFrame(nodes = XML::xmlChildren(XML::xmlRoot(result)[["Data"]]))
+  df$Date <- as.Date(df$Date)
 
-  # Here "df" looks like (approximately)
-  # Date       | Time     | ms | ch1     | ch2   | ch3
-  # ----------------------------------------------------
-  # 2020/03/15 | 18:00:00 | 0  | 10.9201 | 1.289 | 0.263
-  # 2020/03/16 | 00:00:00 | 0  | 10.8713 | 1.274 | 0.265
-  # 2020/03/16 | 06:00:00 | 0  | 10.8542 | 1.271 | 0.267
-
-  # *NOTE that column names are NOT present in the dataframe
-
-  # Loop through columns of dataframe and give columns containing level,
-  # temp, or conductivity data the correct column name AND perform unit conversion
-  # if needed
+  # Loop through columns of dataframe and give columns containing level, temp, or conductivity data the correct column name AND perform unit conversion if needed
   for (i in 1:length(df)) {
     curr_name <- names(df)[i]
-    if (str_detect(curr_name, "ch.")) { # If column name has ch
-      # we are looking at LTC/LT vals
+    if (stringr::str_detect(curr_name, "ch.")) { # If column name has ch we are looking at LTC/LT vals
 
-      # Row containing info we need,
-      # including parameter name, multiplier, proper unit
-      check_row <- filter(check, grepl(curr_name, section_name ,
+      # Row containing info we need, including parameter name, multiplier, proper unit
+      check_row <- dplyr::filter(check, grepl(curr_name, section_name ,
                                        ignore.case = TRUE))
 
       # Give column in df proper name
@@ -283,35 +220,21 @@ logger_convert <- function(target,
   }
 
   # Just in case. Makes sure columns are in the order shown below
-  # NOTE FOR GHISLAIN: Again check if this applies for baro vs levelogger
-  # and check if this is needed (I think mb not)
   if (identical("LTC", Instrument_type)) {
-    df <- select(df, Date, Time, ms, LEVEL, TEMPERATURE, CONDUCTIVITY)
+    df <- dplyr::select(df, Date, Time, ms, LEVEL, TEMPERATURE, CONDUCTIVITY)
   } else if (identical("BL", Instrument_type)) {
-    df <- select(df, Date, Time, ms, LEVEL, TEMPERATURE)
+    df <- dplyr::select(df, Date, Time, ms, LEVEL, TEMPERATURE)
   } else {
     stop("This script is not designed to handle this logger file structure.")
   }
 
-  # Here "df" looks like (approximately)
-  # Date       | Time     | ms | LEVEL        | TEMPERATURE | CONDUCTIVITY
-  # ----------------------------------------------------------------------
-  # 2020/03/15 | 18:00:00 | 0  | 10.9201      | 1.289       | 263
-  # 2020/03/16 | 00:00:00 | 0  | 10.8713      | 1.274       | 265
-  # 2020/03/16 | 06:00:00 | 0  | 10.8542      | 1.271       | 267
-
-  rm(check_row, conversions_BL, conversions_LTC,
-     proper_BL, proper_LTC, curr_name, name, result)
-
-  # -----
   # Handling daylight savings
-
   start_datetime <- as.POSIXct(paste(df$Date[1], df$Time[1]))
 
   if (start_datetime < "2020-03-08 02:00:00") {
     # Are in time period where daylight savings was used
     # With exception of 2020, dst returns true for UTC-07, false for UTC-08
-    if (!dst(start_datetime)) {
+    if (!lubridate::dst(start_datetime)) {
       # Started on UTC-08. Bump up each time stamp by 1h
       df$Time <- format(as_datetime(paste(df$Date, df$Time)) + hours(1),
                         "%H:%M:%S")
@@ -320,9 +243,6 @@ logger_convert <- function(target,
     }
   }
 
-  rm(start_datetime)
-
-  # ADD FINAL HEADER AND EXPORT TO .CSV ----
   # Setting up file w header and data & exporting to .csv
 
   Serial_number     <- xml_data[["Instrument_info"]][["Serial_number"]]
@@ -363,8 +283,8 @@ logger_convert <- function(target,
       possible_names <- c()
       for (i in 1:nrow(yown_stn_names)) {
 
-        user_code <- str_extract(Location, "YOWN-....")
-        user_name <- str_remove(Location, "YOWN-....")
+        user_code <- stringr::str_extract(Location, "YOWN-....")
+        user_name <- stringr::str_remove(Location, "YOWN-....")
 
         # If the YOWN-xxxx provided by user matches a row in the master xlsx
         # OR if the station name provided matches loosely with a row,
@@ -408,22 +328,21 @@ logger_convert <- function(target,
 
 
   # csv name will be startdate_to_enddate_location_loggertype.csv
-  startdate <- df$Date[1]
-  enddate <- df$Date[nrow(df)]
+  startdate <- gsub("-", "", df$Date[1])
+  enddate <- gsub("-", "", df$Date[nrow(df)])
 
-  filename <- paste(format(parse_date(startdate, format = "%Y%.%m%.%d"),"%y%m%d"),
-                    "_to_",
-                    format(parse_date(enddate, format="%Y%.%m%.%d"),"%y%m%d"),
+  filename <- paste(user_location,
                     "_",
-                    user_location,
+                    startdate,
+                    "_to_",
+                    enddate,
                     "_",
                     Instrument_type,
                     ".csv",
                     sep = ""
   )
 
-  setwd(paste0(common_folder, "\\", csv_output))
-  f <- file(filename, "w")
+  f <- file(paste0(save_path, "/", filename), "w")
 
   params_units <- NA
   # params_units will be a string for the header rows (info) for the csv
@@ -440,19 +359,17 @@ logger_convert <- function(target,
 
     # We use "check" to determine the units
     params_units <- paste(c("LEVEL",
-                            paste("UNIT: ",
-                                  select(filter(check,
-                                                parameter == "LEVEL"),
-                                         unit_proper)),
+                            paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "LEVEL"),
+                            unit_proper)),
                             paste("Offset: ", Level_offset),
                             "TEMPERATURE",
                             paste("UNIT: ",
-                                  select(filter(check,
+                                  dplyr::select(dplyr::filter(check,
                                                 parameter == "TEMPERATURE"),
                                          unit_proper)),
                             "CONDUCTIVITY",
                             paste("UNIT: ",
-                                  select(filter(check,
+                                  dplyr::select(dplyr::filter(check,
                                                 parameter == "CONDUCTIVITY"),
                                          unit_proper))))
 
@@ -460,12 +377,12 @@ logger_convert <- function(target,
 
     params_units <- paste(c("LEVEL",
                             paste("UNIT: ",
-                                  select(filter(check,
+                                  dplyr::select(filter(check,
                                                 parameter == "LEVEL"),
                                          unit_proper)),
                             "TEMPERATURE",
                             paste("UNIT: ",
-                                  select(filter(check, parameter == "TEMPERATURE"),
+                                  dplyr::select(filter(check, parameter == "TEMPERATURE"),
                                          unit_proper))))
 
   } else {
@@ -483,9 +400,9 @@ logger_convert <- function(target,
              f)
 
   # Write the actual data into the csv and create the csv
-  write.csv(df, f, row.names = FALSE)
+  utils::write.csv(df, f, row.names = FALSE)
 
   close(f)
 
-  writeLines("\n\t\n\tThank you for using this script! Your file is now in the same location as the input .xle file")
+  writeLines(paste0("\n\t\n\tThank you for using this script! Your file is now in ", save_path, "."))
 }

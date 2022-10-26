@@ -17,8 +17,7 @@
 #' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are in UTC.
 #'
 #' @export
-#'
-#' @examples
+
 aq_upload <- function(loc_id,
                       ts_name,
                       data,
