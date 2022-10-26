@@ -11,7 +11,8 @@
 #' @param end The last day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries end will be adjusted to match available data.
 #' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.
 #' @param server The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.
-#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are adjusted according to the `tz` parameter.
+#'
+#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are in UTC.
 #'
 #' @export
 
@@ -31,16 +32,17 @@ aq_download <- function(loc_id,
                             description = c("GW RECOVERY", "WL BLW", "HW-MISS", "MISSING DATA", "OBSTRUCT", "EST-WI", "Unusable", "Unspecified", "Undefined", "ICE", "E", "C", "B", "A", "do not use - Est. Poor", "do not use - Poor", "Qun(>15%)", "Qun(<15%)", "Qun(<7%)", "do not use - Fair", "do not use - Est. Good", "do not use - formerly Good", "do not use - HW-MISS", "MET MISSING", "MET FREEZE", "MET CUML-GAP", "MET POOR", "MET EST-EXTERNAL", "MET EST-GAP", "MET SNOW", "MET FILL-DUPL", "MET FAIR", "MET GOOD"))
   #Make the Aquarius configuration
   config = list(
-    # Aquarius server credentials
-    server=server, username=login[1], password=login[2],
-    # time series name@location EX: Wlevel_btoc.Calculated@YOWN-XXXX
+    server = server,
+    username=login[1],
+    password=login[2],
     timeSeriesName=paste0(ts_name, "@", loc_id),
-    # Analysis time period
     eventPeriodStartDay = start,
     eventPeriodEndDay = end)
 
   # Connect to Aquarius server
-  timeseries$connect(config$server, config$username, config$password)
+  timeseries$connect(config$server,
+                     config$username,
+                     config$password)
   on.exit(timeseries$disconnect())
 
   # Get the location metadata

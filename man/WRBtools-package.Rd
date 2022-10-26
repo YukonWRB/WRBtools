@@ -6,7 +6,7 @@
 \alias{WRBtools-package}
 \title{WRBtools: Utility functions for the Yukon Water Resources Branch}
 \description{
-What the package does (one paragraph).
+Utility functions for use across the Yukon Water Resources Branch disciplines.
 }
 \author{
 \strong{Maintainer}: Ghislain de Laplante \email{ghislaindel@gmail.com} (\href{https://orcid.org/0000-0002-5093-9185}{ORCID})

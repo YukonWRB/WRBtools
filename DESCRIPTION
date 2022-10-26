@@ -1,6 +1,6 @@
 Package: WRBtools
 Title: Utility functions for the Yukon Water Resources Branch
-Version: 1.1.0-0
+Version: 1.2.0-0
 Authors@R: 
     person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-5093-9185"))
@@ -18,6 +18,8 @@ Imports:
     rvest,
     stringr,
     terra,
+    openxlsx,
+    XML,
     xml2,
     crayon,
     tidyr,
