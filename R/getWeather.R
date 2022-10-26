@@ -29,13 +29,13 @@ getWeather <- function(station,
 
   #Match the input numbers to the proper ECCC station ID
     if (grepl("^[7]{1}", station)){ #Then WMO ID
-      station <- data$ECCC_stations[data$ECCC_stations$WMO.ID==station & !is.na(data$ECCC_stations$WMO.ID),]$Station.ID
+      station <- data$ECCC_stations[data$ECCC_stations$WMO.ID==station & !is.na(data$ECCC_stations$WMO.ID),]
     } else if (grepl("^[0-9]{4}[0-9A-Za-z]{3}$", station)){ #Climate ID
-      station <- data$ECCC_stations[data$ECCC_stations$Climate.ID==station & !is.na(data$ECCC_stations$Climate.ID),]$Station.ID
+      station <- data$ECCC_stations[data$ECCC_stations$Climate.ID==station & !is.na(data$ECCC_stations$Climate.ID),]
     } else if (grepl("^[0-6,8-9]{1}", station)){ #Station ID
-      station <- data$ECCC_stations[data$ECCC_stations$Station.ID==station & !is.na(data$ECCC_stations$Station.ID),]$Station.ID
+      station <- data$ECCC_stations[data$ECCC_stations$Station.ID==station & !is.na(data$ECCC_stations$Station.ID),]
     } else if (grepl("^[A-Za-z]{3}$", station)) { #TC ID
-      station <- data$ECCC_stations[data$ECCC_stations$TC.ID==station & !is.na(data$ECCC_stations$TC.ID),]$Station.ID
+      station <- data$ECCC_stations[data$ECCC_stations$TC.ID==station & !is.na(data$ECCC_stations$TC.ID),]
     } else if (grepl("^[A-Za-z]{4,}", station)){ #station name or part of
       possibilities <- dplyr::filter(data$ECCC_stations, grepl(station, Name))
       possible_names <- possibilities$Name
@@ -53,15 +53,14 @@ getWeather <- function(station,
   yr_start <- substr(start, 1, 4)
   yr_end <- substr(end, 1, 4)
 
-  if (station$Last.Year < yr_start){
+  if (station$Last.Year+2 < yr_start){
     stop(paste0("You are requesting data prior to the start of records. Records at this station are from ", station$First.Year, " to ", station$Last.Year))
   }
 
-  if (as.numeric(station$Last.Year)+2 < yr_end){
+  if (station$Last.Year+2 < yr_end){
     end <- gsub(substr(end, 1, 4), as.numeric(station$Last.Year)+2, end)
-    message(paste0("Your specified end date is long after the last available records. The end date has been modified to begin in year ", as.numeric(station$Last.Year)+1), " (it's normal if that's into the future).")
+    message(paste0("Your specified end date is long after the last available records. The end date year has been modified to ", as.numeric(station$Last.Year)+1), ".")
   }
-
 
   if (station$First.Year > yr_start){
     start <- gsub(substr(start, 1, 4), station$First.Year, start)
