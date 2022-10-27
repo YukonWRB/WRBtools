@@ -98,9 +98,14 @@ getWeather <- function(station,
   files_stacked$Date.Time..LST. <- as.POSIXct(files_stacked$Date.Time..LST., tz = "MST", format = "%Y-%m-%d %H:%M")  #make sure dttm is correctly formatted as POSIXct objects
   files_stacked <- files_stacked[order(files_stacked$Date.Time..LST.),] #order the whole deal
 
-  #manipulate sheet to remove unnecessary fields nand rows
+  #manipulate sheet to remove unnecessary fields and rows
   files_stacked <- files_stacked[-c(6:9, 22:23, 26:30)] #drop redundant columns
   files_stacked <- tidyr::drop_na(files_stacked, Date.Time..LST.) #drop na rows
+
+  files_stacked[,6:19][files_stacked[,6:19] == ""] <- NA
+
+  files_stacked <- files_stacked[rowSums(is.na(files_stacked[,6:19]))!=14,]
+
 
   #write the output to a .csv file for upload into Aquarius.
   if (!(is.null(save_path))){

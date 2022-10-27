@@ -1,10 +1,6 @@
-# DESCRIPTION####################################################################
-# Script to read Solinst logger data in .xle and output into a .csv with
-# proper column names, desired units, correct Date and Time formats and location.
-# Prevents user error and standardizes file naming, units, and UTC offsets.
-
-
 #' Convert Solinst logger files to csv format
+#'
+#' Reads a Solinst .xle file and converts it into a .csv with proper column names. Converts units to those in common usage at the Yukon Water Resources Branch, standardizes file naming, and ensures that times are represented in UTC-7.
 #'
 #' @param xle_file The file you wish to convert. Default "choose" allows you to point to the file.
 #' @param location The ID of the well in the form "YOWN-1500".
