@@ -10,7 +10,7 @@
 #' @return A csv of the logger data, ready for export to Aquarius or for general use.
 #' @export
 #'
-logger_convert <- function(xle_file = "choose",
+xle_convert <- function(xle_file = "choose",
                            location,
                            save_path = "choose",
                            YOWN_master = "//env-fs/env-data/corp/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/2_SPREADSHEETS/1_YOWN_MASTER_TABLE/MASTER for R - remember to update.xlsx"
@@ -367,7 +367,8 @@ logger_convert <- function(xle_file = "choose",
                             paste("UNIT: ",
                                   dplyr::select(dplyr::filter(check,
                                                 parameter == "CONDUCTIVITY"),
-                                         unit_proper))))
+                                         unit_proper))
+                            ))
 
   } else if (identical("BL", Instrument_type)) {
 
@@ -379,7 +380,10 @@ logger_convert <- function(xle_file = "choose",
                             "TEMPERATURE",
                             paste("UNIT: ",
                                   dplyr::select(filter(check, parameter == "TEMPERATURE"),
-                                         unit_proper))))
+                                         unit_proper)),
+                            "CONDUCTIVITY",
+                            "NOT REPORTED"
+                            ))
 
   } else {
 

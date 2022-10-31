@@ -21,9 +21,9 @@ aq_upload(
 
 \item{data}{The data you wish to append to an existing timeseries. Must contain columns named \code{Value} and \code{Time}. Time must be in UTC as Aquarius applies the station offset. See details for more information.}
 
-\item{start}{Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be >= to the first data point in \code{data}. Timezones should match that of data$Time.}
+\item{start}{Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be >= to the first data point in data. Timezones should match that of data$Time.}
 
-\item{end}{Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be <= to the final data point in \code{data}. Timezones should match that of data$Time.}
+\item{end}{Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be <= to the final data point in data. Timezones should match that of data$Time.}
 
 \item{login}{Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.}
 
