@@ -71,6 +71,8 @@ getWeather <- function(station,
     start <- gsub(substr(start, 1, 4), station$First.Year, start)
     message(paste0("Your specified start date is before the actual start of records. The start date has been modified to begin in year ", station$First.Year))
   }
+  start <- lubridate::floor_date(start, unit = "month")
+  end <- lubridate::floor_date(end, unit="month")
 
   DateSequence <- format(seq(as.Date(start), as.Date(end), by="month")) #create date sequence according to user inputs or defaults; truncate according to first/last available data
 
@@ -83,7 +85,12 @@ getWeather <- function(station,
                               width = 50,
                               char = "=")
   for(i in 1:length(DateSequence)){
-    download.file(paste0("https://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID=", station$Station.ID, "&Year=", substr(DateSequence[i], start=1, stop=4), "&Month=", substr(DateSequence[i], start=6, stop=7), "&Day=14&timeframe=1&submit=%20Download+Data"),
+    download.file(paste0("https://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID=",
+                         station$Station.ID, "&Year=",
+                         substr(DateSequence[i], start=1, stop=4),
+                         "&Month=",
+                         substr(DateSequence[i], start=6, stop=7),
+                         "&Day=14&timeframe=1&submit=%20Download+Data"),
                   destfile=paste0(tempdir(), "/", station$Station.ID, "/", DateSequence[i]),
                   method = "curl", extra = "-k",
                   quiet=TRUE)
