@@ -58,25 +58,24 @@ getHRDPS <- function(clip = c("YT"),
     name <- paste0(param, "_", issue_timedate, "_", i, ".tiff")
     if (!(TRUE %in% grepl(name, existing))) { #Checks if the file exists already, runs if not.
       tryCatch({
-
-        download.file(paste0("https://dd.weather.gc.ca/model_hrdps/continental/grib2/",
-                             substr(issue_timedate, 9, 10),
-                             "/0",
-                             i,
-                             "/CMC_hrdps_continental_",
-                             param,
-                             "_ps2.5km_",
-                             issue_timedate,
-                             "_P0",
-                             i,
-                             "-00.grib2"),
-                      destfile = paste0(tempdir(), "/HRDPS", i),
-                      method = "curl",
-                      extra = "-k",
-                      quiet = TRUE)
-        raster <- terra::rast(paste0(tempdir(), "/HRDPS", i))
-        #The two function calls above are to get around the default download method of terra::rast because of the YG firewall. It is not ideal, remember to revert to line below once fixed.
-        # raster <- terra::rast(paste0("https://dd.weather.gc.ca/model_hrdps/continental/grib2/", substr(issue_timedate, 9, 10), "/0", i, "/CMC_hrdps_continental_", param, "_ps2.5km_", issue_timedate, "_P0", i, "-00.grib2"))
+        # download.file(paste0("https://dd.weather.gc.ca/model_hrdps/continental/grib2/",
+        #                      substr(issue_timedate, 9, 10),
+        #                      "/0",
+        #                      i,
+        #                      "/CMC_hrdps_continental_",
+        #                      param,
+        #                      "_ps2.5km_",
+        #                      issue_timedate,
+        #                      "_P0",
+        #                      i,
+        #                      "-00.grib2"),
+        #               destfile = paste0(tempdir(), "/HRDPS", i),
+        #               method = "curl",
+        #               extra = "-k",
+        #               quiet = TRUE)
+        # raster <- terra::rast(paste0(tempdir(), "/HRDPS", i))
+        #The two function calls above are to get around the default download method of terra::rast because of the YG firewall. If the terra::rast line below does not work, make sure that It is not ideal, remember to revert to line below once fixed.
+        raster <- terra::rast(paste0("https://dd.weather.gc.ca/model_hrdps/continental/grib2/", substr(issue_timedate, 9, 10), "/0", i, "/CMC_hrdps_continental_", param, "_ps2.5km_", issue_timedate, "_P0", i, "-00.grib2"))
 
         if (clipped == FALSE){
           if (!is.null(clip)){
