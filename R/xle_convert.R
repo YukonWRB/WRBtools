@@ -1,10 +1,6 @@
-# DESCRIPTION####################################################################
-# Script to read Solinst logger data in .xle and output into a .csv with
-# proper column names, desired units, correct Date and Time formats and location.
-# Prevents user error and standardizes file naming, units, and UTC offsets.
-
-
 #' Convert Solinst logger files to csv format
+#'
+#' Reads a Solinst .xle file and converts it into a .csv with proper column names. Converts units to those in common usage at the Yukon Water Resources Branch, standardizes file naming, and ensures that times are represented in UTC-7.
 #'
 #' @param xle_file The file you wish to convert. Default "choose" allows you to point to the file.
 #' @param location The ID of the well in the form "YOWN-1500".
@@ -14,7 +10,7 @@
 #' @return A csv of the logger data, ready for export to Aquarius or for general use.
 #' @export
 #'
-logger_convert <- function(xle_file = "choose",
+xle_convert <- function(xle_file = "choose",
                            location,
                            save_path = "choose",
                            YOWN_master = "//env-fs/env-data/corp/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/2_SPREADSHEETS/1_YOWN_MASTER_TABLE/MASTER for R - remember to update.xlsx"
@@ -371,7 +367,8 @@ logger_convert <- function(xle_file = "choose",
                             paste("UNIT: ",
                                   dplyr::select(dplyr::filter(check,
                                                 parameter == "CONDUCTIVITY"),
-                                         unit_proper))))
+                                         unit_proper))
+                            ))
 
   } else if (identical("BL", Instrument_type)) {
 
@@ -383,7 +380,10 @@ logger_convert <- function(xle_file = "choose",
                             "TEMPERATURE",
                             paste("UNIT: ",
                                   dplyr::select(filter(check, parameter == "TEMPERATURE"),
-                                         unit_proper))))
+                                         unit_proper)),
+                            "CONDUCTIVITY",
+                            "NOT REPORTED"
+                            ))
 
   } else {
 

@@ -9,8 +9,8 @@
 #' @param loc_id The location ID, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `29EA001` or `YOWN-0804`.
 #' @param ts_name The timeseries name, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `Wlevel_bgs.Calculated`.
 #' @param data The data you wish to append to an existing timeseries. Must contain columns named `Value` and `Time`. Time must be in UTC as Aquarius applies the station offset. See details for more information.
-#' @param start Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be >= to the first data point in `data`. Timezones should match that of data$Time.
-#' @param end Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be <= to the final data point in `data`. Timezones should match that of data$Time.
+#' @param start Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be >= to the first data point in data. Timezones should match that of data$Time.
+#' @param end Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be <= to the final data point in data. Timezones should match that of data$Time.
 #' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.
 #' @param server The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.
 #'
@@ -31,9 +31,15 @@ aq_upload <- function(loc_id,
     stop("Your data.frame must contain columns labelled Value and Time. Case sensitive.")
   }
 
-  #Start with server connection
-  source(system.file("scripts",  "timeseries_client.R", package = "WRBtools")) #This loads the code dependencies
+  data$Value[data$Value == ""] <- NA #Set blank spaces to NA
+  data$Value[data$Value == " "] <- NA
+  data$Value[data$Value == "NA"] <- NA
+  data$Value[data$Value == "<NA>"] <- NA
 
+  data <- na.omit(data) #Very important! Any NA data actually gets appended to AQ as a point that is then a PITA to overwrite.
+
+  #Start with server connection
+  source(system.file("scripts",  "timeseries_client.R", package = "WRBtools"))
   #Make the Aquarius configuration and connect
   config = list(
     server = server,
@@ -41,7 +47,8 @@ aq_upload <- function(loc_id,
     password=login[2],
     timeSeriesName=paste0(ts_name, "@", loc_id),
     eventPeriodStartDay = start,
-    eventPeriodEndDay = end)
+    eventPeriodEndDay = end
+    )
 
   timeseries$connect(config$server,
                      config$username,
@@ -51,14 +58,20 @@ aq_upload <- function(loc_id,
   #Then append Points.
   #Notes about how AQ handles timestamps: it doesn't. The server will take the data fed to it as if it was UTC, without considering the tz attribute, and applies the station offset to that value. Therefore times must be converted to UTC prior to being uploaded, even if the TZ attribute does not matter. Time data can be fed in as.POSIXct or as dateTtime.
 
-  result <- timeseries$waitForCompletedAppendRequest(timeseries$appendPoints(config$timeSeriesName, data), 120)
+  result <- timeseries$waitForCompletedAppendRequest(timeseries$appendPoints(config$timeSeriesName, data, start, end), 120) #This makes it wait up to 120 seconds to show the append result - long enough for even giant datasets.
   points_in_file <- nrow(data)
 
   now <- Sys.time()
   attr(now, "tzone") <- "UTC"
+
+  output <- list(appended = result$NumberOfPointsAppended,
+                 input = points_in_file)
+
   if (result$AppendStatus == "Completed"){
     cat("\n", paste0(crayon::bold$green("Your request was completed:\n"), result$NumberOfPointsAppended, " points were appended out of the ", points_in_file, " that were in the provided dataset.\nThe points were appended to the timeseries ", crayon::bold(ts_name), " at location ", crayon::bold(loc_id), "\n", now, " UTC"))
   } else {
     cat("\n", paste0(crayon::bold$red("Your request was not completed or had an irregular status:\n"), "The status returned was ", crayon::bold(result$AppendStatus), "\n", result$NumberOfPointsAppended, " points were appended out of ", points_in_file, " requested.\nThe target timeseries was ", crayon::bold(ts_name), " at location ", crayon::bold(loc_id), "\n", now, " UTC"))
   }
+
+  return(output)
 }

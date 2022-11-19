@@ -832,6 +832,7 @@ timeseriesClient <- setRefClass("timeseriesClient",
                                     seriesData <- list(Points = points)
                                     postUrl <- paste0(acquisitionUri, "/timeseries/", seriesUniqueId, "/append")
 
+                                    #The section below is not actually modifying seriesData!!! assign new object to seriesData?
                                     if (!is.null(start) && !is.null(end)) {
                                       append(seriesData, list(
                                         TimeRange = list(
@@ -839,7 +840,8 @@ timeseriesClient <- setRefClass("timeseriesClient",
                                           InclusiveEnd = .self$formatIso8601(end))))
                                       postUrl <- paste0(acquisitionUri, "/timeseries/", seriesUniqueId, "/overwriteappend")
                                     }
-
+                                    #Hypothesis: the line below yields HTTP400 because it is missing the TimeRange. Possible?
+                                    #r <- POST(postUrl, body = seriesData$Points, TimeRange = )
                                     r <- POST(postUrl, body = seriesData, encode = "json")
                                     stop_for_status(r, postUrl)
 

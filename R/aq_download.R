@@ -62,7 +62,7 @@ aq_download <- function(loc_id,
   RawDL <- timeseries$getTimeSeriesCorrectedData(c(config$timeSeriesName), queryFrom = fromPeriodStart, queryTo = toPeriodEnd)
 
   metadata <- data.frame(attribute = c("Location Name", "TS name", "Identifier", "Location Type", "Latitude", "Longitude", "Elevation", "Elevation Units", "UTC Offset in Aquarius"),
-                         value = c(locationData$LocationName, ts_name, locationData$Identifier, locationData$LocationType, locationData$Latitude, locationData$Longitude, locationData$Elevation, locationData$ElevationUnits, locationData$UtcOffset)
+                         value = c(locationData$LocationName, ts_name, locationData$Identifier, locationData$LocationType, locationData$Latitude, locationData$Longitude, locationData$Elevation, if (is.null(locationData$ElevationUnits)) "unspecified" else locationData$ElevationUnits, locationData$UtcOffset)
   )
 
   #Get the UTC offset so that times can be made to UTC

@@ -21,8 +21,13 @@ getWeather <- function(station,
     if (save_path %in% c("Choose", "choose")) {
       print("Select the path to the folder where you want this data saved.")
       save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
+    } else {
+      if (!dir.exists(save_path)){
+        stop("The save directory you pointed to does not exist. Try again, or set save_path = `choose` to select it interactively")
+      }
     }
   }
+
 
   station <- as.character(station)
   station <- toupper(station)
@@ -66,6 +71,8 @@ getWeather <- function(station,
     start <- gsub(substr(start, 1, 4), station$First.Year, start)
     message(paste0("Your specified start date is before the actual start of records. The start date has been modified to begin in year ", station$First.Year))
   }
+  start <- lubridate::floor_date(start, unit = "month")
+  end <- lubridate::floor_date(end, unit="month")
 
   DateSequence <- format(seq(as.Date(start), as.Date(end), by="month")) #create date sequence according to user inputs or defaults; truncate according to first/last available data
 
@@ -78,7 +85,12 @@ getWeather <- function(station,
                               width = 50,
                               char = "=")
   for(i in 1:length(DateSequence)){
-    download.file(paste0("https://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID=", station$Station.ID, "&Year=", substr(DateSequence[i], start=1, stop=4), "&Month=", substr(DateSequence[i], start=6, stop=7), "&Day=14&timeframe=1&submit=%20Download+Data"),
+    download.file(paste0("https://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID=",
+                         station$Station.ID, "&Year=",
+                         substr(DateSequence[i], start=1, stop=4),
+                         "&Month=",
+                         substr(DateSequence[i], start=6, stop=7),
+                         "&Day=14&timeframe=1&submit=%20Download+Data"),
                   destfile=paste0(tempdir(), "/", station$Station.ID, "/", DateSequence[i]),
                   method = "curl", extra = "-k",
                   quiet=TRUE)
@@ -95,12 +107,17 @@ getWeather <- function(station,
 
   files_stacked <- do.call("rbind", files)
 
-  files_stacked$Date.Time..LST. <- as.POSIXct(files_stacked$Date.Time..LST., tz = "MST", format = "%Y-%m-%d %H:%M")  #make sure dttm is correctly formatted as POSIXct objects
-  files_stacked <- files_stacked[order(files_stacked$Date.Time..LST.),] #order the whole deal
-
-  #manipulate sheet to remove unnecessary fields nand rows
+  #manipulate sheet to remove unnecessary fields and rows
   files_stacked <- files_stacked[-c(6:9, 22:23, 26:30)] #drop redundant columns
-  files_stacked <- tidyr::drop_na(files_stacked, Date.Time..LST.) #drop na rows
+  files_stacked <- tidyr::drop_na(files_stacked, Date.Time..LST.) #drop rows missing datetime
+  files_stacked[,6:19][files_stacked[,6:19] == ""] <- NA #Set blank spaces to NA
+  files_stacked <- files_stacked[rowSums(is.na(files_stacked[,6:19]))!=14,] #Drop rows that have no data anywhere
+
+  colnames(files_stacked) <- c("Latitude", "Longitude", "Station_Name", "Climate_ID", "Datetime_LST", "Temp_C", "Temp_Flag", "Dew_Point_Temp_C", "Dew_Point_Flag", "Rel_Humidity", "Rel_Humidity_Flag", "Precip_mm", "Precip_Flag", "Wind_Dir_Deg_x10", "Wind_Dir_Flag", "Wind_Spd_kmh", "Wind_Spd_Flag", "Stn_Press_kPa", "Stn_Press_Flag")#Rename columns
+
+  files_stacked$Datetime_LST <- as.POSIXct(files_stacked$Datetime_LST, tz = "MST", format = "%Y-%m-%d %H:%M")  #make sure dttm is correctly formatted as POSIXct objects
+  files_stacked <- files_stacked[order(files_stacked$Datetime_LST),] #order the whole deal
+
 
   #write the output to a .csv file for upload into Aquarius.
   if (!(is.null(save_path))){
