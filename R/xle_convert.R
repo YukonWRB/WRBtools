@@ -318,9 +318,9 @@ xle_convert <- function(xle_file = "choose",
     # We use "check" to determine the units
     params_units <- paste(c("LEVEL", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "LEVEL"), unit_proper)), paste("Offset: ", Level_offset), "TEMPERATURE", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "TEMPERATURE"), unit_proper)), "CONDUCTIVITY", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "CONDUCTIVITY"), unit_proper))))
   } else if (identical("LT", Instrument_type)) {
-    params_units <- paste(c("LEVEL", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "LEVEL"), unit_proper)), "TEMPERATURE", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "TEMPERATURE"), unit_proper)), "CONDUCTIVITY", "NOT REPORTED"))
+    params_units <- paste(c("LEVEL", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "LEVEL"), unit_proper)), paste("Offset: ", Level_offset), "TEMPERATURE", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "TEMPERATURE"), unit_proper)), "CONDUCTIVITY", "NOT REPORTED"))
   } else if (identical("BL", Instrument_type)){
-    params_units <- paste(c("LEVEL", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "LEVEL"), unit_proper)), "TEMPERATURE", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "TEMPERATURE"), unit_proper)), "CONDUCTIVITY", "NOT REPORTED"))
+    params_units <- paste(c("LEVEL", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "LEVEL"), unit_proper)), paste("Offset: ", Level_offset), "TEMPERATURE", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "TEMPERATURE"), unit_proper)), "CONDUCTIVITY", "NOT REPORTED"))
   } else {
     stop("This script is not designed to handle this logger file structure.")
   }
