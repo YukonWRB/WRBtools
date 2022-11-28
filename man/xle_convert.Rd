@@ -15,15 +15,18 @@ xle_convert(
 \arguments{
 \item{xle_file}{The file you wish to convert. Default "choose" allows you to point to the file.}
 
-\item{location}{The ID of the well in the form "YOWN-1500".}
+\item{location}{The ID of the well in the form "YOWN-1500". You can also simply name the well, and if there is ambiguity regarding which well is the right one you will get a prompt to select from a list.}
 
 \item{save_path}{The location where the csv file should be saved.}
 
-\item{YOWN_master}{The location to the YOWN master spreadsheet.}
+\item{YOWN_master}{The location of the YOWN master spreadsheet.}
 }
 \value{
 A csv of the logger data, ready for export to Aquarius or for general use.
 }
 \description{
 Reads a Solinst .xle file and converts it into a .csv with proper column names. Converts units to those in common usage at the Yukon Water Resources Branch, standardizes file naming, and ensures that times are represented in UTC-7.
+}
+\details{
+Currently works with Solinst LT, LTC, and baro loggers. Note that LTs and baro loggers are functionally identical: they are differentiated solely by the pressure scale specified in the logger file header. Barologgers are labelled "M1.5" or similar (1.5 m water column), while the shallowest LT model is an "M5" or similar. Issues will arise if future baro loggers do not use the "1.5" designation, or if you are actually using a barologger to monitor very shallow water columns.
 }
