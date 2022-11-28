@@ -237,8 +237,11 @@ xle_convert <- function(xle_file = "choose",
 
   # Setting up file w header and data & exporting to .csv
   Serial_number <- xml_data[["Instrument_info"]][["Serial_number"]]
-  Project_ID <- xml_data[["Instrument_info_data_header"]][["Project_ID"]]
-
+  if (is.null(xml_data[["Instrument_info_data_header"]][["Project_ID"]])){
+    Project_ID <- "No project ID specified"
+  } else {
+    Project_ID <- xml_data[["Instrument_info_data_header"]][["Project_ID"]]
+  }
   if (is.null(xml_data[["Instrument_info_data_header"]][["Location"]])==TRUE) {
     Location <- "No Location in logger file"
   } else {
