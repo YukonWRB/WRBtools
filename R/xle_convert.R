@@ -306,16 +306,16 @@ xle_convert <- function(xle_file = "choose",
   filename <- paste0(location, "_", startdate, "_to_", enddate, "_", Instrument_type, ".csv")
   f <- file(paste0(save_path, "/", filename), "w")
 
+  Level_offset <- as.numeric(xml_data[["Ch1_data_header"]][["Parameters"]][["Offset"]][1])
+
   params_units <- NA
   # params_units will be a string for the header rows (info) for the csv will look something like:
   # LEVEL
   # UNIT: kPa
   # TEMPERATURE
   # UNIT: °C
-
-  if (identical("LTC", Instrument_type)) {
-    Level_offset <- as.numeric(xml_data[["Ch1_data_header"]][["Parameters"]][["Offset"]][1])
-    # We use "check" to determine the units
+  # etc
+  if (identical("LTC", Instrument_type)) {  # We use "check" to determine the units
     params_units <- paste(c("LEVEL", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "LEVEL"), unit_proper)), paste("Offset: ", Level_offset), "TEMPERATURE", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "TEMPERATURE"), unit_proper)), "CONDUCTIVITY", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "CONDUCTIVITY"), unit_proper))))
   } else if (identical("LT", Instrument_type)) {
     params_units <- paste(c("LEVEL", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "LEVEL"), unit_proper)), paste("Offset: ", Level_offset), "TEMPERATURE", paste("UNIT: ", dplyr::select(dplyr::filter(check, parameter == "TEMPERATURE"), unit_proper)), "CONDUCTIVITY", "NOT REPORTED"))
