@@ -100,33 +100,33 @@ aq_download <- function(loc_id,
   ts$grade_level <- NA
   ts$grade_description <- NA
   for (i in 1:nrow(grades)){
-    if (min(ts$timestamp_UTC) > grades$start_time_UTC[i]){ #if the grade start time is in the TS; it might be well before just to cover everything.
+    if (min(ts$timestamp_UTC) > grades$start_time_UTC[i]) { #if the grade is prior to the first ts point
       ts[ts$timestamp_UTC == min(ts$timestamp_UTC),]$grade_level <- grades$level[i]
       ts[ts$timestamp_UTC == min(ts$timestamp_UTC),]$grade_description <- grades$description[i]
     } else if (nrow(ts[ts$timestamp_UTC == grades$start_time_UTC[i],]) !=0) { #if the times line up properly (are snapped to a point)
       ts[ts$timestamp_UTC == grades$start_time_UTC[i],]$grade_level <- grades$level[i]
       ts[ts$timestamp_UTC == grades$start_time_UTC[i],]$grade_description <- grades$description[i]
-    } else { #if the times do not line up properly (not snapped)
-      index <- which.min(abs(ts$timestamp_UTC - grades$start_time_UTC[i]))
+    } else if (which.min(abs(ts$timestamp_UTC - grades$start_time_UTC[i])) != nrow(ts)){ #if the times do not line up with anything in ts (not snapped), but not after the ts end
+      index <- which.min(abs(ts$timestamp_UTC - grades$start_time_UTC[i])) + 1
       ts[index,]$grade_level <- grades$level[i]
       ts[index,]$grade_description <- grades$description[i]
-    }
+    } # and if the last grade start is after then end of the ts, do nothing with it!
   }
 
   ts$approval_level <- NA
   ts$approval_description <- NA
   for (i in 1:nrow(approvals)){
-    if (min(ts$timestamp_UTC) > approvals$start_time_UTC[i]){ #if the grade start time is in the TS; it might be well before just to cover everything.
+    if (min(ts$timestamp_UTC) > approvals$start_time_UTC[i]) { #if the approval is prior to the first ts point
       ts[ts$timestamp_UTC == min(ts$timestamp_UTC),]$approval_level <- approvals$level[i]
       ts[ts$timestamp_UTC == min(ts$timestamp_UTC),]$approval_description <- approvals$description[i]
-    } else if (nrow(ts[ts$timestamp_UTC == grades$start_time_UTC[i],]) !=0) { #if the times line up properly (are snapped to a point)
+    } else if (nrow(ts[ts$timestamp_UTC == approvals$start_time_UTC[i],]) !=0) { #if the times line up properly (are snapped to a point)
       ts[ts$timestamp_UTC == approvals$start_time_UTC[i],]$approval_level <- approvals$level[i]
       ts[ts$timestamp_UTC == approvals$start_time_UTC[i],]$approval_description <- approvals$description[i]
-    } else { #if the times do not line up properly (not snapped)
-      index <- which.min(abs(ts$timestamp_UTC - approvals$start_time_UTC[i]))
+    } else if (which.min(abs(ts$timestamp_UTC - approvals$start_time_UTC[i])) != nrow(ts)){ #if the times do not line up with anything in ts (not snapped), but not after the ts end
+      index <- which.min(abs(ts$timestamp_UTC - approvals$start_time_UTC[i])) + 1
       ts[index,]$approval_level <- approvals$level[i]
       ts[index,]$approval_description <- approvals$description[i]
-    }
+    } # and if the last approval start is after then end of the ts, do nothing with it!
   }
 
   ts <- tidyr::fill(ts, c(grade_level, grade_description, approval_level, approval_description), .direction = "down")
