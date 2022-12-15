@@ -7,19 +7,19 @@
 #'
 #' @param loc_id The location ID, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `29EA001` or `YOWN-0804`.
 #' @param ts_name The timeseries name, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `Wlevel_bgs.Calculated`.
-#' @param start The first day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries start will be adjusted to match available data.
-#' @param end The last day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries end will be adjusted to match available data.
+#' @param start The first day or instant for which you want information, in UTC 0 timezone. You can specify a Date object, POSIXct object, or character vector of form yyyy-mm-dd or yyyy-mm-dd HH:mm:ss. If specifying date or POSIXct objects, the timezone attribute will be ignored. If only a date is specified it will be assigned the first moment of the day. Times requested prior to the actual timeseries start will be adjusted to match available data.
+#' @param end The last day or instant for which you want information, in UTC 0. You can specify a Date object, POSIXct object, or character vector of form yyyy-mm-dd or yyyy-mm-dd HH:mm:ss. If specifying date or POSIXct objects, the timezone attribute will be ignored. If only a date is specified it will be assigned the last moment of the day. Times requested prior to the actual timeseries end will be adjusted to match available data.
 #' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.
 #' @param server The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.
 #'
-#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are in UTC.
+#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. IMPORTANT: all times in this returned list are in UTC.
 #'
 #' @export
 
 aq_download <- function(loc_id,
                         ts_name,
                         start = "1950-01-01",
-                        end = as.character(Sys.Date()),
+                        end = Sys.Date(),
                         login = Sys.getenv(c("AQUSER", "AQPASS")),
                         server = "https://yukon.aquaticinformatics.net/AQUARIUS"
 )
@@ -35,9 +35,8 @@ aq_download <- function(loc_id,
     server = server,
     username=login[1],
     password=login[2],
-    timeSeriesName=paste0(ts_name, "@", loc_id),
-    eventPeriodStartDay = start,
-    eventPeriodEndDay = end)
+    timeSeriesName=paste0(ts_name, "@", loc_id)
+    )
 
   # Connect to Aquarius server
   timeseries$connect(config$server,
@@ -48,25 +47,30 @@ aq_download <- function(loc_id,
   # Get the location metadata
   locationData = timeseries$getLocationData(loc_id)
 
-  # Deal with times
-  utcOffset = timeseries$getUtcOffsetText(locationData$UtcOffset)
-  startOfDay = "T00:00:00"
-  endOfDay = "T23:59:59.9999999"
+  start <- as.character(start)
+  if(nchar(start) == 10){
+    start <- paste0(start, " 00:00:00")
+  }
+  start <- gsub(" ", "T", start)
+  start <- paste0(start, "-00:00")
 
-  # Prepare for downloading data points based on specified period start and end or for all data points
-  fromPeriodStart = paste0(config$eventPeriodStartDay, startOfDay, utcOffset)
-  toPeriodEnd = paste0(config$eventPeriodEndDay, endOfDay, utcOffset)
-  periodLabel = sprintf("%s - %s", config$eventPeriodStartDay, config$eventPeriodEndDay)
+  end <- as.character(end)
+  if (nchar(end) == 10){
+    end <- paste0(end, " 23:59:59.9999999")
+  }
+  end <- gsub(" ", "T", end)
+  end <- paste0(end, "-00:00")
+
 
   # Read corrected time-series data from Aquarius, format time series to POSIXct
-  RawDL <- timeseries$getTimeSeriesCorrectedData(c(config$timeSeriesName), queryFrom = fromPeriodStart, queryTo = toPeriodEnd)
+  RawDL <- timeseries$getTimeSeriesCorrectedData(c(config$timeSeriesName), queryFrom = start, queryTo = end)
 
   metadata <- data.frame(attribute = c("Location Name", "TS name", "Identifier", "Location Type", "Latitude", "Longitude", "Elevation", "Elevation Units", "UTC Offset in Aquarius"),
                          value = c(locationData$LocationName, ts_name, locationData$Identifier, locationData$LocationType, locationData$Latitude, locationData$Longitude, locationData$Elevation, if (is.null(locationData$ElevationUnits)) "unspecified" else locationData$ElevationUnits, locationData$UtcOffset)
   )
 
   #Get the UTC offset so that times can be made to UTC
-  offset <- as.numeric(substr(utcOffset, 1, 3))
+  offset <- as.numeric(substr(locationData$UtcOffset, 1, 3))
 
   #Make the basic timeseries
   ts <- data.frame(timestamp_UTC = RawDL$Points$Timestamp,
