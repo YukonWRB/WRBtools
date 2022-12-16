@@ -61,7 +61,6 @@ aq_download <- function(loc_id,
   end <- gsub(" ", "T", end)
   end <- paste0(end, "-00:00")
 
-
   # Read corrected time-series data from Aquarius, format time series to POSIXct
   RawDL <- timeseries$getTimeSeriesCorrectedData(c(config$timeSeriesName), queryFrom = start, queryTo = end)
 

@@ -8,7 +8,7 @@ aq_download(
   loc_id,
   ts_name,
   start = "1950-01-01",
-  end = as.character(Sys.Date()),
+  end = Sys.Date(),
   login = Sys.getenv(c("AQUSER", "AQPASS")),
   server = "https://yukon.aquaticinformatics.net/AQUARIUS"
 )
@@ -18,16 +18,16 @@ aq_download(
 
 \item{ts_name}{The timeseries name, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form \code{Wlevel_bgs.Calculated}.}
 
-\item{start}{The first day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries start will be adjusted to match available data.}
+\item{start}{The first day or instant for which you want information, in UTC 0 timezone. You can specify a Date object, POSIXct object, or character vector of form yyyy-mm-dd or yyyy-mm-dd HH:mm:ss. If specifying date or POSIXct objects, the timezone attribute will be ignored. If only a date is specified it will be assigned the first moment of the day. Times requested prior to the actual timeseries start will be adjusted to match available data.}
 
-\item{end}{The last day for which you want information (local time) as a character vector. Whole days only. Times requested prior to the actual timeseries end will be adjusted to match available data.}
+\item{end}{The last day or instant for which you want information, in UTC 0. You can specify a Date object, POSIXct object, or character vector of form yyyy-mm-dd or yyyy-mm-dd HH:mm:ss. If specifying date or POSIXct objects, the timezone attribute will be ignored. If only a date is specified it will be assigned the last moment of the day. Times requested prior to the actual timeseries end will be adjusted to match available data.}
 
 \item{login}{Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.}
 
 \item{server}{The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.}
 }
 \value{
-A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. Important: all times in this list are in UTC.
+A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. IMPORTANT: all times in this returned list are in UTC.
 }
 \description{
 Fetches and processes data downloaded from an Aquarius web-hosted server and returns it in a concise format. Note that any times returned by this function are in UTC.
