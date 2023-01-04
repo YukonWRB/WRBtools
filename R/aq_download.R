@@ -101,6 +101,7 @@ aq_download <- function(loc_id,
 
   #Add in grades and approval columns
   if (nrow(ts) > 0){
+    ts <- ts[!duplicated(ts) , ] #In unknown circumstances, Aquarius spits out duplicate points.
     ts$grade_level <- NA
     ts$grade_description <- NA
     for (i in 1:nrow(grades)){
