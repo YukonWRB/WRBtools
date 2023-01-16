@@ -7,11 +7,11 @@
 getWeather(station, start, end = Sys.Date(), save_path = NULL)
 }
 \arguments{
-\item{station}{The station for which you want data. You can specify the 7-digit/letter Climate ID, the 4 or 5 digit ECCC station ID, the 5-digit WMO ID (starts with a 7), or the three-letter Transport Canada ID (i.e YDA and not CYDA). If working interactively you can also specify the station name or part thereof (as character vector) and select form a list.}
+\item{station}{The station for which you want data. You can specify the 7-digit/letter Climate ID, the 4 or 5 digit ECCC station ID, the 5-digit WMO ID (starts with a 7), or the three-letter Transport Canada ID (i.e YDA and not CYDA). If working interactively you can also specify the station name or part thereof (as character vector) and select from a list.}
 
-\item{start}{The start date for which you want data. Will download whole months only. Input either a character vector of form "2022-12-30" or a Date formated object.}
+\item{start}{The start date for which you want data. Will download whole months only. Input either a character vector of form "2022-12-30" or a Date formatted object.}
 
-\item{end}{The end date for which you want data. Input either a character vector of form "2022-12-30" or a Date formated object.}
+\item{end}{The end date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.}
 
 \item{save_path}{The path where you wish to save the resultant .csv file. Defaults to NULL, in which case you should assign the function to an R object. Set to "choose" to interactively select the location.}
 }

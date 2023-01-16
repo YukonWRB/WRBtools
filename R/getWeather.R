@@ -3,9 +3,9 @@
 #' This script downloads data from ECCC stations for a given date range, combines the resultant .csv sheets, manipulates the data to make the date a POSIXct object, and removes redundant and unnecessary fields. Note that this function may take a long time to complete if you are requesting multiple years of data!
 #'
 #'
-#' @param station The station for which you want data. You can specify the 7-digit/letter Climate ID, the 4 or 5 digit ECCC station ID, the 5-digit WMO ID (starts with a 7), or the three-letter Transport Canada ID (i.e YDA and not CYDA). If working interactively you can also specify the station name or part thereof (as character vector) and select form a list.
-#' @param start The start date for which you want data. Will download whole months only. Input either a character vector of form "2022-12-30" or a Date formated object.
-#' @param end The end date for which you want data. Input either a character vector of form "2022-12-30" or a Date formated object.
+#' @param station The station for which you want data. You can specify the 7-digit/letter Climate ID, the 4 or 5 digit ECCC station ID, the 5-digit WMO ID (starts with a 7), or the three-letter Transport Canada ID (i.e YDA and not CYDA). If working interactively you can also specify the station name or part thereof (as character vector) and select from a list.
+#' @param start The start date for which you want data. Will download whole months only. Input either a character vector of form "2022-12-30" or a Date formatted object.
+#' @param end The end date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.
 #' @param save_path The path where you wish to save the resultant .csv file. Defaults to NULL, in which case you should assign the function to an R object. Set to "choose" to interactively select the location.
 #'
 #' @return A data.frame of weather data and, if save_path is specified, a csv of this same data located in the save_path.
@@ -28,6 +28,8 @@ getWeather <- function(station,
     }
   }
 
+  start <- as.Date(start)
+  end <- as.Date(end)
 
   station <- as.character(station)
   station <- toupper(station)
