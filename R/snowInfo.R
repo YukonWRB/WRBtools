@@ -8,12 +8,13 @@
 #' @param save_path The path where the .csv(s) and plots should be saved.
 #' @param stats set TRUE if you want basic statistics (mean, min, max) and calculated trends.
 #' @param plots Set TRUE if you want plots generated, SWE and depth for each location.
+#' @param quiet Suppresses most messages and warnings.
 #'
 #' @return A list with four data.frames: location metadata, basic statistics, trend information, and snow course measurements is returned to the R environment. In addition, an Excel workbook is saved to the save_path with the four data.frames, and a new folder created to hold SWE and depth plots for each station requested.
 #' @export
 #'
 
-snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inactive = FALSE, save_path = "choose", stats = TRUE, plots = TRUE) {
+snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inactive = FALSE, save_path = "choose", stats = TRUE, plots = TRUE, quiet = FALSE) {
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
@@ -88,7 +89,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     meas$SNOW_COURSE_ID[meas$SNOW_COURSE_ID=="09BA-SC02A"] <- "09BA-SC02B"
     locations <- locations[!(locations$SNOW_COURSE_ID == "09BA-SC02A") , ]
     corrected <- TRUE
-  } else if ("09BA-SC02A" %in% locations$SNOW_COURSE_ID | "09BA-SC02B" %in% locations$SNOW_COURSE_ID) {
+  } else if (("09BA-SC02A" %in% locations$SNOW_COURSE_ID | "09BA-SC02B" %in% locations$SNOW_COURSE_ID ) & quiet) {
     print("Be careful with stations 09BA-SC02A and B. A is no longer active. When requesting data from both, a correction factor determined by operating the stations in parallel over several years is applied to A, and the result reported as 09BA-SC02B. Since you requested only data from A or B, no correction was applied.")
   }
 
@@ -124,7 +125,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     meas$SNOW_COURSE_ID[meas$SNOW_COURSE_ID=="10AD-SC01"] <- "10AD-SC01B"
     corrected <- TRUE
     locations <- locations[!(locations$SNOW_COURSE_ID == "10AD-SC01") , ]
-  } else if ("10AD-SC01" %in% locations$SNOW_COURSE_ID | "10AD-SC01B" %in% locations$SNOW_COURSE_ID) {
+  } else if (("10AD-SC01" %in% locations$SNOW_COURSE_ID | "10AD-SC01B" %in% locations$SNOW_COURSE_ID) & quiet) {
     print("Be careful with stations 10AD-SC01 (no letter) and 10AD-SC01B. The first is no longer active. When requesting data from both, a correction factor determined by operating the stations in parallel over several years is applied to the first, and the result reported as 10AD-SC01B. Since you requested only data from (no letter) or B, no correction was applied.")
   }
 
@@ -133,7 +134,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     meas <- meas[meas$SNOW_COURSE_ID %in% inactive , ]
     locations <- locations[locations$ACTIVE_FLG == TRUE ,]
   }
-  if (corrected){
+  if (corrected & quiet){
     print("Warning: locations 09BA-SC02B and/or 10AD-SC01B are in fact composites of defunct locations 09BA-SC02A and/or 10AD-SC01. A correction factor (determined by operating locations in parallel over several years) was applied to defunct location data to make it comparable to the new locations.")
   }
 
@@ -259,12 +260,13 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
           ggplot2::geom_line(linewidth = 0.1) +
           ggplot2::theme_classic()
 
-        ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_SWE_.png"), plot=plotSWE, height=8, width=12, units="in", device="png", dpi=500)
-        ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_DEPTH_.png"), plot=plotDepth, height=8, width=12, units="in", device="png", dpi=500)
+        if (!is.null(save_path)){
+          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_SWE_.png"), plot=plotSWE, height=8, width=12, units="in", device="png", dpi=500)
+          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_DEPTH_.png"), plot=plotDepth, height=8, width=12, units="in", device="png", dpi=500)
+        }
       }
     }
   }
-
 
   locations$LATITUDE_SEC[is.na(locations$LATITUDE_SEC)] <- as.numeric(0)
   latitude <- locations$LATITUDE_DEG + locations$LATITUDE_MIN/60 + locations$LATITUDE_SEC/3600
