@@ -230,8 +230,8 @@ xle_convert <- function(xle_file = "choose",
   if (start_datetime < "2020-03-08 02:00:00") {
     # Are in time period where daylight savings was used. With exception of 2020, dst returns true for UTC-07, false for UTC-08
     if (!lubridate::dst(start_datetime)) { # Started on UTC-08. Bump up each time stamp by 1h
-      df$Time <- format(lubridate::as_datetime(paste(df$Date, df$Time)) + hours(1), "%H:%M:%S")
-      df$Date <- format(lubridate::as_datetime(paste(df$Date, df$Time)) + hours(1), "%Y-%m-%d")
+      df$Time <- format(lubridate::as_datetime(paste(df$Date, df$Time)) + lubridate::hours(1), "%H:%M:%S")
+      df$Date <- format(lubridate::as_datetime(paste(df$Date, df$Time)) + lubridate::hours(1), "%Y-%m-%d")
     }
   }
 

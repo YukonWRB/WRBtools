@@ -87,7 +87,7 @@ getWeather <- function(station,
                               width = 50,
                               char = "=")
   for(i in 1:length(DateSequence)){
-    download.file(paste0("https://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID=",
+    utils::download.file(paste0("https://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID=",
                          station$Station.ID, "&Year=",
                          substr(DateSequence[i], start=1, stop=4),
                          "&Month=",
@@ -105,7 +105,7 @@ getWeather <- function(station,
   #combine the many csv files generated, sort the file, and delete the old ones
   filenames <- list.files(paste0(tempdir(), "/", station$Station.ID), full.names=TRUE) #stores each month's csv name
   #unlink(list.files(paste0(tempdir(), "/", station$Station.ID), full.names = TRUE))
-  files <- lapply(filenames, read.csv) #stores the contents in a list
+  files <- lapply(filenames, utils::read.csv) #stores the contents in a list
 
   files_stacked <- do.call("rbind", files)
 
@@ -123,7 +123,7 @@ getWeather <- function(station,
 
   #write the output to a .csv file for upload into Aquarius.
   if (!(is.null(save_path))){
-    write.csv(files_stacked, file=paste0(save_path, "/ECCC_station",station$Station.ID,"_from",start,"_to",end,".csv"), row.names=FALSE)
+    utils::write.csv(files_stacked, file=paste0(save_path, "/ECCC_station",station$Station.ID,"_from",start,"_to",end,".csv"), row.names=FALSE)
 
     writeLines(paste0("All done! Your data is in the folder ", save_path))
   }

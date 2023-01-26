@@ -36,7 +36,7 @@ aq_upload <- function(loc_id,
   data$Value[data$Value == "NA"] <- NA
   data$Value[data$Value == "<NA>"] <- NA
 
-  data <- na.omit(data) #Very important! Any NA data actually gets appended to AQ as a point that is then a PITA to overwrite.
+  data <- stats::na.omit(data) #Very important! Any NA data actually gets appended to AQ as a point that is then a PITA to overwrite.
 
   #Start with server connection
   source(system.file("scripts",  "timeseries_client.R", package = "WRBtools"))
