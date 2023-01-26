@@ -10,11 +10,12 @@ snowInfo(
   inactive = FALSE,
   save_path = "choose",
   stats = TRUE,
-  plots = TRUE
+  plots = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
-\item{db_path}{The path to the local Snow Survey database including extension. Supports .mdb and .sqlite databases, though see Description for details of database and table structure.}
+\item{db_path}{The path to the local Snow Survey database including extension.}
 
 \item{locations}{The list of locations requested, as a character vector of length n. Default "all" fetches all stations.}
 
@@ -25,10 +26,12 @@ snowInfo(
 \item{stats}{set TRUE if you want basic statistics (mean, min, max) and calculated trends.}
 
 \item{plots}{Set TRUE if you want plots generated, SWE and depth for each location.}
+
+\item{quiet}{Suppresses most messages and warnings.}
 }
 \value{
 A list with four data.frames: location metadata, basic statistics, trend information, and snow course measurements is returned to the R environment. In addition, an Excel workbook is saved to the save_path with the four data.frames, and a new folder created to hold SWE and depth plots for each station requested.
 }
 \description{
-This function is intended to facilitate the reporting of snow survey data by compiling basic statistics (years of record, missing years, mean, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of SWE and depth for all requested stations.
+This function is intended to facilitate the reporting of snow survey data by compiling basic statistics (years of record, missing years, mean, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of SWE and depth for all requested stations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
 }

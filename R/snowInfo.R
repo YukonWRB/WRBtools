@@ -1,8 +1,8 @@
 #' Plots and tabular data for snow survey locations
 #'
-#' This function is intended to facilitate the reporting of snow survey data by compiling basic statistics (years of record, missing years, mean, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of SWE and depth for all requested stations.
+#' This function is intended to facilitate the reporting of snow survey data by compiling basic statistics (years of record, missing years, mean, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of SWE and depth for all requested stations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
 #'
-#' @param db_path The path to the local Snow Survey database including extension. Supports .mdb and .sqlite databases, though see Description for details of database and table structure.
+#' @param db_path The path to the local Snow Survey database including extension.
 #' @param locations The list of locations requested, as a character vector of length n. Default "all" fetches all stations.
 #' @param inactive Boolean specifying whether to include inactive stations. For 10AD-SC01 and 09BA-SC02 which require conversion factors due to moved measurement locations, this filter is applied after conversion. Therefore, if set to TRUE while 10AD-SC01B or 09BA-SC02B are active then the returned data will include measurements taken at 10AD-SC01 and 09BA-SC02A under their respective current "sister" locations, with conversion factors applied.
 #' @param save_path The path where the .csv(s) and plots should be saved.
@@ -58,13 +58,12 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
 
   #Deal with special cases
   if ("09BA-SC02A" %in% locations$SNOW_COURSE_ID & "09BA-SC02B" %in% locations$SNOW_COURSE_ID){
-    # Special case (i) Twin Creeks: 09BA-SC02B will take precedence over A from 2016 onwards. A correction factor will be calculated from the overlapping years of data for SWE and depth.
+    # Special case (i) Twin Creeks: 09BA-SC02B will take precedence over A from 2016 onwards.
     # Calculate correction factors:
     subset <- meas[meas$SNOW_COURSE_ID %in% c("09BA-SC02A", "09BA-SC02B"),]
     duplicated <- data.frame(table(subset$SAMPLE_DATE))
     duplicated <- duplicated[duplicated$Freq > 1 , ]
     duplicated <- as.Date(as.vector(duplicated$Var1))
-
     swe_factor <- NULL
     for (i in 1:length(duplicated)){
       a <- subset[subset$SNOW_COURSE_ID == "09BA-SC02A" & subset$SAMPLE_DATE == duplicated[i], "SNOW_WATER_EQUIV"]
@@ -94,13 +93,12 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
   }
 
   if ("10AD-SC01" %in% locations$SNOW_COURSE_ID & "10AD-SC01B" %in% locations$SNOW_COURSE_ID){
-    # Special case (ii) Hyland 10AD-SC01 and 10AD-SC01B. B will take precedence over (no letter) from 2018 onwards. A correction factor has been calculated from the overlapping years of data for SWE and depth.
+    # Special case (ii) Hyland 10AD-SC01 and 10AD-SC01B. B will take precedence over (no letter) from 2018 onwards.
     # Calculate correction factors:
     subset <- meas[meas$SNOW_COURSE_ID %in% c("10AD-SC01", "10AD-SC01B"),]
     duplicated <- data.frame(table(subset$SAMPLE_DATE))
     duplicated <- duplicated[duplicated$Freq > 1 , ]
     duplicated <- as.Date(as.vector(duplicated$Var1))
-
     swe_factor <- NULL
     for (i in 1:length(duplicated)){
       a <- subset[subset$SNOW_COURSE_ID == "10AD-SC01" & subset$SAMPLE_DATE == duplicated[i], "SNOW_WATER_EQUIV"]
