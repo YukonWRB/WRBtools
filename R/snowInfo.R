@@ -37,6 +37,8 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     locations <- location_table[location_table$SNOW_COURSE_ID %in% locations , ]
   }
 
+  dir.create(paste0(save_path, "/SnowExport_", Sys.Date()))
+
   #Get the measurements
   meas <- DBI::dbGetQuery(snowCon, paste0("SELECT * FROM SNOW_SAMPLE WHERE SNOW_COURSE_ID IN ('", paste(locations$SNOW_COURSE_ID, collapse = "', '"), "')"))
 
@@ -135,54 +137,40 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
       total_yrs <- max(yrs) - min(yrs)
       gaps <- seq(min(yrs), max(yrs))[!(seq(min(yrs), max(yrs)) %in% yrs)]
       sample_months <- sort(unique(lubridate::month(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SAMPLE_DATE, label = TRUE, abbr = TRUE)))
-      allMinSWE <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SNOW_WATER_EQUIV)
-      allMaxSWE <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SNOW_WATER_EQUIV)
-      allMeanSWE <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SNOW_WATER_EQUIV), 0)
-      allMinDepth <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$DEPTH)
-      allMaxDepth <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$DEPTH)
-      allMeanDepth <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$DEPTH), 0)
-      FebMinSWE <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 2 , ]$SNOW_WATER_EQUIV)
-      FebMaxSWE <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 2 , ]$SNOW_WATER_EQUIV)
-      FebMeanSWE <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 2 , ]$SNOW_WATER_EQUIV), 0)
-      MarMinSWE <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 3 , ]$SNOW_WATER_EQUIV)
-      MarMaxSWE <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 3 , ]$SNOW_WATER_EQUIV)
-      MarMeanSWE <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 3 , ]$SNOW_WATER_EQUIV), 0)
-      AprMinSWE <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 4 , ]$SNOW_WATER_EQUIV)
-      AprMaxSWE <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 4 , ]$SNOW_WATER_EQUIV)
-      AprMeanSWE <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 4 , ]$SNOW_WATER_EQUIV), 0)
-      MayMinSWE <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 5 , ]$SNOW_WATER_EQUIV)
-      MayMaxSWE <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 5 , ]$SNOW_WATER_EQUIV)
-      MayMeanSWE <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 5 , ]$SNOW_WATER_EQUIV), 0)
-      FebMinDepth <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 2 , ]$DEPTH)
-      FebMaxDepth <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 2 , ]$DEPTH)
-      FebMeanDepth <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 2 , ]$DEPTH), 0)
-      MarMinDepth <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 3 , ]$DEPTH)
-      MarMaxDepth <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 3 , ]$DEPTH)
-      MarMeanDepth <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 3 , ]$DEPTH), 0)
-      AprMinDepth <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 4 , ]$DEPTH)
-      AprMaxDepth <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 4 , ]$DEPTH)
-      AprMeanDepth <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 4 , ]$DEPTH), 0)
-      MayMinDepth <- min(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 5 , ]$DEPTH)
-      MayMaxDepth <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 5 , ]$DEPTH)
-      MayMeanDepth <- round(mean(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] & lubridate::month(meas$SAMPLE_DATE) == 5 , ]$DEPTH), 0)
+      allMaxSWE <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SNOW_WATER_EQUIV, na.rm=TRUE)
+      allMaxDepth <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$DEPTH, na.rm=TRUE)
+
+      depthMaxes <- NULL
+      SWEMaxes <- NULL
+      for (j in unique(yrs)){
+        subset <- meas[meas$year == j & meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i], ]
+        months <- unique(subset$month)
+        if (3 %in% months & 4 %in% months){
+          subsetDepth <- max(subset$DEPTH, na.rm=TRUE)
+          subsetSWE <- max(subset$SNOW_WATER_EQUIV, na.rm=TRUE)
+          depthMaxes <- c(depthMaxes, subsetDepth)
+          SWEMaxes <- c(SWEMaxes, subsetSWE)
+        }
+      }
+
+      medianMaxDepth <- stats::median(depthMaxes)
+      meanMaxDepth <- mean(depthMaxes)
+      medianMaxSWE <- stats::median(SWEMaxes)
+      meanMaxSWE <- mean(SWEMaxes)
 
       stats_df <- rbind(stats_df,
-                     data.frame("location" = locations$SNOW_COURSE_ID[i],
+                     data.frame("location_ID" = locations$SNOW_COURSE_ID[i],
                                 "total_record_yrs" = total_yrs,
                                 "start" = min(yrs),
                                 "end" = max(yrs),
                                 "missing_yrs" = paste(gaps, collapse=", ", sep = ", "),
-                                "sample months" = paste(sample_months, collapse = ", "),
-                                "all_time_min/max/mean_SWE" = paste(allMinSWE, allMaxSWE, allMeanSWE, collapse = ", ", sep = ", "),
-                                "all_time_min/max/mean_depth" = paste(allMinDepth, allMaxDepth, allMeanDepth, collapse = ", ", sep = ", "),
-                                "Feb min/max/mean_SWE" = paste(FebMinSWE, FebMaxSWE, FebMeanSWE, collapse = ", ", sep = ", "),
-                                "Mar min/max/mean_SWE" = paste(MarMinSWE, MarMaxSWE, MarMeanSWE, collapse = ", ", sep = ", "),
-                                "Apr min/max/mean_SWE" = paste(AprMinSWE, AprMaxSWE, AprMeanSWE, collapse = ", ", sep = ", "),
-                                "May min/max/mean_SWE" = paste(MayMinSWE, MayMaxSWE, MayMeanSWE, collapse = ", ", sep = ", "),
-                                "Feb min/max/mean_depth" = paste(FebMinDepth, FebMaxDepth, FebMeanDepth, collapse = ", ", sep = ", "),
-                                "Mar min/max/mean_depth" = paste(MarMinDepth, MarMaxDepth, MarMeanDepth, collapse = ", ", sep = ", "),
-                                "Apr min/max/mean_depth" = paste(AprMinDepth, AprMaxDepth, AprMeanDepth, collapse = ", ", sep = ", "),
-                                "May min/max/mean_depth" = paste(MayMinDepth, MayMaxDepth, MayMeanDepth, collapse = ", ", sep = ", ")
+                                "sample_months" = paste(sample_months, collapse = ", "),
+                                "max_SWE" = allMaxSWE,
+                                "mean_max_SWE" = meanMaxSWE,
+                                "median_max_SWE" = medianMaxSWE,
+                                "max_depth" = allMaxDepth,
+                                "mean_max_depth" = meanMaxDepth,
+                                "median_max_depth" = medianMaxDepth
                      )
       )
     }
@@ -221,11 +209,13 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
       }
 
       trends <- rbind(trends,
-                      data.frame("location" = locations$SNOW_COURSE_ID[i],
-                                 "year_p.value_SWE_max" = round(unname(AllSWESensMax$p.value), 3),
-                                 "year_sens.slope_SWE_max" = round(unname(AllSWESensMax$estimates), 3),
-                                 "year_p.value_depth_max" = round(unname(AllDepthSensMax$p.value), 3),
-                                 "year_sens.slope_depth_max" = round(unname(AllDepthSensMax$estimates), 3)
+                      data.frame("location_ID" = locations$SNOW_COURSE_ID[i],
+                                 "p.value_SWE_max" = round(unname(AllSWESensMax$p.value), 3),
+                                 "sens.slope_SWE_max" = round(unname(AllSWESensMax$estimates), 3),
+                                 "n_SWE" = AllSWESensMax$parameter,
+                                 "p.value_depth_max" = round(unname(AllDepthSensMax$p.value), 3),
+                                 "sens.slope_depth_max" = round(unname(AllDepthSensMax$estimates), 3),
+                                 "n_depth" = AllDepthSensMax$parameter
                       ))
     }
 
@@ -235,7 +225,6 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
       #Create box plot?
       plotsSWE <- list()
       plotsDepth <- list()
-      dir.create(paste0(save_path, "/SnowExport_", Sys.Date()))
       for (i in 1:nrow(locations)){
         plot_meas <- meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]
 
@@ -254,8 +243,8 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
           ggplot2::theme_classic()
 
         if (!is.null(save_path)){
-          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_SWE_.png"), plot=plotSWE, height=8, width=12, units="in", device="png", dpi=500)
-          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_DEPTH_.png"), plot=plotDepth, height=8, width=12, units="in", device="png", dpi=500)
+          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_SWE.png"), plot=plotSWE, height=8, width=12, units="in", device="png", dpi=500)
+          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_DEPTH.png"), plot=plotDepth, height=8, width=12, units="in", device="png", dpi=500)
         }
       }
     }
