@@ -13,7 +13,6 @@
 RWISConnect <- function(name = "rwdm", host = "rwis.gov.yk.ca", port = "5432", username = "rwdmread", password = "rwdmread"){
   tryCatch({
     drv <- DBI::dbDriver("PostgreSQL")
-    print("Connecting to Database…")
     RWIS <- DBI::dbConnect(drv = RPostgreSQL::PostgreSQL(),
                            dbname = dsn_database,
                            host = dsn_hostname,
