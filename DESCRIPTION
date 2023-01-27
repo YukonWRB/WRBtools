@@ -23,6 +23,7 @@ Imports:
     odbc,
     openxlsx,
     rlang,
+    RPostgreSQL,
     RSQLite,
     rvest,
     stats,

@@ -14,5 +14,4 @@ data <- list(prov_buff = prov_buff,
 
 usethis::use_data(data, internal=TRUE, overwrite=TRUE)
 
-
 #polygons and points are in WRBfloods for now.

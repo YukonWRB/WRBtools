@@ -23,17 +23,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     }
   }
 
-  #Check the paths and make a connection
-  if(!file.exists(db_path)){
-    stop("The db_path you specified either does not exist or this computer does not have access to that drive.")
-  }
-  if(stringr::str_detect(db_path, ".mdb")){
-    snowCon <- DBI::dbConnect(drv = odbc::odbc(), .connection_string = paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=", db_path))
-  } else if (stringr::str_detect(db_path, ".sqlite")){
-    snowCon <- DBI::dbConnect(RSQLite::SQLite(), db_path)
-  } else {
-    stop("This script is not designed to work with a database having that file extension. Currently supporting .mdb and .sqlite databases.")
-  }
+  snowCon <- snowConnect(path = db_path)
   on.exit(DBI::dbDisconnect(snowCon))
 
   location_table <- DBI::dbReadTable(snowCon, "SNOW_COURSE")
@@ -198,7 +188,12 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     }
 
     #Calculate trends and significance
+    #Calculate the overall trend and p-value
+    #1. start with the mean max snowpack for each year (average of the max measurements)
+    #2. Calculate stats on that
+    #3.
     trends <- data.frame()
+    #Calculate same for all locations
     for (i in 1:nrow(locations)){
       yrs <- unique(lubridate::year(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SAMPLE_DATE))
       AllSWEMax <- numeric(0)
