@@ -21,6 +21,9 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
                      clip = c("YT"),
                      save_path = "choose")
 {
+
+  terra::setGDALconfig("GDAL_PAM_ENABLED", "FALSE") #prevents writting auxiliary files along with the .tiff
+
   #Save path
   if (save_path == "choose") {
     print("Select the path to the folder where you want to save the raster(s).")
@@ -36,7 +39,6 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   end <- lubridate::floor_date(end, "6 hours")
 
   #Get the list of available files
-  #TODO: read_html does not work with YG firewall still
   available <- xml2::read_html("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/") #6 hour products
   available <- rvest::html_elements(available, xpath='//*[contains(@href, ".grib2")]') %>%
     rvest::html_attr("href")
@@ -91,27 +93,11 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
     #Only download if raster doesn't already exist
     if (!(name %in% list.files(save_path))){
         if (httr::HEAD(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0700cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"))$status_code == 200){ #First try downloading all 7-hour post files
-
-        # download.file(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0700cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"),
-        #               destfile = paste0(tempdir(), "HRDPS", i),
-        #               method = "curl",
-        #               extra = "-k",
-        #               quiet = FALSE)
-        # raster <- terra::rast(paste0(tempdir(), "/HRDPS", i))
-        #The two function calls above are to get around the default download method of terra::rast because of the YG firewall. If the terra::rast line below does not work, make sure that It is not ideal, remember to revert to line below once fixed.
       raster <- terra::rast(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0700cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"))
 
       } else { #...but if one is missing because data requested is too recent, get the 1-hour file
         name <- sub("07", "01", name)
         if (!(name %in% list.files(save_path))){ #But don't re-download it if it already exists!
-
-          # download.file(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0100cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"),
-          #               destfile = paste0(tempdir(), "/HRDPStemp"),
-          #               method = "curl",
-          #               extra = "-k",
-          #               quiet = TRUE)
-          # raster <- terra::rast(paste0(tempdir(), "/HRDPStemp"))
-          #The two function calls above are to get around the default download method of terra::rast because of the YG firewall. If the terra::rast line below does not work, make sure that It is not ideal, remember to revert to line below once fixed.
           raster <- terra::rast(paste0("https://dd.weather.gc.ca/analysis/precip/hrdpa/grib2/polar_stereographic/06/CMC_HRDPA_APCP-006-0100cutoff_SFC_0_ps2.5km_", substr(i, 1, 4), substr(i, 6,7), substr(i, 9,10), substr(i, 12,13), "_000.grib2"))
 
         }

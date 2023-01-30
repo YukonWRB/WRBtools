@@ -219,36 +219,95 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
                       ))
     }
 
-    if (plots){
-      #plot of min, max, mean for each month? Might be helpful to visualize trends? Would be one plot per location...
-      #Monthly frequency plot?
-      #Create box plot?
-      plotsSWE <- list()
-      plotsDepth <- list()
-      for (i in 1:nrow(locations)){
-        plot_meas <- meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]
 
-        plotSWE <- ggplot2::ggplot(data=plot_meas[plot_meas$SNOW_WATER_EQUIV > 0 , ], ggplot2::aes(x = .data$SAMPLE_DATE, y = SNOW_WATER_EQUIV)) +
-          ggplot2::labs(x = "Sample date", y = "mm SWE") +
-          ggplot2::scale_x_date() +
-          ggplot2::geom_point() +
-          ggplot2::geom_line(linewidth = 0.1) +
-          ggplot2::theme_classic()
 
-        plotDepth <- ggplot2::ggplot(data=plot_meas[plot_meas$DEPTH > 0 , ], ggplot2::aes(x = .data$SAMPLE_DATE, y = DEPTH)) +
-          ggplot2::labs(x = "Sample date", y = "mm SWE") +
-          ggplot2::scale_x_date() +
-          ggplot2::geom_point() +
-          ggplot2::geom_line(linewidth = 0.1) +
-          ggplot2::theme_classic()
 
-        if (!is.null(save_path)){
-          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_SWE.png"), plot=plotSWE, height=8, width=12, units="in", device="png", dpi=500)
-          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_DEPTH.png"), plot=plotDepth, height=8, width=12, units="in", device="png", dpi=500)
-        }
+
+    yrs <- lubridate::year(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SAMPLE_DATE)
+    total_yrs <- max(yrs) - min(yrs)
+    gaps <- seq(min(yrs), max(yrs))[!(seq(min(yrs), max(yrs)) %in% yrs)]
+    sample_months <- sort(unique(lubridate::month(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SAMPLE_DATE, label = TRUE, abbr = TRUE)))
+    allMaxSWE <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$SNOW_WATER_EQUIV, na.rm=TRUE)
+    allMaxDepth <- max(meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]$DEPTH, na.rm=TRUE)
+
+    depthMaxes <- NULL
+    SWEMaxes <- NULL
+    for (j in unique(yrs)){
+      subset <- meas[meas$year == j & meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i], ]
+      months <- unique(subset$month)
+      if (3 %in% months & 4 %in% months){
+        subsetDepth <- max(subset$DEPTH, na.rm=TRUE)
+        subsetSWE <- max(subset$SNOW_WATER_EQUIV, na.rm=TRUE)
+        depthMaxes <- c(depthMaxes, subsetDepth)
+        SWEMaxes <- c(SWEMaxes, subsetSWE)
       }
     }
-  }
+
+    medianMaxDepth <- stats::median(depthMaxes)
+    meanMaxDepth <- mean(depthMaxes)
+    medianMaxSWE <- stats::median(SWEMaxes)
+    meanMaxSWE <- mean(SWEMaxes)
+
+
+    if (locations == "all"){
+      #mean of the trends?
+      #trend of the territory-mean max snowpack for each year?
+      yrs <- seq(1980, lubridate::year(Sys.Date())) #Start in 1980 because the network is essentially unchanged since then
+      meanMaxSWE <- NULL
+      meanMaxDepth <- NULL
+      for (i in yrs){
+        yearMaxSWE <- NULL
+        yearMaxDepth <- NULL
+        for (j in 1:nrow(locations)){
+          subset <- meas[meas$year == i & meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[j] , ]
+          months <- unique(subset$month)
+          if (3 %in% months & 4 %in% months){
+            locationSWE <- max(subset$SNOW_WATER_EQUIV, na.rm=TRUE)
+            locationDepth <- max(subset$DEPTH, na.rm=TRUE)
+          }
+          if (nrow(subset) > 0){
+            yearMaxSWE <- c(yearMaxSWE, locationSWE)
+            yearMaxDepth <- c(yearMaxDepth, locationDepth)
+          }
+        }
+        if (!is.null(yearMaxSWE) & !is.null(yearMaxDepth)){
+          meanMaxSWE <- c(meanMaxSWE, mean(yearMaxSWE))
+          meanMaxDepth <- c(meanMaxDepth, mean(yearMaxDepth))
+        }
+      }
+
+        territory <- data.frame()
+      }
+
+
+  } #End of stats loop
+
+  if (plots){
+    plotsSWE <- list()
+    plotsDepth <- list()
+    for (i in 1:nrow(locations)){
+      plot_meas <- meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]
+
+      plotSWE <- ggplot2::ggplot(data=plot_meas[plot_meas$SNOW_WATER_EQUIV > 0 , ], ggplot2::aes(x = .data$SAMPLE_DATE, y = SNOW_WATER_EQUIV)) +
+        ggplot2::labs(x = "Sample date", y = "mm SWE") +
+        ggplot2::scale_x_date() +
+        ggplot2::geom_point() +
+        ggplot2::geom_line(linewidth = 0.1) +
+        ggplot2::theme_classic()
+
+      plotDepth <- ggplot2::ggplot(data=plot_meas[plot_meas$DEPTH > 0 , ], ggplot2::aes(x = .data$SAMPLE_DATE, y = DEPTH)) +
+        ggplot2::labs(x = "Sample date", y = "mm SWE") +
+        ggplot2::scale_x_date() +
+        ggplot2::geom_point() +
+        ggplot2::geom_line(linewidth = 0.1) +
+        ggplot2::theme_classic()
+
+      if (!is.null(save_path)){
+        ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_SWE.png"), plot=plotSWE, height=8, width=12, units="in", device="png", dpi=500)
+        ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", locations$SNOW_COURSE_ID[i], "_DEPTH.png"), plot=plotDepth, height=8, width=12, units="in", device="png", dpi=500)
+      }
+    }
+  } #End of plots loop
 
   locations$LATITUDE_SEC[is.na(locations$LATITUDE_SEC)] <- as.numeric(0)
   latitude <- locations$LATITUDE_DEG + locations$LATITUDE_MIN/60 + locations$LATITUDE_SEC/3600
@@ -259,7 +318,11 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
   names(locations) <- c("location_ID", "location_name", "active", "elevation_m", "latitude", "longitude")
 
   if (stats){
-    results <- list("locations" = locations, "stats" = stats_df, "trends" = trends, "measurements" = meas)
+    if (locations == "all"){
+      results <- list("locations" = locations, "stats" = stats_df, "trends" = trends, "territory_stats_trends" = territory, "measurements" = meas)
+    } else {
+      results <- list("locations" = locations, "stats" = stats_df, "trends" = trends, "measurements" = meas)
+    }
     if (!is.null(save_path)){
       openxlsx::write.xlsx(results, paste0(save_path, "/SnowExport_", Sys.Date(), "/measurements+stats.xlsx"))
     }
