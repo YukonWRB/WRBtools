@@ -5,7 +5,7 @@
 #' @param db_path The path to the local Snow Survey database including extension.
 #' @param locations The list of locations requested, as a character vector of length n. Default "all" fetches all stations.
 #' @param inactive Boolean specifying whether to include inactive stations. For 10AD-SC01 and 09BA-SC02 which require conversion factors due to moved measurement locations, this filter is applied after conversion. Therefore, if set to TRUE while 10AD-SC01B or 09BA-SC02B are active then the returned data will include measurements taken at 10AD-SC01 and 09BA-SC02A under their respective current "sister" locations, with conversion factors applied.
-#' @param save_path The path where the .csv(s) and plots should be saved.
+#' @param save_path The path where the .csv(s) and plots should be saved. Set to NULL for data only as an R object. Plots are not created if there is no save path.
 #' @param stats set TRUE if you want basic statistics (mean, min, max) and calculated trends.
 #' @param plots Set TRUE if you want plots generated, SWE and depth for each location.
 #' @param quiet Suppresses most messages and warnings.
@@ -37,7 +37,9 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     locations <- location_table[location_table$SNOW_COURSE_ID %in% locations , ]
   }
 
-  dir.create(paste0(save_path, "/SnowExport_", Sys.Date()))
+  if (!is.null(save_path)){
+    dir.create(paste0(save_path, "/SnowExport_", Sys.Date()))
+  }
 
   #Get the measurements
   meas <- DBI::dbGetQuery(snowCon, paste0("SELECT * FROM SNOW_SAMPLE WHERE SNOW_COURSE_ID IN ('", paste(locations$SNOW_COURSE_ID, collapse = "', '"), "')"))
@@ -282,7 +284,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
 
   } #End of stats loop
 
-  if (plots){
+  if (plots & !is.null(save_path)){
     plotsSWE <- list()
     plotsDepth <- list()
     for (i in 1:nrow(locations)){
