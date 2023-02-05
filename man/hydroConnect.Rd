@@ -15,5 +15,5 @@ hydroConnect(path, timeout = 1e+05)
 A connection to the database.
 }
 \description{
-This function exists to facilitate connecting to the hydrology database, especially if the database type and connection method changes in the future.
+This function exists to facilitate connecting to the hydrology database, especially if the database type and connection method changes in the future. Cannot be used to create a new database, use DBI::dbConnect with the appropriate driver (e.g. RSQlite::SQLite()) for that purpose.
 }
