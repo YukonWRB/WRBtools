@@ -4,7 +4,7 @@
 #'
 #' @param EQcode Site abbreviation as it appears in EQWin eg. "(LOB)" or "(KNO)"
 #' @param stationIDs "all" for all stations(default) OR vector of selected stations exactly as they appear in the EQWin database
-#' @param paramIDs "all" for all parameters (default) OR vector of seleted parameters exactly as they appear in the EQWin database
+#' @param paramIDs "all" for all parameters (default) OR vector of selected parameters exactly as they appear in the EQWin database
 #' @param dates "all" for all dates (default) OR vector of length 2 of start and end date in format "YYYY-MM-DD"
 #'
 #' @return A list of data frames containing sample information and results
@@ -29,32 +29,33 @@ dbpath <- "X:/EQWin/WR/DB/Water Resources.mdb"
 EQWin <- DBI::dbConnect(drv = odbc::odbc(), .connection_string = paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=", dbpath))
 on.exit(DBI::dbDisconnect(EQWin))
 
-# Download data from EQWin
+# Download raw data from EQWin
+stns <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstns") %>%
+                                    subset(select=c("StnId", "StnCode", "StnName", "StnDesc", "StnType", "udf_Stn_Status")) %>%
+                                    dplyr::filter(grepl(EQcode, StnCode)))
+samps <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqsampls") %>%
+                                     subset(select=c("SampleId", "StnId", "CollectDateTime")) %>%
+                                     dplyr::filter(StnId %in% stns$StnId))
 params <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqparams") %>%
                                       subset(select=c("ParamId", "ParamCode", "ParamName", "Units")))
-samps <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqsampls") %>%
-                                     subset(select=c("SampleId", "StnId", "CollectDateTime")))
-stns <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstns") %>%
-                                    subset(select=c("StnId", "StnCode", "StnName", "StnDesc", "StnType", "UTMZone", "Easting", "Northing", "udf_Stn_Status")))
+
+results <- DBI::dbGetQuery(EQWin, paste0("SELECT ", paste0('SampleId', ", ", 'ParamId', ", ", 'Result'), " FROM eqdetail WHERE ParamID IN (", paste(params$ParamId, collapse = ", "),") AND SampleId IN (", paste0(samps$SampleId, collapse = ", "), ")"))
 
 #### Filter and format data into a table ####
 
-# Select desired parameter IDs, or "all"
-if(paste(paramIDs, collapse = "") == "all"){
-  print("All parameters selected")
+# Select desired stations
+if(paste(stationIDs, collapse = "") == "all"){
+  stns <- dplyr::filter(stns, grepl(EQcode, StnCode))
 } else {
+  stns <- dplyr::filter(stns, StnCode %in% paste0(EQcode, stationIDs))
+}
+
+# Select desired parameter IDs, or "all"
+if(paste(paramIDs, collapse = "") != "all"){
   print(paste0("Parameters Selected: ", paste(paramIDs, collapse = ", ")))
   params <- dplyr::filter(params, ParamCode %in% paramIDs)
 }
 
-# Select desired stations
-if(paste(stationIDs, collapse = "") == "all"){
-  print("All stations selected")
-  stns <- dplyr::filter(stns, grepl(EQcode, StnCode))
-} else {
-  print(paste0("Stations selected: ", paste(stationIDs, collapse = ", ")))
-  stns <- dplyr::filter(stns, StnCode %in% stationIDs)
-}
 
 # Select desired date range
 if(paste(dates, collapse = "") == "all"){
