@@ -15,7 +15,7 @@
 #' @return A list with four data.frames: location metadata, basic statistics, trend information, and snow course measurements is returned to the R environment. In addition, an Excel workbook is saved to the save_path with the four data.frames, and a new folder created to hold SWE and depth plots for each station requested.
 #' @export
 #'
-#TODO: This function should really be getting data from the hydro database. However, it is currently used by the database program itself to get data out of the SnowDB. This part of the function needs to be hived off and put into WRBdatabase. Should be possible to preserve a "fallback" option in this function that goes straight to the SnowDB as well, since it's already written.
+#TODO: This function should really be getting data from the hydro database.
 
 snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inactive = FALSE, save_path = "choose", stats = TRUE, complete_yrs = TRUE, plots = TRUE, plot_type = "combined", quiet = FALSE) {
 
