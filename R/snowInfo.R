@@ -84,8 +84,8 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     # Remove 09BA-SC02A values in 2016 and later.
     meas <- meas[!(meas$SNOW_COURSE_ID=="09BA-SC02A" & meas$year >= 2016),]
     # Multiply all 09BA-SC02A values by correction factors:
-    meas$SNOW_WATER_EQUIV[meas$SNOW_COURSE_ID=="09BA-SC02A"] <- swe_correction*(meas$SNOW_WATER_EQUIV[meas$SNOW_COURSE_ID=="09BA-SC02A"])
-    meas$DEPTH[meas$SNOW_COURSE_ID=="09BA-SC02A"] <- depth_correction*(meas$DEPTH[meas$SNOW_COURSE_ID=="09BA-SC02A"])
+    meas$SNOW_WATER_EQUIV[meas$SNOW_COURSE_ID=="09BA-SC02A"] <- swe_correction*(meas[meas$SNOW_COURSE_ID=="09BA-SC02A", "SNOW_WATER_EQUIV"])
+    meas$DEPTH[meas$SNOW_COURSE_ID=="09BA-SC02A"] <- depth_correction*(meas[meas$SNOW_COURSE_ID=="09BA-SC02A", "DEPTH"])
     # Rename as 09BA-SC02B (A will no longer exist here)
     meas$SNOW_COURSE_ID[meas$SNOW_COURSE_ID=="09BA-SC02A"] <- "09BA-SC02B"
     locations <- locations[!(locations$SNOW_COURSE_ID == "09BA-SC02A") , ]
@@ -117,10 +117,10 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     depth_correction <- mean(depth_factor)
 
     #Step 1: Remove SC01 blank values in 2018 and later.
-    meas <- meas[!(meas$SNOW_COURSE_ID=="10AD-SC01" & meas$year>=2018),]
+    meas <- meas[!(meas$SNOW_COURSE_ID == "10AD-SC01" & meas$year >= 2018),]
     #Step 2: Multiply all remaining SC01 values by correction factors:
-    meas$SNOW_WATER_EQUIV[meas$SNOW_COURSE_ID=="10AD-SC01"] <- swe_correction*(meas$SNOW_WATER_EQUIV[meas$SNOW_COURSE_ID=="10AD-SC01"])
-    meas$DEPTH[meas$SNOW_COURSE_ID=="10AD-SC01"] <- depth_correction*(meas$DEPTH[meas$SNOW_COURSE_ID=="10AD-SC01"])
+    meas$SNOW_WATER_EQUIV[meas$SNOW_COURSE_ID == "10AD-SC01"] <- swe_correction*(meas[meas$SNOW_COURSE_ID=="10AD-SC01", "SNOW_WATER_EQUIV"])
+    meas$DEPTH[meas$SNOW_COURSE_ID=="10AD-SC01"] <- depth_correction*(meas[meas$SNOW_COURSE_ID=="10AD-SC01", "DEPTH"])
     # Step 3: Rename as 010AD-SC01B (blank will no longer exist)
     meas$SNOW_COURSE_ID[meas$SNOW_COURSE_ID=="10AD-SC01"] <- "10AD-SC01B"
     corrected <- TRUE
@@ -230,61 +230,112 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
                       ))
     }
 
+    for (i in 1:nrow(trends)){
+      subset <- meas[meas$SNOW_COURSE_ID == trends$location_ID[i] & meas$SNOW_WATER_EQUIV > 0,]
+      intercept_yr <- min(subset$year)
+      intercept_value_SWE <- unname(lm(formula = subset$SNOW_WATER_EQUIV ~ subset$SAMPLE_DATE)$coefficients[1])
+      intercept_value_depth <- unname(lm(formula = subset$DEPTH ~ subset$SAMPLE_DATE)$coefficients[1])
+      trends$annual_prct_chg_SWE[i] <- trends[trends$location_ID == trends$location_ID[i] , "sens.slope_SWE_max"] / intercept_value_SWE
+      trends$annual_prct_chg_DEPTH[i] <- trends[trends$location_ID == trends$location_ID[i] , "sens.slope_DEPTH_max"] / intercept_value_depth
+      trends$note[i] <- paste0("Prct chg based on linear model intercepts of ", round(intercept_value_SWE, 1), " and ", round(intercept_value_depth,1), " for SWE and depth at the start year.")
+    }
+
     if (all){
+      #Calculate the territory trend and add it to trends
+      terr_prct_chg_SWE <- mean(trends$annual_prct_chg_SWE)
+      terr_prct_chg_depth <- mean(trends$annual_prct_chg_DEPTH)
+      trends <- plyr::rbind.fill(trends, data.frame("location_ID" = "territory",
+                                                    "annual_prct_chg_SWE" = terr_prct_chg_SWE,
+                                                    "annual_prct_chg_DEPTH" = terr_prct_chg_depth,
+                                                    "note" = "Mean of the annual percent changes."))
+
       yrs <- seq(1980, lubridate::year(Sys.Date())) #Start in 1980 because the network is essentially unchanged since then
       meanMaxSWE <- NULL
       meanMaxDepth <- NULL
+      meanApr1SWE <- NULL
+      meanApr1Depth <- NULL
       for (i in yrs){
         yearMaxSWE <- NULL
         yearMaxDepth <- NULL
+        yearApr1SWE <- NULL
+        yearApr1Depth <- NULL
         for (j in 1:nrow(locations)){
           subset <- meas[meas$year == i & meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[j] , ]
           months <- unique(subset$month)
+          add <- FALSE
           if (3 %in% months & 4 %in% months){
             locationSWE <- max(subset$SNOW_WATER_EQUIV, na.rm=TRUE)
             locationDepth <- max(subset$DEPTH, na.rm=TRUE)
+            add <- TRUE
           }
-          if (nrow(subset) > 0){
+          if (add){
             yearMaxSWE <- c(yearMaxSWE, locationSWE)
             yearMaxDepth <- c(yearMaxDepth, locationDepth)
+          }
+          if (4 %in% months){
+            locApr1SWE <- subset[subset$SAMPLE_DATE == paste0(i, "-04-01") ,"SNOW_WATER_EQUIV"]
+            locApr1Depth <- subset[subset$SAMPLE_DATE == paste0(i, "-04-01") ,"DEPTH"]
+            yearApr1SWE <- c(yearApr1SWE, locApr1SWE)
+            yearApr1Depth <- c(yearApr1Depth, locApr1Depth)
           }
         }
         if (!is.null(yearMaxSWE) & !is.null(yearMaxDepth) & length(yearMaxSWE) > nrow(locations)/2){
           meanMaxSWE <- c(meanMaxSWE, mean(yearMaxSWE))
           meanMaxDepth <- c(meanMaxDepth, mean(yearMaxDepth))
         }
+        if (!is.null(yearApr1SWE) & !is.null(yearApr1Depth)){
+          meanApr1SWE <- c(meanApr1SWE, mean(yearApr1SWE))
+          meanApr1Depth <- c(meanApr1Depth, mean(yearApr1Depth))
+        }
       }
 
       meanMaxSWESens <- trend::sens.slope(meanMaxSWE)
       meanMaxDepthSens <- trend::sens.slope(meanMaxDepth)
+      meanApr1SWESens <- trend::sens.slope(meanApr1SWE)
+      meanApr1DepthSens <- trend::sens.slope(meanApr1Depth)
 
-      plot_all <- data.frame("SNOW_COURSE_ID" = "",
+      plot_all <- data.frame("SNOW_COURSE_ID" = "all_locs_max",
                              "SAMPLE_DATE" = as.Date(paste0(seq(min(yrs), min(yrs) + length(meanMaxSWE) - 1), "-01-01")),
                              "SNOW_WATER_EQUIV" = meanMaxSWE,
                              "DEPTH" = meanMaxDepth)
-      new_loc <- data.frame("SNOW_COURSE_ID" = "",
+      plot_apr1 <- data.frame("SNOW_COURSE_ID" = "all_locs_Apr1",
+                              "SAMPLE_DATE" = as.Date(paste0(seq(min(yrs), min(yrs) + length(meanMaxSWE) - 1), "-04-01")),
+                              "SNOW_WATER_EQUIV" = meanApr1SWE,
+                              "DEPTH" = meanApr1Depth)
+      new_all <- data.frame("SNOW_COURSE_ID" = "all_locs_max",
                             "SNOW_COURSE_NAME" = "Territory-averaged maximum")
+      new_apr1 <- data.frame("SNOW_COURSE_ID" = "all_locs_Apr1",
+                            "SNOW_COURSE_NAME" = "Territory-averaged April 1")
       meas <- plyr::rbind.fill(meas, plot_all)
-      locations <- plyr::rbind.fill(locations, new_loc)
-      #IMPORTANT NOTE: these new entries are removed later on, before returning the final tables or objects. This is necessary as the database does not need to ingest derived values!
+      meas <- plyr::rbind.fill(meas, plot_apr1)
+      locations <- plyr::rbind.fill(locations, new_all)
+      locations <- plyr::rbind.fill(locations, new_apr1)
 
-
-      territory <- data.frame("inactive_locations" = inactive,
-                              "n_locations" = nrow(locations),
-                              "year_start" = min(yrs),
-                              "year_end" = max(yrs),
-                              "terr_mean_max_SWE" = round(mean(meanMaxSWE), 1),
-                              "terr_median_max_SWE" = round(stats::median(meanMaxSWE),1),
-                              "terr_mean_max_DEPTH" = round(mean(meanMaxDepth), 1),
-                              "terr_median_max_DEPTH" = round(stats::median(meanMaxDepth),1),
-                              "p.value_SWE_terr_mean" = round(unname(meanMaxSWESens$p.value), 3),
-                              "sens.slope_SWE_terr_mean" = round(unname(meanMaxSWESens$estimates), 3),
-                              "p.value_DEPTH_terr_mean" = round(unname(meanMaxDepthSens$p.value), 3),
-                              "sens.slope_DEPTH_terr_mean" = round(unname(meanMaxDepthSens$estimates), 3)
+      territory <- data.frame("subset" = c("mean max", "mean Apr 1"),
+                              "inactive_locs" = inactive,
+                              "n_locs" = nrow(locations) - 2,
+                              "yr_start" = min(yrs),
+                              "yr_end" = max(yrs),
+                              "mean_SWE" = c(round(mean(meanMaxSWE), 1), round(mean(meanApr1SWE), 1)),
+                              "median_SWE" = c(round(stats::median(meanMaxSWE), 1), round(stats::median(meanApr1SWE), 1)),
+                              "mean_DEPTH" = c(round(mean(meanMaxDepth), 1), round(mean(meanApr1Depth), 1)),
+                              "median_DEPTH" = c(round(stats::median(meanMaxDepth), 1), round(stats::median(meanApr1Depth), 1)),
+                              "p.val_SWE_mean" = c(round(unname(meanMaxSWESens$p.value), 3), round(unname(meanApr1SWESens$p.value), 3)),
+                              "sens.slope_SWE_mean" = c(round(unname(meanMaxSWESens$estimates), 3), round(unname(meanApr1SWESens$estimates), 3)),
+                              "p.val_DEPTH_mean" = c(round(unname(meanMaxDepthSens$p.value), 3), round(unname(meanApr1DepthSens$p.value), 3)),
+                              "sens.slope_DEPTH_mean" = c(round(unname(meanMaxDepthSens$estimates), 3), round(unname(meanApr1DepthSens$estimates), 3)),
+                              "annual_prct_chg_SWE" = c(
+                                unname(meanMaxSWESens$estimates) / unname(lm(plot_all$SNOW_WATER_EQUIV ~ plot_meas$SAMPLE_DATE)$coefficients[1]),
+                                unname(meanApr1SWESens$estimates) / unname(lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
+                              ),
+                              "annual_prct_chg_DEPTH" = c(
+                                unname(meanMaxDepthSens$estimates) / unname(lm(plot_all$DEPTH ~ plot_meas$SAMPLE_DATE)$coefficients[1]),
+                                unname(meanApr1DepthSens$estimates) / unname(lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
+                                ),
+                              "description" = c(paste0("Computed on one data point per year, consisting of the mean of maximum values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(lm(plot_all$SNOW_WATER_EQUIV ~ plot_meas$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(lm(plot_all$DEPTH ~ plot_meas$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."),
+                                                paste0("Computed on one data point per year, consisting of April 1 values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."))
       )
     }
-
-
   } #End of stats loop
 
   if (plots){
@@ -295,8 +346,11 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
 
     for (i in 1:nrow(locations)){
       name <- locations$SNOW_COURSE_ID[i]
-      if (name == "") {
-        name <- "Territory"
+      if (name == "all_locs_max") {
+        name <- "Territory mean maximum"
+      }
+      if (name == "all_locs_Apr1") {
+        name <- "Territory mean April 1"
       }
       plot_meas <- meas[meas$SNOW_COURSE_ID == locations$SNOW_COURSE_ID[i] , ]
       plot_meas$density <- (plot_meas$SNOW_WATER_EQUIV / 10) / plot_meas$DEPTH
@@ -343,10 +397,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
           ggplot2::labs(x = "Sample date", y = bquote('Density (g/' ~cm^{"3"} *')'), title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i]))
       } else {
         plotDensity <- plotDensity +
-          ggplot2::labs(x = "Sample date", y =bquote('Density (g/' ~cm^{"3"} *')')) +
-          ggplot2::theme(axis.title.x = ggplot2::element_blank(),
-                         axis.text.x = ggplot2::element_blank(),
-                         axis.ticks.x = ggplot2::element_blank())
+          ggplot2::labs(x = "Sample date", y = bquote('Density (g/' ~cm^{"3"} *')'))
       }
 
       if (plot_type == "combined"){
@@ -374,8 +425,8 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
   } #End of plots loop
 
   if (all) {
-    locations <- locations[!locations$SNOW_COURSE_ID == "" , ]
-    meas <- meas[!meas$SNOW_COURSE_ID == "" , ]
+    locations <- locations[!locations$SNOW_COURSE_ID %in% c("all_locs_max", "all_locs_Apr1") , ]
+    meas <- meas[!meas$SNOW_COURSE_ID %in% c("all_locs_max", "all_locs_Apr1") , ]
   }
 
   #Fix up the location metadata table
@@ -403,7 +454,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
 
   if (plots){
     if (plot_type == "combined"){
-      result[[plots]] <- plots_combined
+      results[[plots]] <- plots_combined
 
     } else if (plot_type == "separate"){
       results[[plots]] <- list("SWE" = plotsSWE,
@@ -411,6 +462,5 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
                                "Density" = plotsDensity)
     }
   }
-
   return(results)
 } #End of function

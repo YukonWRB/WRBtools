@@ -2,7 +2,7 @@
 #'
 #' This function is intended to facilitate the reporting of hydrology data by compiling basic statistics (years of record, months of operation, min, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of level (for lakes) or flow for all requested locations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
 #'
-#' @param db_path The path to the local hydro database including extension. Supports .sqlite database at the moment.
+#' @param db_path The path to the local hydro database including extension. See WRBtools::hydroConnect for supported database types.
 #' @param locations The list of locations requested, as a character vector of length n. Default "all" fetches all stations.
 #' @param inactive Boolean specifying whether to include inactive stations.
 #' @param save_path The path where the .csv(s) and plots should be saved.
