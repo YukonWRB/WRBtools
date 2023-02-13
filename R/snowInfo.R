@@ -24,7 +24,12 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
       print("Select the path to the folder where you want this report saved.")
       save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
     }
+    dir.create(paste0(save_path, "/SnowInfo_", Sys.Date()))
+    if (plots){
+      dir.create(paste0(save_path, "/SnowInfo_", Sys.Date(), "/plots"))
+    }
   }
+
 
   if (!(plot_type %in% c("separate", "combined"))){
     stop("The parameter 'plot_type' must be set to either 'separate' or 'combined'.")
@@ -45,9 +50,6 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     locations <- location_table[location_table$SNOW_COURSE_ID %in% locations , ]
   }
 
-  if (!is.null(save_path)){
-    dir.create(paste0(save_path, "/SnowExport_", Sys.Date()))
-  }
 
   #Get the measurements
   meas <- DBI::dbGetQuery(snowCon, paste0("SELECT * FROM SNOW_SAMPLE WHERE SNOW_COURSE_ID IN ('", paste(locations$SNOW_COURSE_ID, collapse = "', '"), "')"))
@@ -410,11 +412,11 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
       }
       if (!is.null(save_path)){
         if (plot_type == "combined"){
-          ggplot2::ggsave(filename = paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", name, "_combined.png"), plot=plots_combined, height=10, width=10, units="in", device="png", dpi=500)
+          ggplot2::ggsave(filename = paste0(save_path, "/SnowInfo_", Sys.Date(), "/plots/", name, "_combined.png"), plot=plots_combined, height=10, width=10, units="in", device="png", dpi=500)
         } else {
-          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", name, "_SWE.png"), plot=plotSWE, height=8, width=12, units="in", device="png", dpi=500)
-          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", name, "_DEPTH.png"), plot=plotDepth, height=8, width=12, units="in", device="png", dpi=500)
-          ggplot2::ggsave(filename=paste0(save_path, "/SnowExport_", Sys.Date(), "/plots/", name, "_DENSITY.png"), plot=plotDensity, height=8, width=12, units="in", device="png", dpi=500)
+          ggplot2::ggsave(filename=paste0(save_path, "/SnowInfo_", Sys.Date(), "/plots/", name, "_SWE.png"), plot=plotSWE, height=8, width=12, units="in", device="png", dpi=500)
+          ggplot2::ggsave(filename=paste0(save_path, "/SnowInfo_", Sys.Date(), "/plots/", name, "_DEPTH.png"), plot=plotDepth, height=8, width=12, units="in", device="png", dpi=500)
+          ggplot2::ggsave(filename=paste0(save_path, "/SnowInfo_", Sys.Date(), "/plots/", name, "_DENSITY.png"), plot=plotDensity, height=8, width=12, units="in", device="png", dpi=500)
         }
       }
     }
@@ -449,7 +451,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     results <- list("locations" = locations, "measurements" = meas)
   }
   if (!is.null(save_path)){
-    openxlsx::write.xlsx(results, paste0(save_path, "/SnowExport_", Sys.Date(), "/measurements+stats.xlsx"))
+    openxlsx::write.xlsx(results, paste0(save_path, "/SnowInfo_", Sys.Date(), "/measurements+stats.xlsx"))
   }
 
   if (plots){
