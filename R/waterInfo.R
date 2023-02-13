@@ -96,9 +96,11 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
   }
   for (i in names(extremes)){
     tbl <- extremes[[i]]
+    name <- DBI::dbGetQuery(hydro, paste0("SELECT name FROM locations where location = '", sub("_.*", "", i), "'"))[1,1]
     #metadata
     metadata <- rbind(metadata,
                       data.frame("location" = sub("_.*", "", i),
+                                 "name" = name,
                                  "parameter" = sub(".*_", "", i),
                                  "latitude" = DBI::dbGetQuery(hydro, paste0("SELECT latitude FROM locations where location = '", sub("_.*", "", i), "'"))[1,1],
                                  "longitude" = DBI::dbGetQuery(hydro, paste0("SELECT longitude FROM locations where location = '", sub("_.*", "", i), "'"))[1,1],
@@ -113,6 +115,7 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
     gaps_min <- seq(min(yrs_min), max(yrs_min))[!(seq(min(yrs_min), max(yrs_min)) %in% yrs_min)]
     gaps_max <- seq(min(yrs_max), max(yrs_max))[!(seq(min(yrs_max), max(yrs_max)) %in% yrs_max)]
     info <- rbind(info, data.frame("location" = sub("_.*", "", i),
+                                   "name" = name,
                                    "parameter" = sub(".*_", "", i),
                                    "start" = min(min(yrs_min), min(yrs_max)),
                                    "end" = max(max(yrs_min), max(yrs_max)),
@@ -152,6 +155,7 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
       max_intercept <<- NA
     })
     trends <- rbind(trends, data.frame("location" = sub("_.*", "", i),
+                                       "name" = name,
                                        "parameter" = sub(".*_", "", i),
                                        "n_min" = unname(min$parameter),
                                        "p.value_min" = round(unname(min$p.value), 3),
@@ -165,18 +169,23 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
     )
 
     if (plots){
-      name <- DBI::dbGetQuery(hydro, paste0("SELECT name FROM locations where location = '", sub("_.*", "", i), "'"))[1,1]
-
-      plot <- ggplot2::ggplot(data=tbl, ggplot2::aes(x = .data$Year, y = .data$Min_1_Day)) +
+        plot <- ggplot2::ggplot(data=tbl, ggplot2::aes(x = .data$Year, y = .data$Min_1_Day)) +
         ggplot2::geom_point() +
         ggplot2::geom_line(linewidth = 0.1) +
         ggplot2::theme_classic()
       if (plot_type == "combined"){
         plot <- plot +
           ggplot2::geom_point(ggplot2::aes(y = .data$Max_1_Day)) +
-          ggplot2::geom_line(ggplot2::aes(y = .data$Max_1_Day), linewidth = 0.1) +
-          ggplot2::labs(y = "Annual extreme value (log scale)", title = paste0(sub("_.*", "", i), ": " , name), subtitle = paste0("Parameter: ", sub(".*_", "", i))) +
-          ggplot2::scale_y_log10()
+          ggplot2::geom_line(ggplot2::aes(y = .data$Max_1_Day), linewidth = 0.1)
+        if (sub(".*_", "", i) == "flow"){
+          plot <- plot +
+            ggplot2::labs(y = "Annual extreme value (log scale)", title = paste0(sub("_.*", "", i), ": " , name), subtitle = paste0("Parameter: ", sub(".*_", "", i))) +
+            ggplot2::scale_y_log10()
+        } else {
+          plot <- plot +
+            ggplot2::labs(y = "Annual extreme value", title = paste0(sub("_.*", "", i), ": " , name), subtitle = paste0("Parameter: ", sub(".*_", "", i)))
+        }
+
         plot_list[[i]] <- plot
 
       } else if (plot_type == "separate"){
