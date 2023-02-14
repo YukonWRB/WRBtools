@@ -2,11 +2,13 @@
 #'
 #' This function is intended to facilitate the reporting of hydrology data by compiling basic statistics (years of record, months of operation, min, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of level (for lakes) or flow for all requested locations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
 #'
+#' Sites that routinely see 0 values for flow or level in mid-winter may report a negative annual percent change *even if* the sens's slope is positive. This is due to the intercept of a linear model calculated using minimum flows and years being below 0 at the first year of record. Unfortunately there is no fix, but the Sen's value is still valid.
+#'
 #' @param db_path The path to the local hydro database including extension. See WRBtools::hydroConnect for supported database types.
 #' @param locations The list of locations requested, as either a vector of location IDs or one of "WRB" (only WRB stations selected), "WSC" (only), or "all". Default "all" fetches all stations.
 #' @param level_flow Default 'both' will get and calculate level and flow information wherever possible. 'one' will pick flow where it exists, otherwise level. Exception to this is if there is no flow on the end_date requested AND most recent flow is > 1 month older than level ; in this case flow is assumed to be discontinued and level is used.
 #' @param end_date The most recent day to include in calculations. Defaults to today.
-#' @param months_min The month range in which to look for minimums.
+#' @param months_min The month range in which to look for minimums. Does *not* currently support a month range overlapping two years.
 #' @param months_max The month range in which to look for maximums.
 #' @param allowed_missing The percent of data allowed to be missing and still return a minimum and/or maximum value. Applied separately to minimums and maximums for the months specified in 'months'.
 #' @param plots Set TRUE if you want plots generated for each location (level or flow).
@@ -17,7 +19,8 @@
 #' @return A list with four data.frames: location metadata, basic statistics, trend information, and daily measurements is returned to the R environment. In addition, an Excel workbook is saved to the save_path with the four data.frames as tabs, and a new folder created to hold level/flow plots for each station requested.
 #' @export
 
-waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/database/hydro.sqlite", locations = "all", level_flow = "both", end_date = Sys.Date(), months_min = c(1:4), months_max = c(4:9), allowed_missing = 10, save_path = "choose", plots = TRUE, plot_type = "combined", quiet = FALSE) {
+waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/database/hydro.sqlite", locations = "all", level_flow = "both", end_date = Sys.Date(), months_min = c(1:4), months_max = c(5:9), allowed_missing = 10, save_path = "choose", plots = TRUE, plot_type = "combined", quiet = FALSE)
+  {
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
@@ -63,7 +66,7 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
           if (flow_end > end_date){
             flow_end <- end_date
           }
-          if (flow_end > level_end - 30*24*60*60){ #check if last flow is recent enough
+          if (flow_end > level_end - 6*30*24*60*60){ #check if last flow is recent enough
             locs <- locs[!(locs$location == i & locs$parameter == "level") ,] #drop level
           } else {
             locs <- locs[!(locs$location == i & locs$parameter == "flow") ,] #drop flow
