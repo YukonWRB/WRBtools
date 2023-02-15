@@ -47,8 +47,12 @@ getWeather <- function(station,
   station <- toupper(station)
 
   #Match the input numbers to the proper ECCC station ID
-  if(weathercan::stations_meta()$ECCC_modified < Sys.time() - 28*24*60*60){
-    warning("The local list of stations is outdated. Please update it by running weathercan::stations_dl(), especially if there's an issue running this function.")
+  if(weathercan::stations_meta()$ECCC_modified < Sys.time() - 60*24*60*60){
+    tryCatch({
+      suppressWarnings(weathercan::stations_dl(quiet=TRUE))
+    }, error = function(e) {
+      warning("The local list of stations is outdated and automatically updating it failed. Please update it by running weathercan::stations_dl(), especially if there's an issue running this function.")
+    })
   }
   stations <- weathercan::stations()
     if (grepl("^[7]{1}", station)){ #Then WMO ID
@@ -74,8 +78,10 @@ getWeather <- function(station,
       station <- possibilities[choice,]
       interval <- station$interval
     }
-  if (nrow(station) != 1){
-    stop("The station you requested could not be found in my internal tables, or multiple records were found. You could try again by typing the station name (partial is ok).")
+  if (nrow(station) < 1){
+    stop("The station you requested could not be found in my internal tables. You could try again by typing the station name (partial is ok). If that fails, try updating the internal table by running weathercan::stations_dl().")
+  } else if (nrow(station) > 1){
+    stop("Something strange happened: we've got more than one station selected here! Check your options, but if everything looks ok you should try typing in the station name (partial is ok) and selecting form the list.")
   }
 
   yr_start <- substr(start, 1, 4)
