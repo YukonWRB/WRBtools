@@ -101,5 +101,5 @@ getWeather <- function(station,
     writeLines(paste0("All done! Your data is in the folder ", save_path))
   }
 
-  return(files_stacked)
+  return(data)
 }
