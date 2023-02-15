@@ -15,6 +15,7 @@ Imports:
     DBI,
     dplyr,
     fuzzyjoin,
+    fasstr,
     ggplot2,
     gridExtra,
     hablar,
