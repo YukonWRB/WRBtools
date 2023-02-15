@@ -235,8 +235,8 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     for (i in 1:nrow(trends)){
       subset <- meas[meas$SNOW_COURSE_ID == trends$location_ID[i] & meas$SNOW_WATER_EQUIV > 0,]
       intercept_yr <- min(subset$year)
-      intercept_value_SWE <- unname(lm(formula = subset$SNOW_WATER_EQUIV ~ subset$SAMPLE_DATE)$coefficients[1])
-      intercept_value_depth <- unname(lm(formula = subset$DEPTH ~ subset$SAMPLE_DATE)$coefficients[1])
+      intercept_value_SWE <- unname(stats::lm(formula = subset$SNOW_WATER_EQUIV ~ subset$SAMPLE_DATE)$coefficients[1])
+      intercept_value_depth <- unname(stats::lm(formula = subset$DEPTH ~ subset$SAMPLE_DATE)$coefficients[1])
       trends$annual_prct_chg_SWE[i] <- trends[trends$location_ID == trends$location_ID[i] , "sens.slope_SWE_max"] / intercept_value_SWE
       trends$annual_prct_chg_DEPTH[i] <- trends[trends$location_ID == trends$location_ID[i] , "sens.slope_DEPTH_max"] / intercept_value_depth
       trends$note[i] <- paste0("Prct chg based on linear model intercepts of ", round(intercept_value_SWE, 1), " and ", round(intercept_value_depth,1), " for SWE and depth at the start year.")
@@ -327,15 +327,15 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
                               "p.val_DEPTH_mean" = c(round(unname(meanMaxDepthSens$p.value), 3), round(unname(meanApr1DepthSens$p.value), 3)),
                               "sens.slope_DEPTH_mean" = c(round(unname(meanMaxDepthSens$estimates), 3), round(unname(meanApr1DepthSens$estimates), 3)),
                               "annual_prct_chg_SWE" = c(
-                                unname(meanMaxSWESens$estimates) / unname(lm(plot_all$SNOW_WATER_EQUIV ~ plot_meas$SAMPLE_DATE)$coefficients[1]),
-                                unname(meanApr1SWESens$estimates) / unname(lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
+                                unname(meanMaxSWESens$estimates) / unname(stats::lm(plot_all$SNOW_WATER_EQUIV ~ plot_meas$SAMPLE_DATE)$coefficients[1]),
+                                unname(meanApr1SWESens$estimates) / unname(stats::lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
                               ),
                               "annual_prct_chg_DEPTH" = c(
-                                unname(meanMaxDepthSens$estimates) / unname(lm(plot_all$DEPTH ~ plot_meas$SAMPLE_DATE)$coefficients[1]),
-                                unname(meanApr1DepthSens$estimates) / unname(lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
+                                unname(meanMaxDepthSens$estimates) / unname(stats::lm(plot_all$DEPTH ~ plot_meas$SAMPLE_DATE)$coefficients[1]),
+                                unname(meanApr1DepthSens$estimates) / unname(stats::lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
                                 ),
-                              "description" = c(paste0("Computed on one data point per year, consisting of the mean of maximum values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(lm(plot_all$SNOW_WATER_EQUIV ~ plot_meas$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(lm(plot_all$DEPTH ~ plot_meas$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."),
-                                                paste0("Computed on one data point per year, consisting of April 1 values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."))
+                              "description" = c(paste0("Computed on one data point per year, consisting of the mean of maximum values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(stats::lm(plot_all$SNOW_WATER_EQUIV ~ plot_meas$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(stats::lm(plot_all$DEPTH ~ plot_meas$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."),
+                                                paste0("Computed on one data point per year, consisting of April 1 values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(stats::lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(stats::lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."))
       )
     }
   } #End of stats loop

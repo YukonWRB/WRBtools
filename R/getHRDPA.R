@@ -21,9 +21,6 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
                      clip = c("YT"),
                      save_path = "choose")
 {
-
-  terra::setGDALconfig("GDAL_PAM_ENABLED", "FALSE") #prevents writting auxiliary files along with the .tiff
-
   #Save path
   if (save_path == "choose") {
     print("Select the path to the folder where you want to save the raster(s).")

@@ -14,11 +14,11 @@ RWISConnect <- function(name = "rwdm", host = "rwis.gov.yk.ca", port = "5432", u
   tryCatch({
     drv <- DBI::dbDriver("PostgreSQL")
     RWIS <- DBI::dbConnect(drv = RPostgreSQL::PostgreSQL(),
-                           dbname = dsn_database,
-                           host = dsn_hostname,
-                           port = dsn_port,
-                           user = dsn_uid,
-                           password = dsn_pwd)
+                           dbname = name,
+                           host = host,
+                           port = port,
+                           user = username,
+                           password = password)
     return(RWIS)
   }, error=function(e) {
     print("Connection failed.")

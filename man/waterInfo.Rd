@@ -10,7 +10,7 @@ waterInfo(
   level_flow = "both",
   end_date = Sys.Date(),
   months_min = c(1:4),
-  months_max = c(4:9),
+  months_max = c(5:9),
   allowed_missing = 10,
   save_path = "choose",
   plots = TRUE,
@@ -27,7 +27,7 @@ waterInfo(
 
 \item{end_date}{The most recent day to include in calculations. Defaults to today.}
 
-\item{months_min}{The month range in which to look for minimums.}
+\item{months_min}{The month range in which to look for minimums. Does \emph{not} currently support a month range overlapping two years.}
 
 \item{months_max}{The month range in which to look for maximums.}
 
@@ -46,4 +46,7 @@ A list with four data.frames: location metadata, basic statistics, trend informa
 }
 \description{
 This function is intended to facilitate the reporting of hydrology data by compiling basic statistics (years of record, months of operation, min, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of level (for lakes) or flow for all requested locations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
+}
+\details{
+Sites that routinely see 0 values for flow or level in mid-winter may report a negative annual percent change \emph{even if} the sens's slope is positive. This is due to the intercept of a linear model calculated using minimum flows and years being below 0 at the first year of record. Unfortunately there is no fix, but the Sen's value is still valid.
 }
