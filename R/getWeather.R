@@ -72,6 +72,7 @@ getWeather <- function(station,
       choice <- readline(prompt =
                            writeLines(crayon::bold$red("\nChoose your desired station from the list and enter the number corresponding to the choice below:")))
       station <- possibilities[choice,]
+      interval <- station$interval
     }
   if (nrow(station) != 1){
     stop("The station you requested could not be found in my internal tables, or multiple records were found. You could try again by typing the station name (partial is ok).")
