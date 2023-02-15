@@ -81,19 +81,17 @@ getWeather <- function(station,
   yr_start <- substr(start, 1, 4)
   yr_end <- substr(end, 1, 4)
 
-  if (station$end < yr_end){
-    end <- gsub(substr(end, 1, 4), as.numeric(station$end), end)
-    message(paste0("Your specified end date is long after the last available records. The end date year has been modified to ", as.numeric(station$end)), ".")
+  if (station$end+1 < yr_end){
+    end <- gsub(substr(end, 1, 4), as.numeric(station$end)+1, end)
+    message(paste0("Your specified end date is after the last available records. The end date year has been modified to ", as.numeric(station$end)), ".")
   }
 
   if (station$start > yr_start){
     start <- gsub(substr(start, 1, 4), station$start, start)
     message(paste0("Your specified start date is before the actual start of records. The start date has been modified to begin in year ", station$start))
   }
-  start <- lubridate::floor_date(start, unit = "month")
-  end <- lubridate::floor_date(end, unit="month")
 
-  data <- weathercan::weather_dl(station$station_id, start = start, end = end, interval = station$interval, time_disp = tzone)
+  data <- weathercan::weather_dl(station$station_id, start = as.character(start), end = as.character(end), interval = interval, time_disp = tzone)
 
   #write the output to a .csv file for upload into Aquarius or other end use.
   if (!(is.null(save_path))){
