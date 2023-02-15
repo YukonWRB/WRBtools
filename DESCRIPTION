@@ -1,6 +1,6 @@
 Package: WRBtools
 Title: Utility functions for the Yukon Water Resources Branch
-Version: 1.4.1-0
+Version: 1.4.2-0
 Authors@R: 
     person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-5093-9185"))
@@ -31,14 +31,18 @@ Imports:
     stats,
     stringr,
     terra,
+    tidyhydat,
     tidyr,
     trend,
+    weathercan,
     XML,
     xml2
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+Remotes:
+    github::ropensci/weathercan
 VignetteBuilder: 
     knitr
 Config/testthat/edition: 3

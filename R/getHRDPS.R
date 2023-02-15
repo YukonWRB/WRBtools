@@ -16,15 +16,13 @@ getHRDPS <- function(clip = c("YT"),
                      param = "APCP_SFC_0")
 {
 
-  terra::setGDALconfig("GDAL_PAM_ENABLED", "FALSE") #prevents writting auxiliary files along with the .tiff
-
   #Save path
   if (save_path == "choose") {
     print("Select the path to the folder where you want to save the raster(s).")
     save_path <- as.character(utils::choose.dir(caption = "Select Save Folder"))
   }
 
-  suppressWarnings(dir.create(paste0(save_path, "\\", param)))
+  suppressWarnings(dir.create(paste0(save_path, "/", param)))
 
   save_path <- paste0(save_path, "/", param)
 

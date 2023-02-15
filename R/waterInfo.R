@@ -83,7 +83,7 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
     daily <- daily %>% dplyr::mutate(year = lubridate::year(.data$date),
                                      month = lubridate::month(.data$date))
     tryCatch({
-      extremes[[paste0(locs$location[i], "_", locs$parameter[i])]] <- calc_annual_extremes(data = daily, dates = date, values = value, months_min = months_min, months_max = months_max, allowed_missing = allowed_missing, water_year_start = 1)
+      extremes[[paste0(locs$location[i], "_", locs$parameter[i])]] <- fasstr::calc_annual_extremes(data = daily, dates = date, values = value, months_min = months_min, months_max = months_max, allowed_missing = allowed_missing, water_year_start = 1)
       data[[paste0(locs$location[i], "_", locs$parameter[i])]] <- daily
     }, error = function(e) {
       print(paste0("Failed on location ", locs$location[i], " and parameter ", locs$parameter[i]))
@@ -138,7 +138,7 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
     tryCatch({
       min <- trend::sens.slope(tbl$Min_1_Day[!is.na(tbl$Min_1_Day)])
       sub <- tbl[!is.na(tbl$Min_1_Day) , ]
-      lm <- lm(formula = sub$Min_1_Day ~ sub$Year)
+      lm <- stats::lm(formula = sub$Min_1_Day ~ sub$Year)
       min_intercept <- lm$coefficients[1] + lm$coefficients[2] * min(sub$Year)
     }, error = function(e) {
       min <<- data.frame("parameter" = NA,
@@ -149,7 +149,7 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
     tryCatch({
       max <- trend::sens.slope(tbl$Max_1_Day[!is.na(tbl$Max_1_Day)])
       sub <- tbl[!is.na(tbl$Max_1_Day) , ]
-      lm <- lm(formula = sub$Max_1_Day ~ sub$Year)
+      lm <- stats::lm(formula = sub$Max_1_Day ~ sub$Year)
       max_intercept <- lm$coefficients[1] + lm$coefficients[2] * min(sub$Year)
     }, error = function(e) {
       max <<- data.frame("parameter" = NA,
