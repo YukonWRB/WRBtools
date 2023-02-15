@@ -80,10 +80,6 @@ getWeather <- function(station,
   yr_start <- substr(start, 1, 4)
   yr_end <- substr(end, 1, 4)
 
-  if (station$end < yr_start){
-    stop(paste0("You are requesting data prior to the start of records. Records at this station are from ", station$start, " to ", station$end))
-  }
-
   if (station$end < yr_end){
     end <- gsub(substr(end, 1, 4), as.numeric(station$end), end)
     message(paste0("Your specified end date is long after the last available records. The end date year has been modified to ", as.numeric(station$end)), ".")
