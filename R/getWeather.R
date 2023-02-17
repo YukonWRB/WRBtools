@@ -1,11 +1,9 @@
 #' Download ECCC weather station data
 #'
 #' This script downloads data from an ECCC station for a given date range, calling weathercan::weather_dl to download the data. This function facilitates interaction with that package by modifying start and end dates if your request is out of range, and allows you to interactively search for locations by name. Note that this function may take a long time to complete if you are requesting multiple years of data!
-#' If
-#'
 #'
 #' @param station The station for which you want data. You can specify the 7-digit/letter Climate ID, the 4 or 5 digit ECCC station ID, the 5-digit WMO ID (starts with a 7), or the three-letter Transport Canada ID (i.e YDA and not CYDA). If working interactively you can also specify the station name or part thereof (as character vector) and select from a list.
-#' @param start The start date for which you want data. Will download whole months only. Input either a character vector of form "2022-12-30" or a Date formatted object.
+#' @param start The start date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.
 #' @param end The end date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.
 #' @param save_path The path where you wish to save the resultant .csv file. Defaults to NULL, in which case you should assign the function to an R object. Set to "choose" to interactively select the location.
 #' @param tzone Choose from "local" or "UTC". Note that "local" is whatever ECCC thinks the station local TZ is: this might be inaccurate in Yukon, where many (maybe even all) stations report in UTC-8.
@@ -22,13 +20,15 @@ getWeather <- function(station,
                        save_path = NULL)
 {
 
-  if(!(tzone %in% c("UTC", "none"))){
-    stop("The parameter tzone must be one of 'UTC' or 'none'.")
+  if(!(tzone %in% c("UTC", "local"))){
+    stop("The parameter tzone must be one of 'UTC' or 'local'.")
   }
+  if (tzone == "local") tzone <- "none" #the parameter has a stupid name in weathercan::weather_dl.
   interval <- tolower(interval)
   if (!(interval %in% c("hour", "day", "month"))){
     stop("The parameter interval must be one of 'hour', 'day', 'month'.")
   }
+
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
       print("Select the path to the folder where you want this data saved.")
@@ -39,9 +39,6 @@ getWeather <- function(station,
       }
     }
   }
-
-  start <- as.Date(start)
-  end <- as.Date(end)
 
   station <- as.character(station)
   station <- toupper(station)
@@ -87,6 +84,10 @@ getWeather <- function(station,
   yr_start <- substr(start, 1, 4)
   yr_end <- substr(end, 1, 4)
 
+  if (is.na(station$end) | is.na(station$start)){
+    stop("Looks like you've selected a station with no data: the start and end years I have for that location are empty. Try again with a different interval.")
+  }
+
   if (station$end+1 < yr_end){
     end <- gsub(substr(end, 1, 4), as.numeric(station$end)+1, end)
     message(paste0("Your specified end date is after the last available records. The end date year has been modified to ", as.numeric(station$end)), ".")
@@ -97,7 +98,7 @@ getWeather <- function(station,
     message(paste0("Your specified start date is before the actual start of records. The start date has been modified to begin in year ", station$start))
   }
 
-  data <- weathercan::weather_dl(station$station_id, start = as.character(start), end = as.character(end), interval = interval, time_disp = tzone)
+  data <- suppressMessages(weathercan::weather_dl(station$station_id, start = as.character(start), end = as.character(end), interval = interval, time_disp = tzone))
 
   #write the output to a .csv file for upload into Aquarius or other end use.
   if (!(is.null(save_path))){

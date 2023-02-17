@@ -4,7 +4,7 @@
 #'
 #' Sites that routinely see 0 values for flow or level in mid-winter may report a negative annual percent change *even if* the sens's slope is positive. This is due to the intercept of a linear model calculated using minimum flows and years being below 0 at the first year of record. Unfortunately there is no fix, but the Sen's value is still valid.
 #'
-#' @param db_path The path to the local hydro database including extension. See WRBtools::hydroConnect for supported database types.
+#' @param db_path The path to the local hydro database including extension. Default will use hydroConnect default path.
 #' @param locations The list of locations requested, as either a vector of location IDs or one of "WRB" (only WRB stations selected), "WSC" (only), or "all". Default "all" fetches all stations.
 #' @param level_flow Default 'both' will get and calculate level and flow information wherever possible. 'one' will pick flow where it exists, otherwise level. Exception to this is if there is no flow on the end_date requested AND most recent flow is > 1 month older than level ; in this case flow is assumed to be discontinued and level is used.
 #' @param end_date The most recent day to include in calculations. Defaults to today.
@@ -19,7 +19,7 @@
 #' @return A list with four data.frames: location metadata, basic statistics, trend information, and daily measurements is returned to the R environment. In addition, an Excel workbook is saved to the save_path with the four data.frames as tabs, and a new folder created to hold level/flow plots for each station requested.
 #' @export
 
-waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/database/hydro.sqlite", locations = "all", level_flow = "both", end_date = Sys.Date(), months_min = c(1:4), months_max = c(5:9), allowed_missing = 10, save_path = "choose", plots = TRUE, plot_type = "combined", quiet = FALSE)
+waterInfo <- function(db_path ="default", locations = "all", level_flow = "both", end_date = Sys.Date(), months_min = c(1:4), months_max = c(5:9), allowed_missing = 10, save_path = "choose", plots = TRUE, plot_type = "combined", quiet = FALSE)
   {
 
   if (!is.null(save_path)){
@@ -192,11 +192,14 @@ waterInfo <- function(db_path ="//env-fs/env-data/corp/water/Common_GW_SW/Data/d
         plot_list[[i]] <- plot
 
       } else if (plot_type == "separate"){
+        x_lim <- c(min(min(yrs_min), min(yrs_max)), max(max(yrs_min), max(yrs_max)))
         plot <- plot +
-          ggplot2::labs(y = "Annual Minimum")
+          ggplot2::labs(y = "Annual Minimum") +
+          ggplot2::xlim(x_lim)
 
         plot2 <- ggplot2::ggplot(data=tbl, ggplot2::aes(x = .data$Year, y = .data$Max_1_Day)) +
           ggplot2::labs(y = "Annual Maximum", title = paste0(sub("_.*", "", i), ": " , name), subtitle = paste0("Parameter: ", sub(".*_", "", i))) +
+          ggplot2::xlim(x_lim) +
           ggplot2::geom_point() +
           ggplot2::geom_line(linewidth = 0.1) +
           ggplot2::theme_classic() +
