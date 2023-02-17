@@ -16,7 +16,7 @@ getWeather(
 \arguments{
 \item{station}{The station for which you want data. You can specify the 7-digit/letter Climate ID, the 4 or 5 digit ECCC station ID, the 5-digit WMO ID (starts with a 7), or the three-letter Transport Canada ID (i.e YDA and not CYDA). If working interactively you can also specify the station name or part thereof (as character vector) and select from a list.}
 
-\item{start}{The start date for which you want data. Will download whole months only. Input either a character vector of form "2022-12-30" or a Date formatted object.}
+\item{start}{The start date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.}
 
 \item{end}{The end date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.}
 
@@ -31,5 +31,4 @@ A data.frame of weather data and, if save_path is specified, a csv of this same 
 }
 \description{
 This script downloads data from an ECCC station for a given date range, calling weathercan::weather_dl to download the data. This function facilitates interaction with that package by modifying start and end dates if your request is out of range, and allows you to interactively search for locations by name. Note that this function may take a long time to complete if you are requesting multiple years of data!
-If
 }

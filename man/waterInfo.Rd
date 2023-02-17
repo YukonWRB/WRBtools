@@ -5,7 +5,7 @@
 \title{Plots and tabular data for hydrometric locations}
 \usage{
 waterInfo(
-  db_path = "//env-fs/env-data/corp/water/Common_GW_SW/Data/database/hydro.sqlite",
+  db_path = "default",
   locations = "all",
   level_flow = "both",
   end_date = Sys.Date(),
@@ -19,7 +19,7 @@ waterInfo(
 )
 }
 \arguments{
-\item{db_path}{The path to the local hydro database including extension. See WRBtools::hydroConnect for supported database types.}
+\item{db_path}{The path to the local hydro database including extension. Default will use hydroConnect default path.}
 
 \item{locations}{The list of locations requested, as either a vector of location IDs or one of "WRB" (only WRB stations selected), "WSC" (only), or "all". Default "all" fetches all stations.}
 
