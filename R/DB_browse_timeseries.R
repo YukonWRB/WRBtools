@@ -1,6 +1,6 @@
-#' Get timeseries information from the hydromet database
+#' Get information on timeseries contained in the database
 #'
-#' Wondering what's in the database? This function helps you see what's under the hood, with an eye to helping you create a query for function get_DB_data. Leaving all NULL defaults will show you every timeseries in the database.
+#' Wondering what's in the database? This function helps you see what's under the hood, with an eye to helping you create a query for function DB_get_table. Leaving all NULL defaults will show you every timeseries in the database.
 #'
 #' @param path The path to the database, passed to hydroConnect. Default uses hydroConnect default path.
 #' @param operator Narrow by location operator if you wish. Exact spelling only!
@@ -12,7 +12,7 @@
 #' @export
 #'
 
-DB_get_timeseries <- function(path = "default", operator = NULL, location = NULL, type = NULL, parameter = NULL) {
+DB_browse_timeseries <- function(path = "default", operator = NULL, location = NULL, type = NULL, parameter = NULL) {
 
   DB <- hydroConnect(path = path, silent = TRUE)
   on.exit(DBI::dbDisconnect(DB), add=TRUE)
@@ -32,5 +32,9 @@ DB_get_timeseries <- function(path = "default", operator = NULL, location = NULL
     timeseries <- timeseries[timeseries$parameter == parameter , ]
   }
 
-  return(timeseries)
+  if (nrow(timeseries) > 0){
+    return(timeseries)
+  } else {
+    print("No records matched your inputs.")
+  }
 }

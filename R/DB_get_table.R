@@ -11,7 +11,7 @@
 #' @export
 #'
 
-DB_get_data <- function(path = "default", location, parameter, frequency, start, end) {
+DB_get_table <- function(path = "default", location, parameter, frequency, start, end) {
 
   if (length(location) != 1){
     stop("You can only request data from one location at a time.")
