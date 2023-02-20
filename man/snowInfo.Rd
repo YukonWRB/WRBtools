@@ -5,7 +5,7 @@
 \title{Plots and tabular data for snow survey locations}
 \usage{
 snowInfo(
-  db_path = "X:/Snow/DB/SnowDB.mdb",
+  db_path = "default",
   locations = "all",
   inactive = FALSE,
   save_path = "choose",
@@ -17,7 +17,7 @@ snowInfo(
 )
 }
 \arguments{
-\item{db_path}{The path to the local Snow Survey database including extension.}
+\item{db_path}{The path to the local Snow Survey database including extension, passed to snowConnect.}
 
 \item{locations}{The list of locations requested, as a character vector of length n. Default "all" fetches all stations.}
 

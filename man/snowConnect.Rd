@@ -4,10 +4,12 @@
 \alias{snowConnect}
 \title{Connect to snow survey database}
 \usage{
-snowConnect(path)
+snowConnect(path = "default", silent = FALSE)
 }
 \arguments{
-\item{path}{The path to the database. Currently supports either a Microsoft Access database or an .sqlite database.}
+\item{path}{The path to the database. Currently supports either a Microsoft Access database or an .sqlite database. 'default' points to //carver/infosys/Snow/DB/SnowDB.mdb.}
+
+\item{silent}{TRUE suppresses messages except for errors.}
 }
 \value{
 A connection to the database.

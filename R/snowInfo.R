@@ -2,7 +2,7 @@
 #'
 #' This function is intended to facilitate the reporting of snow survey data by compiling basic statistics (years of record, missing years, mean, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of SWE, depth, and density for all requested stations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
 #'
-#' @param db_path The path to the local Snow Survey database including extension.
+#' @param db_path The path to the local Snow Survey database including extension, passed to snowConnect.
 #' @param locations The list of locations requested, as a character vector of length n. Default "all" fetches all stations.
 #' @param inactive Boolean specifying whether to include inactive stations. For 10AD-SC01 and 09BA-SC02 which require conversion factors due to moved measurement locations, this filter is applied after conversion. Therefore, if set to TRUE while 10AD-SC01B or 09BA-SC02B are active then the returned data will include measurements taken at 10AD-SC01 and 09BA-SC02A under their respective current "sister" locations, with conversion factors applied.
 #' @param save_path The path where the .csv(s) and plots should be saved. Set to NULL for data only as an R object. Plots are not created if there is no save path.
@@ -17,7 +17,7 @@
 #'
 #TODO: This function should really be getting data from the hydro database.
 
-snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inactive = FALSE, save_path = "choose", stats = TRUE, complete_yrs = TRUE, plots = TRUE, plot_type = "combined", quiet = FALSE) {
+snowInfo <- function(db_path ="default", locations = "all", inactive = FALSE, save_path = "choose", stats = TRUE, complete_yrs = TRUE, plots = TRUE, plot_type = "combined", quiet = FALSE) {
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
@@ -35,7 +35,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     stop("The parameter 'plot_type' must be set to either 'separate' or 'combined'.")
   }
 
-  snowCon <- snowConnect(path = db_path)
+  snowCon <- snowConnect(path = db_path, silent=TRUE)
   on.exit(DBI::dbDisconnect(snowCon))
 
   location_table <- DBI::dbReadTable(snowCon, "SNOW_COURSE")
