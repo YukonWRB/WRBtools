@@ -14,16 +14,19 @@ DB_get_spatial <- function(path = "default", type, rowid, save_path = NULL, save
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
-      print("Select the path to the folder where you want this polygon/raster saved.")
+      print("Select the folder where you want this polygon/raster saved.")
       save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
     }
+  }
+  if (!dir.exists(save_path)){
+    stop("The save path you pointed me to does not exist.")
   }
 
   DB <- hydroConnect(path = path, silent = TRUE)
   on.exit(DBI::dbDisconnect(DB), add=TRUE)
 
   if (type == "polygon"){
-    poly <- DBI::dbGetQuery(DB, paste0("SELECT * FROM polygons WHERE ROWID = '", rowid, "'"))
+    poly <- DBI::dbGetQuery(hydro, paste0("SELECT * FROM polygons WHERE ROWID = '", rowid, "'"))
     poly <- terra::vect(poly$file_path)
     if (!is.null(save_path)){
       if (!is.null(save_name)){
@@ -34,7 +37,7 @@ DB_get_spatial <- function(path = "default", type, rowid, save_path = NULL, save
     }
     return(poly)
   } else if (type == "raster"){
-    raster <- DBI::dbGetQuery(DB, paste0("SELECT * FROM rasters WHERE ROWID = '", rowid, "'"))
+    raster <- DBI::dbGetQuery(hydro, paste0("SELECT * FROM rasters WHERE ROWID = '", rowid, "'"))
     raster <- terra::rast(raster$file_path)
     if (!is.null(save_path)){
       if (!is.null(save_name)){
@@ -43,6 +46,7 @@ DB_get_spatial <- function(path = "default", type, rowid, save_path = NULL, save
         terra::writeRaster(raster, paste0(save_path, "/raster_", Sys.Date(), ".tif"))
       }
     }
+
     return(raster)
   } else {
     stop("You must specify a type of either 'polygon' or 'raster'. Tray again.")

@@ -4,12 +4,23 @@
 #'
 #' @param path The path to the database, passed to hydroConnect. Default uses hydroConnect default path.
 #' @param location A character vector of 1 or more location IDs, or default "all" to retrieval all locations.
+#' @param save_path Specify a path here if you want an Excel workbook saved to disk. "choose" lets you interactively choose your folder.
 #'
-#' @return A list of two data.frames: one with the location code, name, latitude, and longitude, and another with vertical datum information.
+#' @return A list of two data.frames: one with the location code, name, latitude, and longitude, and another with vertical datum information. Optionally, an Excel workbook saved to disk.
 #' @export
 #'
 
-DB_get_meta <- function(path = "default", location = "all") {
+DB_get_meta <- function(path = "default", location = "all", save_path = NULL) {
+
+  if (!is.null(save_path)){
+    if (save_path %in% c("Choose", "choose")) {
+      print("Select the the folder where you want location metadata saved.")
+      save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
+    }
+  }
+  if (!dir.exists(save_path)){
+    stop("The save path you pointed me to does not exist.")
+  }
 
   DB <- hydroConnect(path = path, silent = TRUE)
   on.exit(DBI::dbDisconnect(DB), add=TRUE)
@@ -42,6 +53,10 @@ DB_get_meta <- function(path = "default", location = "all") {
   }
 
   ls <- list("locations" = meta, "vertical_datums" = datums)
+
+  if (!is.null(save_path)){
+    openxlsx::write.xlsx(ls, paste0(save_path, "/"))
+  }
 
   return(ls)
 }
