@@ -40,7 +40,7 @@ waterInfo <- function(db_path ="default", locations = "all", level_flow = "both"
   end_date <- as.POSIXct(end_date)
   attr(end_date, "tzone") <- "UTC"
 
-  hydro <- hydroConnect(path = db_path)
+  hydro <- hydroConnect(path = db_path, silent=TRUE)
   on.exit(DBI::dbDisconnect(hydro))
 
   #select the locations

@@ -12,7 +12,7 @@
 #' @export
 #'
 
-DB_get_table <- function(path = "default", location, parameter, frequency, start, end) {
+DB_get_data <- function(path = "default", location, parameter, frequency, start, end) {
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {

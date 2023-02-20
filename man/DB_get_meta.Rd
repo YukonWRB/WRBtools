@@ -4,15 +4,17 @@
 \alias{DB_get_meta}
 \title{Get location metadata from the hydromet database}
 \usage{
-DB_get_meta(path = "default", location = "all")
+DB_get_meta(path = "default", location = "all", save_path = NULL)
 }
 \arguments{
 \item{path}{The path to the database, passed to hydroConnect. Default uses hydroConnect default path.}
 
 \item{location}{A character vector of 1 or more location IDs, or default "all" to retrieval all locations.}
+
+\item{save_path}{Specify a path here if you want an Excel workbook saved to disk. "choose" lets you interactively choose your folder.}
 }
 \value{
-A list of two data.frames: one with the location code, name, latitude, and longitude, and another with vertical datum information.
+A list of two data.frames: one with the location code, name, latitude, and longitude, and another with vertical datum information. Optionally, an Excel workbook saved to disk.
 }
 \description{
 Retrieves metadata for any valid location ID in the database. Returns the name of the location, the lat/long and (if possible) vertical datum information.

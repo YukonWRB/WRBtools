@@ -32,4 +32,5 @@ snowConnect <- function(path = "default", silent=FALSE){
   } else {
     stop("This script is not designed to work with a database having that file extension. Currently supporting .mdb and .sqlite databases.")
   }
+  return(snowCon)
 }

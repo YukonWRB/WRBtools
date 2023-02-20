@@ -9,7 +9,7 @@ DB_get_table(path = "default", location, parameter, frequency, start, end)
 \arguments{
 \item{path}{The path to the database, passed to hydroConnect. Default uses hydroConnect default path.}
 
-\item{location}{The location code/id for the requested timeseries. Refer to DB_get_timeseries if unsure of location code.}
+\item{location}{The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to DB_get_timeseries if unsure of location code.}
 
 \item{parameter}{The parameter requested for the timeseries.  Refer to DB_get_timeseries if unsure of parameter spelling.}
 
@@ -18,9 +18,11 @@ DB_get_table(path = "default", location, parameter, frequency, start, end)
 \item{start}{The start date or datetime of records requested (inclusive). Specify a Date or poSIXCT object, or a character vector of form "2022-01-01" or "2022-01-01 10:10:10". Set before timeseries start to get all records up to the end date/time.}
 
 \item{end}{The end date or datetime of records requested (inclusive). Format as per 'start'. Set after timeseries end to get all records after the start date/time}
+
+\item{save_path}{Specify a path here if you want an Excel workbook saved to disk. "choose" lets you interactively choose your folder.}
 }
 \value{
-A data.frame containing the information requested.
+A list of data frames containing the information requested and, optionally, an Excel workbook saved to disk.
 }
 \description{
 Get data from the hydromet database
