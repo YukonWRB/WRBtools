@@ -4,12 +4,20 @@
 \alias{DB_get_data}
 \title{Get data from the hydromet database}
 \usage{
-DB_get_data(path = "default", location, parameter, frequency, start, end)
+DB_get_data(
+  path = "default",
+  locations,
+  parameter,
+  frequency,
+  start,
+  end,
+  save_path = "choose"
+)
 }
 \arguments{
 \item{path}{The path to the database, passed to hydroConnect. Default uses hydroConnect default path.}
 
-\item{location}{The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to DB_get_timeseries if unsure of location code.}
+\item{locations}{The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to DB_get_timeseries if unsure of location code.}
 
 \item{parameter}{The parameter requested for the timeseries.  Refer to DB_get_timeseries if unsure of parameter spelling.}
 

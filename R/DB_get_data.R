@@ -1,7 +1,7 @@
 #' Get data from the hydromet database
 #'
 #' @param path The path to the database, passed to hydroConnect. Default uses hydroConnect default path.
-#' @param location The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to DB_get_timeseries if unsure of location code.
+#' @param locations The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to DB_get_timeseries if unsure of location code.
 #' @param parameter The parameter requested for the timeseries.  Refer to DB_get_timeseries if unsure of parameter spelling.
 #' @param frequency One of "daily", "realtime", or "discrete".
 #' @param start The start date or datetime of records requested (inclusive). Specify a Date or poSIXCT object, or a character vector of form "2022-01-01" or "2022-01-01 10:10:10". Set before timeseries start to get all records up to the end date/time.
@@ -12,7 +12,7 @@
 #' @export
 #'
 
-DB_get_data <- function(path = "default", location, parameter, frequency, start, end) {
+DB_get_data <- function(path = "default", locations, parameter, frequency, start, end, save_path = "choose") {
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
