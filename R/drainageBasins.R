@@ -5,11 +5,11 @@
 #'
 #' Delineates watersheds above one or more points using [Whitebox Tools](www.whiteboxgeo.com/). To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement. Many time-consuming raster operations are performed, so the function will attempt to use already-calculated rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See additional details below for processing steps.
 #'
-#' NOTE 1: This tool can be extremely slow to execute, and will use a lot of memory. Be patient, it might take several hours with a large DEM, even days on first run or when recalculating flow rasters.
+#' NOTE 1: This tool can be extremely slow to execute, and will use a lot of memory. Be patient, it might take several hours with a large DEM, even days on first run or whenever performing operations that call for breaching voids in the DEM.
 #'
 #' NOTE 2: If you are have already run this tool and are using a DEM in the same directory as last time, you only need to specify the DEM and the points (and, optionally, a projection). Operations using the streams shapefile and generating flow accumulation, etc rasters do not need to be repeated unless you want to use a different DEM or streams shapefile.
 #'
-#' NOTE 3: This function is very memory (RAM) intensive, despite performing most raster operations to disk rather than holding information in memory. You'll want at least 16GB of RAM, and to ensure that most of it is free. If you get an error such as 'cannot allocate xxxxx bytes', you probably don't have the resources to run the tool. The WhiteboxTool functions in particular are memory hungry: for a 32-bit float raster, requires ~4-8x the raster size on disk to be available in memory. For the whole Yukon at a resolution of 16.9 meters (the CDEM), you'll need 32 or even 64 GB of RAM.
+#' NOTE 3: This function is very memory (RAM) intensive, despite performing most raster operations to disk rather than holding information in memory. You'll want at least 16GB of RAM, and to ensure that most of it is free. If you get an error such as 'cannot allocate xxxxx bytes', you probably don't have the resources to run the tool. The WhiteboxTool functions in particular are memory hungry: all rasters are un-compressed and converted to 64-bit fload type before starting work, and there needs to be room to store more than twice that uncompressed raster size in memory. Example: for the whole Yukon at a resolution of 16.9 meters (the highest resolution CDEM) the tool attempts to allocate 36GB of memory.
 #'
 #' @details
 #' This function uses software from the Whitebox geospatial analysis package, built by Prof. John Lindsay. Refer to [this link](https://www.whiteboxgeo.com/manual/wbt_book/intro.html) for more information.
@@ -29,6 +29,8 @@
 #' @param force_update_wbt WhiteboxTools is by default only downloaded if it cannot be found on the computer, and no check are performed to ensure the local version is current. Set to TRUE if you know that there is a new version and you would like to use it.
 #'
 #' @return Saved to disk: an ESRI shapefile for each drainage basin, plus the associated pour point and the point as provided, all in a separate folder for each basin.
+#'
+#' @seealso [WSC_drainages()] if looking for drainages associated with a WSC monitoring location.
 #' @export
 
 # DEM <- "G:/water/Common_GW_SW/Data/basins/GMTED/merged 50N150W and 180W.tif"
