@@ -36,6 +36,7 @@ Imports:
     tidyr,
     trend,
     weathercan,
+    whitebox,
     XML,
     xml2
 Suggests: 
