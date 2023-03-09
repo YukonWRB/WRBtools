@@ -1,12 +1,17 @@
 #' Get location metadata from the hydromet database
 #'
+#' @description
+#' `r lifecycle::badge("maturing")`
+#'
 #' Retrieves metadata for any valid location ID in the database. Returns the name of the location, the lat/long and (if possible) vertical datum information.
 #'
-#' @param path The path to the database, passed to hydroConnect. Default uses hydroConnect default path.
+#' @param path The path to the database, passed to [hydroConnect()]. Default uses hydroConnect default path.
 #' @param location A character vector of 1 or more location IDs, or default "all" to retrieval all locations.
 #' @param save_path Specify a path here if you want an Excel workbook saved to disk. "choose" lets you interactively choose your folder.
 #'
 #' @return A list of two data.frames: one with the location code, name, latitude, and longitude, and another with vertical datum information. Optionally, an Excel workbook saved to disk.
+#'
+#' @seealso [DB_browse_ts()] and [DB_get_ts()] to browse for and extract timeseries data; [DB_browse_spatial()] and [DB_get_spatial()] to browse and extract spatial layers.
 #' @export
 #'
 

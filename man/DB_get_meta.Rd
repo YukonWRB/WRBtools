@@ -7,7 +7,7 @@
 DB_get_meta(path = "default", location = "all", save_path = NULL)
 }
 \arguments{
-\item{path}{The path to the database, passed to hydroConnect. Default uses hydroConnect default path.}
+\item{path}{The path to the database, passed to \code{\link[=hydroConnect]{hydroConnect()}}. Default uses hydroConnect default path.}
 
 \item{location}{A character vector of 1 or more location IDs, or default "all" to retrieval all locations.}
 
@@ -17,5 +17,10 @@ DB_get_meta(path = "default", location = "all", save_path = NULL)
 A list of two data.frames: one with the location code, name, latitude, and longitude, and another with vertical datum information. Optionally, an Excel workbook saved to disk.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}
+
 Retrieves metadata for any valid location ID in the database. Returns the name of the location, the lat/long and (if possible) vertical datum information.
+}
+\seealso{
+\code{\link[=DB_browse_ts]{DB_browse_ts()}} and \code{\link[=DB_get_ts]{DB_get_ts()}} to browse for and extract timeseries data; \code{\link[=DB_browse_spatial]{DB_browse_spatial()}} and \code{\link[=DB_get_spatial]{DB_get_spatial()}} to browse and extract spatial layers.
 }

@@ -38,7 +38,8 @@ Imports:
     weathercan,
     whitebox,
     XML,
-    xml2
+    xml2,
+    lifecycle
 Suggests: 
     knitr,
     rmarkdown,
