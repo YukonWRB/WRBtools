@@ -17,7 +17,7 @@ DB_get_spatial(
 
 \item{type}{'polygon' or 'raster'?}
 
-\item{rowid}{The rowid of the file you wish to download. If unsure, use function DB_browse_spatial to narrow your search down to a single file.}
+\item{rowid}{The rowid of the file you wish to download. If unsure, use function \code{\link[=DB_browse_spatial]{DB_browse_spatial()}} to narrow your search down to a single file.}
 
 \item{save_path}{Optional; the path where the raster (as tif) or polygon (as shapefile) should be saved. You can enter 'choose' to select the path interactively.}
 

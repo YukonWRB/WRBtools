@@ -22,10 +22,11 @@ DB_get_meta <- function(path = "default", location = "all", save_path = NULL) {
       print("Select the the folder where you want location metadata saved.")
       save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
     }
+    if (!dir.exists(save_path)){
+      stop("The save path you pointed me to does not exist.")
+    }
   }
-  if (!dir.exists(save_path)){
-    stop("The save path you pointed me to does not exist.")
-  }
+
 
   DB <- hydroConnect(path = path, silent = TRUE)
   on.exit(DBI::dbDisconnect(DB), add=TRUE)

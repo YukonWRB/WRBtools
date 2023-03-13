@@ -19,16 +19,16 @@
 #' @export
 #'
 
-DB_get_ts <- function(path = "default", location, parameter, frequency, start, end, save_path = "choose") {
+DB_get_ts <- function(path = "default", location, parameter, frequency, start = "1900-01-01", end = Sys.Date(), save_path = NULL) {
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
       print("Select the folder where you want this information saved.")
       save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
     }
-  }
-  if (!dir.exists(save_path)){
-    stop("The save path you pointed me to does not exist.")
+    if (!dir.exists(save_path)){
+      stop("The save path you pointed me to does not exist.")
+    }
   }
 
   if (length(parameter) != 1){
