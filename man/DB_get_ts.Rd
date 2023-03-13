@@ -9,9 +9,9 @@ DB_get_ts(
   location,
   parameter,
   frequency,
-  start,
-  end,
-  save_path = "choose"
+  start = "1900-01-01",
+  end = Sys.Date(),
+  save_path = NULL
 )
 }
 \arguments{

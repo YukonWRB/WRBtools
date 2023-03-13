@@ -10,7 +10,7 @@
 #'
 #' @param path The path to the database, passed to [hydroConnect()]. Default uses hydroConnect default path.
 #' @param type 'polygon' or 'raster'?
-#' @param rowid The rowid of the file you wish to download. If unsure, use function DB_browse_spatial to narrow your search down to a single file.
+#' @param rowid The rowid of the file you wish to download. If unsure, use function [DB_browse_spatial()] to narrow your search down to a single file.
 #' @param save_path Optional; the path where the raster (as tif) or polygon (as shapefile) should be saved. You can enter 'choose' to select the path interactively.
 #' @param save_name Optional, the name of the layer written to disk (without extension). Leave NULL to have it named vector or raster with the system date.
 #'
@@ -27,9 +27,9 @@ DB_get_spatial <- function(path = "default", type, rowid, save_path = NULL, save
       print("Select the folder where you want this polygon/raster saved.")
       save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
     }
-  }
-  if (!dir.exists(save_path)){
-    stop("The save path you pointed me to does not exist.")
+    if (!dir.exists(save_path)){
+      stop("The save path you pointed me to does not exist.")
+    }
   }
 
   DB <- hydroConnect(path = path, silent = TRUE)
