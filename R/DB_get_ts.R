@@ -6,8 +6,8 @@
 #' Extracts timeseries information from the WRB's hydrometric database. Refer to [DB_browse_ts()] if unsure of how to formulate your query.
 #'
 #' @param path The path to the database, passed to [hydroConnect()]. Default uses hydroConnect default path.
-#' @param location The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to DB_get_timeseries if unsure of location code.
-#' @param parameter The parameter requested for the timeseries.  Refer to [DB_get_timeseries()] if unsure of parameter spelling.
+#' @param location The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to [DB_get_ts()] if unsure of location code.
+#' @param parameter The parameter requested for the timeseries.  Refer to [DB_browse_ts()] if unsure of parameter spelling.
 #' @param frequency One of "daily", "realtime", or "discrete".
 #' @param start The start date or datetime of records requested (inclusive). Specify a Date or poSIXCT object, or a character vector of form "2022-01-01" or "2022-01-01 10:10:10". Set before timeseries start to get all records up to the end date/time.
 #' @param end The end date or datetime of records requested (inclusive). Format as per 'start'. Set after timeseries end to get all records after the start date/time

@@ -17,9 +17,9 @@ DB_get_ts(
 \arguments{
 \item{path}{The path to the database, passed to \code{\link[=hydroConnect]{hydroConnect()}}. Default uses hydroConnect default path.}
 
-\item{location}{The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to DB_get_timeseries if unsure of location code.}
+\item{location}{The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to \code{\link[=DB_get_ts]{DB_get_ts()}} if unsure of location code.}
 
-\item{parameter}{The parameter requested for the timeseries.  Refer to \code{\link[=DB_get_timeseries]{DB_get_timeseries()}} if unsure of parameter spelling.}
+\item{parameter}{The parameter requested for the timeseries.  Refer to \code{\link[=DB_browse_ts]{DB_browse_ts()}} if unsure of parameter spelling.}
 
 \item{frequency}{One of "daily", "realtime", or "discrete".}
 

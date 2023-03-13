@@ -29,8 +29,8 @@ A data.frame containing the database timeseries matching the function parameters
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}
 
-Wondering what's in the database? This function helps you see what's under the hood, with an eye to helping you create a query for function \code{\link[=DB_get_table]{DB_get_table()}}. Leaving all NULL defaults will show you every timeseries in the database.
+Wondering what's in the database? This function helps you see what's under the hood, with an eye to helping you create a query for function \code{\link[=DB_get_ts]{DB_get_ts()}}. Leaving all NULL defaults will show you every timeseries in the database.
 }
 \seealso{
-\code{\link[=DB_get_data]{DB_get_data()}} for extracting timeseries data from the database, or, for spatial data, \code{\link[=DB_browse_spatial]{DB_browse_spatial()}} and \code{\link[=DB_get_spatial]{DB_get_spatial()}} to browse and extract spatial data. For location metadata use \code{\link[=DB_get_meta]{DB_get_meta()}}.
+\code{\link[=DB_get_ts]{DB_get_ts()}} for extracting timeseries data from the database, or, for spatial data, \code{\link[=DB_browse_spatial]{DB_browse_spatial()}} and \code{\link[=DB_get_spatial]{DB_get_spatial()}} to browse and extract spatial data. For location metadata use \code{\link[=DB_get_meta]{DB_get_meta()}}.
 }
