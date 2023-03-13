@@ -21,9 +21,9 @@ aq_upload(
 
 \item{data}{The data you wish to append to an existing timeseries. Must contain columns named \code{Value} and \code{Time}. Time must be in UTC as Aquarius applies the station offset. See details for more information.}
 
-\item{start}{Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be >= to the first data point in data. Timezones should match that of data$Time.}
+\item{start}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be >= to the first data point in data. Timezones should match that of data$Time.}
 
-\item{end}{Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be <= to the final data point in data. Timezones should match that of data$Time.}
+\item{end}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be <= to the final data point in data. Timezones should match that of data$Time.}
 
 \item{login}{Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.}
 
@@ -33,10 +33,12 @@ aq_upload(
 Appends points to the Aquarius server.
 }
 \description{
-This function bypasses the web GUI and allows you to append data to Aquarius directly.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}
+
+Bypasses the web GUI and allows you to append data to Aquarius directly.
 }
 \details{
 The parameter \code{data} should consist of a data.frame with two named columns: Value and Time. Units for the column \code{Value} are set according the units already in use for the timeserie, so it should only contain numbers compatible with this. The \code{Time} column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
 
-To store login credentials in your .renviron profile, call usethis::edit_r_environ() and enter your username and password as value pairs, as AQUSER="your username" and AQPASS = "your password".
+To store login credentials in your .renviron profile, call \code{\link[usethis:edit]{usethis::edit_r_environ()}} and enter your username and password as value pairs, as AQUSER="your username" and AQPASS = "your password".
 }

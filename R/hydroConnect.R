@@ -1,12 +1,17 @@
 #' Connect to hydrology database
 #'
-#' This function exists to facilitate connecting to the hydrology database, especially if the database type and connection method changes in the future. Cannot be used to create a new database, use DBI::dbConnect with the appropriate driver (e.g. RSQlite::SQLite()) for that purpose.
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
+#' This function exists to facilitate connecting to the hydrology database, especially if the database type and connection method changes in the future. Cannot be used to create a new database, use [DBI::dbConnect()] with the appropriate driver (e.g. [RSQLite::SQLite()]) for that purpose.
 #'
 #' @param path The path to the database. Currently supports only .sqlite databases. 'default' points to //env-fs/env-data/corp/water/Common_GW_SW/Data/database/hydro.sqlite.
 #' @param timeout For sqlite DBs, the duration in which to retry an operation in milliseconds. Valid for the duration of the connection.
 #' @param silent TRUE suppresses messages except for errors.
 #'
 #' @return A connection to the database.
+#'
+#' @seealso [DB_browse_ts()], [DB_browse_spatial()]to browse the database contents; [DB_get_meta()] to extract metadata; [DB_get_ts()] to extract timeseries information; and [DB_get_spatial()] to extract spatial content.
 #' @export
 #'
 

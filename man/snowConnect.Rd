@@ -15,5 +15,7 @@ snowConnect(path = "default", silent = FALSE)
 A connection to the database.
 }
 \description{
-If the Snow Survey database is migrated to an SQLite database, beware that the tables and table columns might no longer be what you're expecting!
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
+Connects to the Snow Survey Access database, or, if this DB is supersceded by a .sqlite database, to an equivalent .sqlite DB. If the Snow Survey database is migrated to an SQLite database, beware that the tables and table columns might no longer be what you're expecting!
 }

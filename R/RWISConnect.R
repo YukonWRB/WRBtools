@@ -1,5 +1,10 @@
 #' Connect to the RWIS database
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Establishes a connection to the RWIS (Road Weather Information System) database. Only works from within YG networks.
+#'
 #' @param name Database name.
 #' @param host Database host address.
 #' @param port Connection port.
@@ -7,6 +12,9 @@
 #' @param password Password.
 #'
 #' @return A connection to the database
+#'
+#' @seealso [hydroConnect()] for establishing a connection to the WRB's hydrometric database.
+#'
 #' @export
 #'
 

@@ -1,10 +1,20 @@
 #' Get spatial files from the database
 #'
-#' @param path The path to the database, passed to hydroConnect. Default uses hydroConnect default path.
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Loads a database spatial file to the R environment and, optionally, saves the file to disc. Refer to function [DB_browse_spatial()] to identify the exact record you are looking for.
+#'
+#'@details
+#' Spatial files are not stored directly in the database but rather in folders situated alongside the database. The database stores the file description and other identifiers, as well as the path to the file.
+#'
+#' @param path The path to the database, passed to [hydroConnect()]. Default uses hydroConnect default path.
 #' @param type 'polygon' or 'raster'?
 #' @param rowid The rowid of the file you wish to download. If unsure, use function DB_browse_spatial to narrow your search down to a single file.
 #' @param save_path Optional; the path where the raster (as tif) or polygon (as shapefile) should be saved. You can enter 'choose' to select the path interactively.
 #' @param save_name Optional, the name of the layer written to disk (without extension). Leave NULL to have it named vector or raster with the system date.
+#'
+#' @seealso [DB_browse_spatial()] if you need to identify the exact record you're after.
 #'
 #' @return A spatial object as per the terra package and, if requested, a shapefile or tif saved to disc.
 #' @export

@@ -24,7 +24,7 @@ drainageBasins(
 
 \item{streams}{Optionally, the path to the polylines shapefile containing streams, which will be used to improve accuracy when using poor quality DEMs. If this shapefile is the only input parameter being modified from previous runs (i.e. you've found a new/better streams shapefile) then simply run this function with a shapefile specified for this parameter to incorporate this new layer.}
 
-\item{projection}{Optionally, specify a projection string in the form epsg:3579 (find them \href{https://epsg.io/}{here}). The inputs poinst and all derived processing and output layers will use this projection. If no projection is specified the projection of the points will be used.}
+\item{projection}{Optionally, specify a projection string in the form epsg:3579 (find them \href{https://epsg.io/}{here}). The inputs points and all derived processing and output layers will use this projection. If no projection is specified the projection of the points will be used.}
 
 \item{snap}{Snap to the "nearest" derived (calculated) stream, or to the "greatest" flow accumulation cell within the snap distance? Beware that "greatest" will move the point downstream by up to the 'snap_dist' specified, while nearest might snap to the wrong stream.}
 
@@ -42,13 +42,25 @@ drainageBasins(
 Saved to disk: an ESRI shapefile for each drainage basin, plus the associated pour point and the point as provided, all in a separate folder for each basin.
 }
 \description{
-NOTE 1: This tool can be extremely slow to execute, and will use a lot of memory. Be patient, it might take several hours with a large DEM, even days on first run or when recalculating flow rasters.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+Delineates watersheds above one or more points using \href{www.whiteboxgeo.com/}{Whitebox Tools}. To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement (see details). Many time-consuming raster operations are performed, so the function will attempt to use already-calculated rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See additional details below for processing steps.
+
+NOTE 1: This tool can be extremely slow to execute, and will use a lot of memory. Be patient, it might take several hours with a large DEM, even days on first run or whenever performing operations that call for breaching voids in the DEM.
+
 NOTE 2: If you are have already run this tool and are using a DEM in the same directory as last time, you only need to specify the DEM and the points (and, optionally, a projection). Operations using the streams shapefile and generating flow accumulation, etc rasters do not need to be repeated unless you want to use a different DEM or streams shapefile.
-NOTE 3: This function is very memory (RAM) intensive, despite performing most raster operations to disk rather than holding information in memory. You'll want at least 16GB of RAM, and to ensure that most of it is free. If you get an error such as 'cannot allocate xxxxx bytes', you probably don't have the resources to run the tool. The WhiteboxTool functions in particular are memory hungry: for a 32-bit float raster, requires ~4-8x the raster size on disk to be available in memory. For the whole Yukon at a resolution of 16.9 meters (the CDEM), you'll need 32 or even 64 GB of RAM.
-Delineates watersheds above one or more points using \href{www.whiteboxgeo.com/}{Whitebox Tools}. To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement. Many time-consuming raster operations are performed, so the function will attempt to use already-calculated rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See additional details below for processing steps.
+
+NOTE 3: This function is very memory (RAM) intensive, despite performing most raster operations to disk rather than holding information in memory. You'll want at least 16GB of RAM, and to ensure that most of it is free. If you get an error such as 'cannot allocate xxxxx bytes', you probably don't have the resources to run the tool. The WhiteboxTool functions in particular are memory hungry: all rasters are un-compressed and converted to 64-bit fload type before starting work, and there needs to be room to store more than twice that uncompressed raster size in memory. Example: for the whole Yukon at a resolution of 16.9 meters (the highest resolution CDEM) the tool attempts to allocate 36GB of memory.
 }
 \details{
 This function uses software from the Whitebox geospatial analysis package, built by Prof. John Lindsay. Refer to \href{https://www.whiteboxgeo.com/manual/wbt_book/intro.html}{this link} for more information.
 
-Explanation of process: starting from a supplied DEM, the function will burn-in a stream network depression (ensuring that flow accumulations happen in the correct location), breach depressions in the digital elevation model using a least-cost algorithm (i.e. using the pathway resulting in minimal changes to the DEM) then calculate flow accumulation and direction rasters. Then, a raster of streams is created from flow accumulation/direction rasters. The points provided by the user are then snapped to the derived streams raster and watersheds are computed using the flow direction rasters. Finally, the watershed/drainage basin polygons are saved to the specified save path along with the provided points and the snapped pour points.
+Explanation of process:
+Starting from a supplied DEM, the function will burn-in a stream network depression (ensuring that flow accumulations happen in the correct location), breach depressions in the digital elevation model using a least-cost algorithm (i.e. using the pathway resulting in minimal changes to the DEM) then calculate flow accumulation and direction rasters. Then, a raster of streams is created from flow accumulation/direction rasters. The points provided by the user are then snapped to the derived streams raster and watersheds are computed using the flow direction rasters. Finally, the watershed/drainage basin polygons are saved to the specified save path along with the provided points and the snapped pour points.
+
+Using streams shapefile to burn-in depressions to the DEM:
+Be aware that this part of the function should ideally be used with a "simplified" streams shapefile. In particular, avoid or pre-process stream shapefiles that represent side-channels, as these will burn-in several parallel tracks to the DEM. ESRI has a tool called "simplify hydrology lines" which is great if you can ever get it to work, and WhiteboxTools has functions \code{\link[whitebox:wbt_remove_short_streams]{whitebox::wbt_remove_short_streams()}} to trim the streams raster, and \code{\link[whitebox:wbt_repair_stream_vector_topology]{whitebox::wbt_repair_stream_vector_topology()}} to help in converting a corrected streams vector to raster in the first place.
+}
+\seealso{
+\code{\link[=WSC_drainages]{WSC_drainages()}} if looking for drainages associated with a WSC monitoring location.
 }

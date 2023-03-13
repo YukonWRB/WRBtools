@@ -13,7 +13,7 @@ DB_get_spatial(
 )
 }
 \arguments{
-\item{path}{The path to the database, passed to hydroConnect. Default uses hydroConnect default path.}
+\item{path}{The path to the database, passed to \code{\link[=hydroConnect]{hydroConnect()}}. Default uses hydroConnect default path.}
 
 \item{type}{'polygon' or 'raster'?}
 
@@ -27,5 +27,13 @@ DB_get_spatial(
 A spatial object as per the terra package and, if requested, a shapefile or tif saved to disc.
 }
 \description{
-Get spatial files from the database
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+Loads a database spatial file to the R environment and, optionally, saves the file to disc. Refer to function \code{\link[=DB_browse_spatial]{DB_browse_spatial()}} to identify the exact record you are looking for.
+}
+\details{
+Spatial files are not stored directly in the database but rather in folders situated alongside the database. The database stores the file description and other identifiers, as well as the path to the file.
+}
+\seealso{
+\code{\link[=DB_browse_spatial]{DB_browse_spatial()}} if you need to identify the exact record you're after.
 }

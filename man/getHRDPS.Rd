@@ -2,7 +2,7 @@
 % Please edit documentation in R/getHRDPS.R
 \name{getHRDPS}
 \alias{getHRDPS}
-\title{Retrieve HRDPS rasters}
+\title{Download/proces ECCC HRDPS rasters}
 \usage{
 getHRDPS(clip = c("YT"), save_path = "choose", param = "APCP_SFC_0")
 }
@@ -14,8 +14,13 @@ getHRDPS(clip = c("YT"), save_path = "choose", param = "APCP_SFC_0")
 \item{param}{The HRDPS parameter you wish to download, from the list of published abbreviations at \url{https://weather.gc.ca/grib/HRDPS_HR/HRDPS_ps2p5km_PNONZERO_deterministic_e.html}. Defaults to accumulated precipitation at the surface.}
 }
 \value{
-Up to 48 rasters representing the HRDPS modeled output for the parameter selected.
+Up to 48 rasters (one per hour) representing the HRDPS modeled output for the parameter selected.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Utility function to retrieve gridded predictions output from the \href{https://weather.gc.ca/grib/grib2_HRDPS_HR_e.html}{HRDPS model}. In current form will delete all old files in the save directory.
+}
+\seealso{
+\code{\link[=getHRDPA]{getHRDPA()}} if looking for precipitation reanalysis rasters instead. For nice precipitation maps and tabular reports of precipitation (past or future), try \code{\link[WRBfloods:basinPrecip]{WRBfloods::basinPrecip()}}.
 }
