@@ -1,4 +1,4 @@
-test_that("four raster are downloaded and saved as tiffs when using default parameters", {
+test_that("four or five (depending on time and availability on remote) raster are downloaded and saved as tiffs when using default parameters", {
   suppressWarnings(file.remove(list.files(tempdir(), full.names = TRUE)))
   existing <- list.files(tempdir(), pattern = "\\.tiff$")
   getHRDPA(save_path=tempdir())
