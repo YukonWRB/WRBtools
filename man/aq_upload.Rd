@@ -38,7 +38,7 @@ Appends points to the Aquarius server.
 Bypasses the web GUI and allows you to append data to Aquarius directly.
 }
 \details{
-The parameter \code{data} should consist of a data.frame with two named columns: Value and Time. Units for the column \code{Value} are set according the units already in use for the timeserie, so it should only contain numbers compatible with this. The \code{Time} column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
+The parameter \code{data} should consist of a data.frame with two named columns: Value and Time. Units for the column \code{Value} are set according the units already in use for the timeseries on the Aquarius server, so it should only contain numbers compatible with this. The \code{Time} column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
 
 To store login credentials in your .renviron profile, call \code{\link[usethis:edit]{usethis::edit_r_environ()}} and enter your username and password as value pairs, as AQUSER="your username" and AQPASS = "your password".
 }

@@ -47,14 +47,21 @@ DB_browse_spatial <- function(path = "default", type, location = NULL, descripti
       rasters <- rasters[rasters$description %in% description ,]
     }
   } else {
-    stop("You must specify a type of either 'polygon' or 'raster'. Tray again.")
+    stop("You must specify a type of either 'polygon' or 'raster'. Try again.")
   }
 
-  if (nrow(polys) > 0){
-    return(polys)
-  } else if (nrow(rasters) > 0){
-    return(rasters)
+  if (type == "polygon"){
+    if (nrow(polys) > 0){
+      return(polys)
     } else {
-    print("No records matched your inputs.")
+      print("No records matched your inputs.")
+    }
+
+  } else if (type == "raster"){
+    if (nrow(rasters) > 0){
+      return(rasters)
+    } else {
+      print("No records matched your inputs.")
+    }
   }
 }
