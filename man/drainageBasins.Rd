@@ -58,7 +58,7 @@ This function uses software from the Whitebox geospatial analysis package, built
 Explanation of process:
 Starting from a supplied DEM, the function will burn-in a stream network depression (ensuring that flow accumulations happen in the correct location), breach depressions in the digital elevation model using a least-cost algorithm (i.e. using the pathway resulting in minimal changes to the DEM) then calculate flow accumulation and direction rasters. Then, a raster of streams is created from flow accumulation/direction rasters. The points provided by the user are then snapped to the derived streams raster and watersheds are computed using the flow direction rasters. Finally, the watershed/drainage basin polygons are saved to the specified save path along with the provided points and the snapped pour points.
 
-Using streams shapefile to burn-in depressions to the DEM:
+Using a streams shapefile to burn-in depressions to the DEM:
 Be aware that this part of the function should ideally be used with a "simplified" streams shapefile. In particular, avoid or pre-process stream shapefiles that represent side-channels, as these will burn-in several parallel tracks to the DEM. ESRI has a tool called "simplify hydrology lines" which is great if you can ever get it to work, and WhiteboxTools has functions \code{\link[whitebox:wbt_remove_short_streams]{whitebox::wbt_remove_short_streams()}} to trim the streams raster, and \code{\link[whitebox:wbt_repair_stream_vector_topology]{whitebox::wbt_repair_stream_vector_topology()}} to help in converting a corrected streams vector to raster in the first place.
 }
 \seealso{

@@ -17,7 +17,7 @@
 #' Explanation of process:
 #' Starting from a supplied DEM, the function will burn-in a stream network depression (ensuring that flow accumulations happen in the correct location), breach depressions in the digital elevation model using a least-cost algorithm (i.e. using the pathway resulting in minimal changes to the DEM) then calculate flow accumulation and direction rasters. Then, a raster of streams is created from flow accumulation/direction rasters. The points provided by the user are then snapped to the derived streams raster and watersheds are computed using the flow direction rasters. Finally, the watershed/drainage basin polygons are saved to the specified save path along with the provided points and the snapped pour points.
 #'
-#' Using streams shapefile to burn-in depressions to the DEM:
+#' Using a streams shapefile to burn-in depressions to the DEM:
 #' Be aware that this part of the function should ideally be used with a "simplified" streams shapefile. In particular, avoid or pre-process stream shapefiles that represent side-channels, as these will burn-in several parallel tracks to the DEM. ESRI has a tool called "simplify hydrology lines" which is great if you can ever get it to work, and WhiteboxTools has functions [whitebox::wbt_remove_short_streams()] to trim the streams raster, and [whitebox::wbt_repair_stream_vector_topology()] to help in converting a corrected streams vector to raster in the first place.
 #'
 #' @param DEM The path to a DEM including extension from which to delineate watersheds/catchments. Must be in .tif format. Note that a new raster will be written with either the projection of the points layer or of the projection specified. Reprojection is time-consuming, try to use an existing DEM if at all possible.
@@ -129,12 +129,16 @@ drainageBasins <- function(DEM, points, streams = NULL, projection = NULL, snap 
       terra::writeRaster(DEM_burned, paste0(directory, "/DEM_burned.tif"), overwrite = TRUE)
     }
 
+    print("Filling single-cell pits in the DEM before breaching depressions...")
+    whitebox::wbt_fill_single_cell_pits(dem = if (is.null(streams)) input_DEM else paste0(directory, "/DEM_burned.tif"),
+                                        output = paste0(directory, "/filled_single_cells.tif"))
+
     print("Breaching depressions in the DEM to ensure continuous flow paths...")
     whitebox::wbt_breach_depressions_least_cost(
-      dem = if (is.null(streams)) input_DEM else paste0(directory, "/DEM_burned.tif"),
+      dem = paste0(directory, "/filled_single_cells.tif"),
       output = paste0(directory, "/FilledDEM.tif"),
       dist = breach_dist,
-      fill = TRUE)
+      fill = FALSE)
 
     print("Calculating a flow accumulation raster...")
     whitebox::wbt_d8_flow_accumulation(input = paste0(directory, "/FilledDEM.tif"),

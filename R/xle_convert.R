@@ -16,10 +16,10 @@
 #' @export
 #'
 xle_convert <- function(xle_file = "choose",
-                           location,
-                           save_path = "choose",
-                           YOWN_master = "//env-fs/env-data/corp/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/2_SPREADSHEETS/1_YOWN_MASTER_TABLE/MASTER for R - remember to update.xlsx"
-                           )
+                        location,
+                        save_path = "choose",
+                        YOWN_master = "//env-fs/env-data/corp/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/2_SPREADSHEETS/1_YOWN_MASTER_TABLE/MASTER for R - remember to update.xlsx"
+)
 {
 
   if (xle_file == "choose"){
