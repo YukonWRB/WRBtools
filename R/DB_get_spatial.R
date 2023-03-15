@@ -37,6 +37,9 @@ DB_get_spatial <- function(path = "default", type, rowid, save_path = NULL, save
 
   if (type == "polygon"){
     poly <- DBI::dbGetQuery(DB, paste0("SELECT * FROM polygons WHERE ROWID = '", rowid, "'"))
+    if (nrow(poly != 1)){
+      stop("There is no polygon associated with that rowid. Refer to DB_browse_spatial() to find the right rowid.")
+    }
     poly <- terra::vect(poly$file_path)
     if (!is.null(save_path)){
       if (!is.null(save_name)){
@@ -48,6 +51,9 @@ DB_get_spatial <- function(path = "default", type, rowid, save_path = NULL, save
     return(poly)
   } else if (type == "raster"){
     raster <- DBI::dbGetQuery(DB, paste0("SELECT * FROM rasters WHERE ROWID = '", rowid, "'"))
+    if (nrow(raster != 1)){
+      stop("There is no raster associated with that rowid. Refer to DB_browse_spatial() to find the right rowid.")
+    }
     raster <- terra::rast(raster$file_path)
     if (!is.null(save_path)){
       if (!is.null(save_name)){
