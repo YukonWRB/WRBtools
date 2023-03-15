@@ -6,7 +6,7 @@
 #' Bypasses the web GUI and allows you to append data to Aquarius directly.
 #'
 #'@details
-#' The parameter `data` should consist of a data.frame with two named columns: Value and Time. Units for the column `Value` are set according the units already in use for the timeserie, so it should only contain numbers compatible with this. The `Time` column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
+#' The parameter `data` should consist of a data.frame with two named columns: Value and Time. Units for the column `Value` are set according the units already in use for the timeseries on the Aquarius server, so it should only contain numbers compatible with this. The `Time` column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
 #'
 #' To store login credentials in your .renviron profile, call [usethis::edit_r_environ()] and enter your username and password as value pairs, as AQUSER="your username" and AQPASS = "your password".
 #'
@@ -40,7 +40,7 @@ aq_upload <- function(loc_id,
   data$Value[data$Value == "NA"] <- NA
   data$Value[data$Value == "<NA>"] <- NA
 
-  data <- stats::na.omit(data) #Very important! Any NA data actually gets appended to AQ as a point that is then a PITA to overwrite.
+  data <- stats::na.omit(data) #Very important! Any NA data actually gets appended to AQ as a point that are then a PITA to overwrite.
 
   #Start with server connection
   source(system.file("scripts",  "timeseries_client.R", package = "WRBtools"))
