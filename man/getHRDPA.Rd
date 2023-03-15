@@ -16,7 +16,7 @@ getHRDPA(
 
 \item{end}{The end of the time period for which you want HRDPA rasters. Other details as per \code{start}.}
 
-\item{clip}{The two-digit abbreviation(s) as per \href{https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/tab/index-eng.cfm?ID=t1_8}{Canadian Census} for the province(s) with which to clip the HRDPA. A 300 km buffer is added beyond the provincial boundaries. Set to NULL for no clip}
+\item{clip}{The two-digit abbreviation(s) as per \href{https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/tab/index-eng.cfm?ID=t1_8}{Canadian Census} for the province(s) with which to clip the HRDPA. A 300 km buffer is added beyond the provincial boundaries. Set to NULL for no clip.}
 
 \item{save_path}{The path to the directory (folder) where the raster(s) should be saved. Default \code{"choose"} lets you select your folder, or enter the path as a character string. Any necessary rasters already in the save path will not be downloaded again.}
 }
