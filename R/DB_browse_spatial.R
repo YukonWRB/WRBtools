@@ -54,14 +54,14 @@ DB_browse_spatial <- function(path = "default", type, location = NULL, descripti
     if (nrow(polys) > 0){
       return(polys)
     } else {
-      print("No records matched your inputs.")
+      stop("No records matched your inputs.")
     }
 
   } else if (type == "raster"){
     if (nrow(rasters) > 0){
       return(rasters)
     } else {
-      print("No records matched your inputs.")
+      stop("No records matched your inputs.")
     }
   }
 }
