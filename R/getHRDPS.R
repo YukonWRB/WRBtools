@@ -1,7 +1,7 @@
 #' Download/proces ECCC HRDPS rasters
 #'
 #' @description
-#' `r lifecycle::badge("experimental")`
+#' `r lifecycle::badge("stable")`
 #'
 #' Utility function to retrieve gridded predictions output from the [HRDPS model](https://weather.gc.ca/grib/grib2_HRDPS_HR_e.html). In current form will delete all old files in the save directory.
 #'
