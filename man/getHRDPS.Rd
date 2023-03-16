@@ -17,7 +17,7 @@ getHRDPS(clip = c("YT"), save_path = "choose", param = "APCP_Sfc")
 Up to 48 rasters (one per hour) representing the HRDPS modeled output for the parameter selected.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Utility function to retrieve gridded predictions output from the \href{https://weather.gc.ca/grib/grib2_HRDPS_HR_e.html}{HRDPS model}. In current form will delete all old files in the save directory.
 }
