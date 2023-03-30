@@ -49,7 +49,7 @@ getWeather <- function(station,
   station <- toupper(station)
 
   #Match the input numbers to the proper ECCC station ID
-  if(weathercan::stations_meta()$ECCC_modified < Sys.time() - 60*24*60*60){
+  if(weathercan::stations_meta()$ECCC_modified < Sys.time() - 30*24*60*60){
     tryCatch({
       suppressWarnings(weathercan::stations_dl(quiet=TRUE))
     }, error = function(e) {

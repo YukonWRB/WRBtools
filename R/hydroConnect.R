@@ -27,7 +27,7 @@ hydroConnect <- function(path = "default", timeout = 100000, silent = FALSE){
 
   tryCatch({
     hydro <- DBI::dbConnect(RSQLite::SQLite(), path)
-    DBI::dbExecute(hydro, "PRAGMA busy_timeout=100000")
+    DBI::dbExecute(hydro, paste0("PRAGMA busy_timeout=", timeout))
     if (!silent){
       print("Remember to disconnect using DBI::dbDisconnect() when finished.")
     }
