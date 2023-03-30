@@ -5,28 +5,28 @@
 #'
 #' Delineates watersheds above one or more points using [Whitebox Tools](www.whiteboxgeo.com/). To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement (see details). Many time-consuming raster operations are performed, so the function will attempt to use already-calculated rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See additional details below for processing steps.
 #'
-#' NOTE 1: This tool can be extremely slow to execute, and will use a lot of memory. Be patient, it might take several hours with a large DEM, even days on first run or whenever performing operations that call for breaching voids in the DEM.
+#' NOTE 1: This tool can be slow to execute, and will use a lot of memory. Be patient, it might take several hours with a large DEM.
 #'
-#' NOTE 2: If you are have already run this tool and are using a DEM in the same directory as last time, you only need to specify the DEM and the points (and, optionally, a projection). Operations using the streams shapefile and generating flow accumulation, etc rasters do not need to be repeated unless you want to use a different DEM or streams shapefile.
+#' NOTE 2: If you are have already run this tool and are using a DEM in the same directory as last time, you only need to specify the DEM and the points (and, optionally, a projection for the points output). Operations using the streams shapefile and generating flow accumulation, etc rasters do not need to be repeated unless you want to use a different DEM or streams shapefile.
 #'
-#' NOTE 3: This function is very memory (RAM) intensive, despite performing most raster operations to disk rather than holding information in memory. You'll want at least 16GB of RAM, and to ensure that most of it is free. If you get an error such as 'cannot allocate xxxxx bytes', you probably don't have the resources to run the tool. The WhiteboxTool functions in particular are memory hungry: all rasters are un-compressed and converted to 64-bit fload type before starting work, and there needs to be room to store more than twice that uncompressed raster size in memory. Example: for the whole Yukon at a resolution of 16.9 meters (the highest resolution CDEM) the tool attempts to allocate 36GB of memory.
+#' NOTE 3: This function is very memory (RAM) intensive. You'll want at least 16GB of RAM, and to ensure that most of it is free. If you get an error such as 'cannot allocate xxxxx bytes', you probably don't have the resources to run the tool. The WhiteboxTool functions are memory hungry: all rasters are un-compressed and converted to 64-bit float type before starting work, and there needs to be room to store more than twice that uncompressed raster size in memory. Example: for the whole Yukon at a resolution of 16.9 meters (the highest resolution CDEM) the tool attempts to allocate 36GB of memory.
 #'
 #' @details
 #' This function uses software from the Whitebox geospatial analysis package, built by Prof. John Lindsay. Refer to [this link](https://www.whiteboxgeo.com/manual/wbt_book/intro.html) for more information.
 #'
 #' Explanation of process:
-#' Starting from a supplied DEM, the function will burn-in a stream network depression (ensuring that flow accumulations happen in the correct location), breach depressions in the digital elevation model using a least-cost algorithm (i.e. using the pathway resulting in minimal changes to the DEM) then calculate flow accumulation and direction rasters. Then, a raster of streams is created from flow accumulation/direction rasters. The points provided by the user are then snapped to the derived streams raster and watersheds are computed using the flow direction rasters. Finally, the watershed/drainage basin polygons are saved to the specified save path along with the provided points and the snapped pour points.
+#' Starting from a supplied DEM, the function will fill single-cell pits, burn-in a stream network depression if requested (ensuring that flow accumulations happen in the correct location), breach depressions in the digital elevation model using a least-cost algorithm (i.e. using the pathway resulting in minimal changes to the DEM) then calculate flow accumulation and direction rasters. Then, a raster of streams is created where flow accumulation is greatest. The points provided by the user are then snapped to the derived streams raster and watersheds are computed using the flow direction rasters. Finally, the watershed/drainage basin polygons are saved to the specified save path along with the provided points and the snapped pour points.
 #'
 #' Using a streams shapefile to burn-in depressions to the DEM:
 #' Be aware that this part of the function should ideally be used with a "simplified" streams shapefile. In particular, avoid or pre-process stream shapefiles that represent side-channels, as these will burn-in several parallel tracks to the DEM. ESRI has a tool called "simplify hydrology lines" which is great if you can ever get it to work, and WhiteboxTools has functions [whitebox::wbt_remove_short_streams()] to trim the streams raster, and [whitebox::wbt_repair_stream_vector_topology()] to help in converting a corrected streams vector to raster in the first place.
 #'
 #' @param DEM The path to a DEM including extension from which to delineate watersheds/catchments. Must be in .tif format. Note that a new raster will be written with either the projection of the points layer or of the projection specified. Reprojection is time-consuming, try to use an existing DEM if at all possible.
 #' @param points The path to the points shapefile containing the points from which to build watersheds. As shapefiles have multiple associated files, point to the .shp file only. The attribute table of this shapefile will not be used, only the geometry. If parameter 'projection' is not specified, the crs of this layer will be used to set the crs of the DEM and subsequently calculated intermediary and output layers.
-#' @param streams Optionally, the path to the polylines shapefile containing streams, which will be used to improve accuracy when using poor quality DEMs. If this shapefile is the only input parameter being modified from previous runs (i.e. you've found a new/better streams shapefile) then simply run this function with a shapefile specified for this parameter to incorporate this new layer.
+#' @param streams Optionally, the path to the polylines shapefile containing streams, which will be used to improve accuracy when using poor quality DEMs. If this shapefile is the only input parameter being modified from previous runs (i.e. you've found a new/better streams shapefile but the DEM is unchanged) then run this function with a shapefile specified here and overwrite = TRUE.
 #' @param projection Optionally, specify a projection string in the form epsg:3579 (find them [here](https://epsg.io/)). The inputs points and all derived processing and output layers will use this projection. If no projection is specified the projection of the points will be used.
 #' @param snap Snap to the "nearest" derived (calculated) stream, or to the "greatest" flow accumulation cell within the snap distance? Beware that "greatest" will move the point downstream by up to the 'snap_dist' specified, while nearest might snap to the wrong stream.
 #' @param snap_dist The search radius within which to snap points to streams. Snapping method depends on 'snap' parameter. Note that distance units will match the projection, so probably best to work on a meter grid.
-#' @param breach_dist The max radius (in raster cells) for which to search for a path to breach depressions, passed to whitebox::wbt_breach_depressions_least_cost. Setting a large number here dramatically increases the tool's run time, as the number of possible solutions to sort through increase rapidly. Unbreached depressions are filled if any remain after breaching depressions.
+#' @param breach_dist The max radius (in raster cells) for which to search for a path to breach depressions, passed to whitebox::wbt_breach_depressions_least_cost. This value should be high to ensure all depressions are breached. Note that the DEM is *not* breached in order of lowest elevation to greatest, nor is it breached sequentially (order is unknown, but the raster is presumably searched in some grid pattern for depressions). This means that flow paths may need to cross multiple depressions, especially in low relief areas.
 #' @param overwrite If applicable, should rasters present in the same directory as the DEM be overwritten? This will also force the recalculation of derived layers.
 #' @param save_path The path where you want the output shapefiles saved. Default "choose" lets you choose interactively.
 #' @param force_update_wbt WhiteboxTools is by default only downloaded if it cannot be found on the computer, and no check are performed to ensure the local version is current. Set to TRUE if you know that there is a new version and you would like to use it.
@@ -42,7 +42,7 @@
 # points <- "G:/water/Common_GW_SW/Data/database/polygons/watersheds/09EA004/09EA004_station.shp"
 # streams <- "G:/water/Common_GW_SW/Data/basins/Water_Flow_50k_Canvec.shp"
 
-drainageBasins <- function(DEM, points, streams = NULL, projection = NULL, snap = "nearest", snap_dist = 200, breach_dist = 50, overwrite = FALSE, save_path = "choose", force_update_wbt = FALSE) {
+drainageBasins <- function(DEM, points, streams = NULL, projection = NULL, snap = "nearest", snap_dist = 200, breach_dist = 10000, overwrite = FALSE, save_path = "choose", force_update_wbt = FALSE) {
 
   #initial checks
   if (!(snap %in% c("nearest", "greatest"))){
@@ -56,7 +56,7 @@ drainageBasins <- function(DEM, points, streams = NULL, projection = NULL, snap 
     stop("The DEM you pointed to does not exist. Perhaps your file path is wrong?")
   }
   directory <- dirname(DEM)
-  input_DEM <- DEM
+  input_DEM <- DEM #at this point DEM is a path, not an object
   if (!is.null(streams)){
     if (!file.exists(streams)){
       stop("The streams shapefile you pointed to does not exist. Perhaps your file path is wrong? Reminder, I'm looking for the .shp file with extension.")
@@ -82,7 +82,7 @@ drainageBasins <- function(DEM, points, streams = NULL, projection = NULL, snap 
 
   points <- terra::vect(points) #load the points
   original_projection <- paste0("epsg:", terra::crs(points, describe=TRUE)$code)
-  DEM <- terra::rast(DEM) #load the DEM
+  DEM <- terra::rast(DEM) #load the DEM to R environment
   points <- terra::project(points, DEM)
   dir.create(paste0(tempdir(), "/temp_inputs"))
   terra::writeVector(points, paste0(tempdir(), "/temp_inputs/points.shp"), overwrite=TRUE)
@@ -94,29 +94,36 @@ drainageBasins <- function(DEM, points, streams = NULL, projection = NULL, snap 
   if (!is.null(streams) & !overwrite){ #no point in checking the derived rasters if a new streams layer is specified or if we're overwriting anyways
     print("Checking if the right layers already exist...")
     if (file.exists(paste0(directory, "/D8pointer.tif")) & !overwrite){
-      d8pntr <- terra::rast(paste0(directory, "/D8pointer.tif"), overwrite=TRUE)
+      d8pntr <- terra::rast(paste0(directory, "/D8pointer.tif"))
       if (terra::compareGeom(d8pntr, DEM)){
         d8pntr_exists <- TRUE
       }
     }
     if (file.exists(paste0(directory, "/streams_derived.tif")) & d8pntr_exists & !overwrite){
-      streams_derived <- terra::rast(paste0(directory, "/streams_derived.tif"), overwrite=TRUE)
+      streams_derived <- terra::rast(paste0(directory, "/streams_derived.tif"))
       if (terra::compareGeom(streams_derived, DEM)){
         streams_derived_exists <- TRUE
       }
     }
     if (snap == "greatest"){
       if (file.exists(paste0(directory, "/D8fac.tif"))){
-        d8fac <- terra::rast(paste0(directory, "/D8fac.tif"), overwrite=TRUE)
+        d8fac <- terra::rast(paste0(directory, "/D8fac.tif"))
         if (terra::compareGeom(d8fac, DEM)){
           d8fac_exists <- TRUE
         }
       }
+    } else {
+      d8fac_exists <- TRUE
     }
   }
 
   if (!streams_derived_exists | !d8pntr_exists | !d8fac_exists | overwrite){
     print("Caculating layers derived from the DEM as they are either missing, have different extents as the provided DEM, you've requested an overwrite of calculated layers, or you specified a streams shapefile.")
+
+    print("Filling single-cell pits in the DEM...")
+    whitebox::wbt_fill_single_cell_pits(dem = input_DEM,
+                                        output = paste0(directory, "/filled_single_cells.tif"))
+
     if (!is.null(streams)){ #load streams, process to raster, and burn-in the DEM
       print("Creating a stream raster from the provided stream shapefile...")
       streams_input <- terra::vect(streams)
@@ -124,21 +131,20 @@ drainageBasins <- function(DEM, points, streams = NULL, projection = NULL, snap 
       streams_input <- terra::rasterize(streams_input, DEM, touches = TRUE, filename = paste0(tempdir(), "/temp_inputs/streams_input_rasterized.tif"), overwrite=TRUE) #Make raster stream network. Background has values NA. Write to disk to avoid memory restrictions.
       streams_input <- (streams_input/streams_input) * 20 #Make each cell value = 20 to later burn in a 20 meter depression
       streams_input <- terra::subst(streams_input, NA, 0) #replace background NAs with 0 so that it subtracts (nothing) from the DEM later; subtracting NA results in NA cells.
-      print("Burning in depressions to the DEM where streams should be...")
-      DEM_burned <- DEM - streams_input #burn-in the DEM
+      print("Creating depressions in the DEM where streams should be...")
+      filled_single_cells <- terra::rast(paste0(directory, "/filled_single_cells.tif"))
+      DEM_burned <- filled_single_cells - streams_input #burn-in the DEM
       terra::writeRaster(DEM_burned, paste0(directory, "/DEM_burned.tif"), overwrite = TRUE)
     }
 
-    print("Filling single-cell pits in the DEM before breaching depressions...")
-    whitebox::wbt_fill_single_cell_pits(dem = if (is.null(streams)) input_DEM else paste0(directory, "/DEM_burned.tif"),
-                                        output = paste0(directory, "/filled_single_cells.tif"))
-
     print("Breaching depressions in the DEM to ensure continuous flow paths...")
     whitebox::wbt_breach_depressions_least_cost(
-      dem = paste0(directory, "/filled_single_cells.tif"),
+      #dem = if (!is.null(streams)) paste0(directory, "/DEM_burned.tif") else paste0 (directory, "/filled_single_cells.tif"),
+      dem = paste0(directory, "/DEM_burned.tif"),
       output = paste0(directory, "/FilledDEM.tif"),
       dist = breach_dist,
-      fill = FALSE)
+      fill = TRUE,
+      flat_increment = 0.0001)
 
     print("Calculating a flow accumulation raster...")
     whitebox::wbt_d8_flow_accumulation(input = paste0(directory, "/FilledDEM.tif"),
