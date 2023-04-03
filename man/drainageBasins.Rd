@@ -7,6 +7,7 @@
 drainageBasins(
   DEM,
   points,
+  points_name_col,
   streams = NULL,
   projection = NULL,
   snap = "nearest",
@@ -20,11 +21,13 @@ drainageBasins(
 \arguments{
 \item{DEM}{The path to a DEM including extension from which to delineate watersheds/catchments. Must be in .tif format. Note that a new raster will be written with either the projection of the points layer or of the projection specified. Reprojection is time-consuming, try to use an existing DEM if at all possible.}
 
-\item{points}{The path to the points shapefile containing the points from which to build watersheds. As shapefiles have multiple associated files, point to the .shp file only. The attribute table of this shapefile will not be used, only the geometry. If parameter 'projection' is not specified, the crs of this layer will be used to set the crs of the DEM and subsequently calculated intermediary and output layers.}
+\item{points}{The path to the points shapefile containing the points from which to build watersheds. As shapefiles have multiple associated files, point to the .shp file only. The attribute of each point will be attached to the newly-created drainage polygons. If parameter 'projection' is not specified, the crs of this layer will be used to set the crs of the DEM and subsequently calculated intermediary and output layers.}
+
+\item{points_name_col}{The name of the column in the points shapefile containing names to assign to the watersheds. Duplicates \emph{are} allowed, and are labelled with the suffix _duplicate and a number for duplicates 2+.}
 
 \item{streams}{Optionally, the path to the polylines shapefile containing streams, which will be used to improve accuracy when using poor quality DEMs. If this shapefile is the only input parameter being modified from previous runs (i.e. you've found a new/better streams shapefile but the DEM is unchanged) then run this function with a shapefile specified here and overwrite = TRUE.}
 
-\item{projection}{Optionally, specify a projection string in the form epsg:3579 (find them \href{https://epsg.io/}{here}). The inputs points and all derived processing and output layers will use this projection. If no projection is specified the projection of the points will be used.}
+\item{projection}{Optionally, specify a projection string in the form "epsg:3579" (find them \href{https://epsg.io/}{here}). The derived processing and output layers will use this projection. If no projection is specified the projection of the points will be used.}
 
 \item{snap}{Snap to the "nearest" derived (calculated) stream, or to the "greatest" flow accumulation cell within the snap distance? Beware that "greatest" will move the point downstream by up to the 'snap_dist' specified, while nearest might snap to the wrong stream.}
 
@@ -39,10 +42,10 @@ drainageBasins(
 \item{force_update_wbt}{WhiteboxTools is by default only downloaded if it cannot be found on the computer, and no check are performed to ensure the local version is current. Set to TRUE if you know that there is a new version and you would like to use it.}
 }
 \value{
-Saved to disk: an ESRI shapefile for each drainage basin, plus the associated pour point and the point as provided, all in a separate folder for each basin.
+Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin. The drainage basin polygons inherit the associated point attributes.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}
 
 Delineates watersheds above one or more points using \href{www.whiteboxgeo.com/}{Whitebox Tools}. To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement (see details). Many time-consuming raster operations are performed, so the function will attempt to use already-calculated rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See additional details below for processing steps.
 
