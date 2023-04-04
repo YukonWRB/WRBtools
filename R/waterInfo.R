@@ -51,10 +51,12 @@ waterInfo <- function(db_path ="default", locations = "all", level_flow = "both"
   on.exit(DBI::dbDisconnect(hydro))
 
   #select the locations
-  if (locations %in% c("WRB", "WSC")){
-    locs <- DBI::dbGetQuery(hydro, paste0("SELECT * FROM timeseries WHERE parameter IN ('level', 'flow') AND operator = '", locations, "'"))
-  } else if (locations == "all"){
-    locs <- DBI::dbGetQuery(hydro, "SELECT * FROM timeseries WHERE parameter IN ('level', 'flow')")
+  if (length(locations) == 1){
+    if (locations %in% c("WRB", "WSC")){
+      locs <- DBI::dbGetQuery(hydro, paste0("SELECT * FROM timeseries WHERE parameter IN ('level', 'flow') AND operator = '", locations, "'"))
+    } else if (locations == "all"){
+      locs <- DBI::dbGetQuery(hydro, "SELECT * FROM timeseries WHERE parameter IN ('level', 'flow')")
+    }
   } else {
     locs <- DBI::dbGetQuery(hydro, paste0("SELECT * FROM timeseries WHERE parameter IN ('level', 'flow') AND location IN ('", paste(locations, collapse = "', '"), "')"))
   }
