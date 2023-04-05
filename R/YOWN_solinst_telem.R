@@ -4,10 +4,8 @@
 #'
 #' @param active_telem Character vector of YOWN sites for processing of SOLINST telemetry data
 #'
-#' @return
-#' @export
+#' @return Returns a .xle file in the XLE_FIle_Dropbox folder on the G drive
 #'
-#' @examples
 YOWN_solinst_telem <- function(active_telem = c("YOWN-2201S")){
 
   #### Gmail configuration ####
