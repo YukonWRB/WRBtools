@@ -8,6 +8,7 @@ aq_upload(
   loc_id,
   ts_name,
   data,
+  overwrite = FALSE,
   start = NULL,
   end = NULL,
   login = Sys.getenv(c("AQUSER", "AQPASS")),
@@ -17,13 +18,15 @@ aq_upload(
 \arguments{
 \item{loc_id}{The location ID, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form \verb{29EA001} or \code{YOWN-0804}.}
 
-\item{ts_name}{The timeseries name, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form \code{Wlevel_bgs.Calculated}.}
+\item{ts_name}{The timeseries name exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form \code{Wlevel_bgs.Calculated}.}
 
-\item{data}{The data you wish to append to an existing timeseries. Must contain columns named \code{Value} and \code{Time}. Time must be in UTC as Aquarius applies the station offset. See details for more information.}
+\item{data}{The data you wish to append to an existing timeseries. Must contain columns named \code{Value} and \code{Time}, case sensitive. Time must be in UTC as Aquarius applies the station offset only when displaying or exporting data interactively. See details for more information.}
 
-\item{start}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be >= to the first data point in data. Timezones should match that of data$Time.}
+\item{overwrite}{Set to TRUE to modify existing data. See details for more information, including if you only want to delete and not append anything.}
 
-\item{end}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Not required; specify only if you with to overwrite existing data, as a POSIXct object. Inclusive, must be <= to the final data point in data. Timezones should match that of data$Time.}
+\item{start}{Not required; specify only if you with to overwrite existing data, as a character string of format "2022-01-01 00:00:00" or as a POSIXct object. Inclusive, must be >= to the first data point in data. Timezones should match that of data$Time.}
+
+\item{end}{Not required; specify only if you with to overwrite existing data, as a character string of format "2022-01-01 00:00:00" or as a POSIXct object. Inclusive, must be <= to the final data point in data. Timezones should match that of data$Time.}
 
 \item{login}{Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.}
 
@@ -38,7 +41,9 @@ Appends points to the Aquarius server.
 Bypasses the web GUI and allows you to append data to Aquarius directly.
 }
 \details{
-The parameter \code{data} should consist of a data.frame with two named columns: Value and Time. Units for the column \code{Value} are set according the units already in use for the timeseries on the Aquarius server, so it should only contain numbers compatible with this. The \code{Time} column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
+The parameter \code{data} should consist of a data.frame with two named columns: Value and Time (case sensitive). Units for the column \code{Value} are set according the units already in use for the timeseries on the Aquarius server, so it should only contain numbers compatible with this. The \code{Time} column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
+
+Deleting or overwriting: this function can be used to simply delete data without appending anything. Simply specify a data.frame with both columns and NA values, set overwrite = TRUE, and specify a start and end time (inclusive)
 
 To store login credentials in your .renviron profile, call \code{\link[usethis:edit]{usethis::edit_r_environ()}} and enter your username and password as value pairs, as AQUSER="your username" and AQPASS = "your password".
 }
