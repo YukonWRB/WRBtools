@@ -9,7 +9,7 @@
 #' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD).
 #' @param apply_standards TRUE or FALSE, include standards with data
 #'
-#' @return A list of data frames containing sample information and results
+#' @return A list of lists, each one containing 2 data frames with sample information and calculated standards
 #'
 #' @export
 #'
@@ -18,15 +18,15 @@ EQ_fetch <- function(EQcode,
                      stationIDs = "all",
                      paramIDs = "all",
                      dates = "all",
-                     BD = 0,
+                     BD = 1,
                      apply_standards = TRUE){
 
-  EQcode <- "(LOB)"
-  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  dates <- "all"
-  BD <- 1
-  apply_standards = TRUE
+  # EQcode <- "(LOB)"
+  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  # dates <- "all"
+  # BD <- 1
+  # apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
   options(dplyr.summarise.inform = FALSE)
@@ -118,43 +118,34 @@ EQ_fetch <- function(EQcode,
       merge(params, by.x ="ParamId", by.y = "ParamId")
     stds <- stds[, c("ParamCode", "ParamId", "StdCode", "StdName", "MaxVal", "MinVal","Units")] # Select relevant columns, reorder
 
-    # stdcalcs <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqcalcs")) %>%
-    #   dplyr::mutate(MaxVal = as.numeric(NA),
-    #                 MinVal = as.numeric(NA)) %>%
-    #   dplyr::filter(Category == "Calculated Standard") %>%
-    #   dplyr::select("CalcId", "CalcCode")
-
     # Separate calculated from set standards
     std_set <- suppressWarnings(stds %>%
-      dplyr::mutate_at("MaxVal", as.numeric) %>% # Convert MaxVal to numeric
-      tidyr::drop_na("MaxVal"))
-
+                                  dplyr::mutate_at("MaxVal", as.numeric) %>% # Convert MaxVal to numeric
+                                  tidyr::drop_na("MaxVal"))
     std_calc <- stds %>%
       dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=") # Extract standards with MaxVal value beginning with "=" (calculated standard)
     std_calc$MaxVal <- stringr::str_remove_all(std_calc$MaxVal, "=*") # Remove equal sign, leaving MaxVal with values matching values in eqcalcs access table
 
+    # Process calculated standards
+    std_calc <- WRBtools::EQ_std_calc()
 
-
-
-    eqcalcs <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqcalcs")) %>%
-      dplyr::mutate(MaxVal = as.numeric(NA),
-                    MinVal = as.numeric(NA)) %>%
-      dplyr::filter(Category == "Calculated Standard") %>%
-      dplyr::select("CalcId", "CalcCode", "MaxVal", "MinVal")
-    dplyr::right_join(std_calcs, dplyr::join_by("CalcCode" == "MaxVal"))
-
-
+    # Combine set and calculated standards, order
+    stddata <- rbind(std_set, std_calc)
+    stddata <- stddata[order(ParamId), ]
+    rownames(stddata) <- NULL
   }
 
-
-  # Extract by-station data and apply standards
-  EQfetch_list <- list()
+  # Extract by-station data and station standards, put into by-location list then add list to master EQ_fetch output
+  EQ_fetch_list <- list()
   for(i in unique(stns$StnCode)){
     list <- list()
     stndata <- sampledata %>%
       dplyr::filter(StnCode == i)
     list[["stndata"]] <- stndata
-    list[["stnstd"]] <- stds
-    EQfetch_list[[i]] <- list
+    if(apply_standards == TRUE){
+    list[["stnstd"]] <- stddata
+    }
+    EQ_fetch_list[[i]] <- list
   }
+  return(EQ_fetch_list)
 }
