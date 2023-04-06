@@ -1,3 +1,6 @@
+# Utility function to populate the rcalcs table with calculated values, using averaged pH and hardness values for the station.
+
+
 # Calculate EQwin standards
 dbpath <- "X:/EQWin/WR/DB/Water Resources.mdb"
 EQWin <- DBI::dbConnect(drv = odbc::odbc(), .connection_string = paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=", dbpath))
@@ -8,24 +11,21 @@ rcalcs <- calcs %>%
   dplyr::filter(Category == "Calculated Standard")
 
 ####CCME_Al_lt####
-CCME_Al_lt <- function(){
-  if(!all(is.na(stndata$`pH-F (pH units)`))) {
-    pH <- mean(na.omit(stndata$`pH-F (pH units)`))
-  } else if(!all(is.na(stndata$`pH-L (pH units)`))) {
-    pH <- mean(na.omit(stndata$`pH-L (pH units)`))
-  } else {pH <- NA}
-  if(!is.na(pH)){
-    if(pH < 6.5){
-      X <- 0.005
-    } else if (pH >= 6.5){
-      X <- 0.1
-    }
-  } else {
-    X <- NA
+if(!all(is.na(stndata$`pH-F (pH units)`))) {
+  pH <- mean(na.omit(stndata$`pH-F (pH units)`))
+} else if(!all(is.na(stndata$`pH-L (pH units)`))) {
+  pH <- mean(na.omit(stndata$`pH-L (pH units)`))
+} else {pH <- NA}
+if(!is.na(pH)){
+  if(pH < 6.5){
+    CCME_Al_lt <- 0.005
+  } else if (pH >= 6.5){
+    CCME_Al_lt <- 0.1
   }
-  return(X)
+} else {
+  CCME_Al_lt <- NA
 }
-rcalcs[rcalcs$CalcId == 1, "MaxVal"] <- CCME_Al_lt()
+rcalcs[rcalcs$CalcId == 1, "MaxVal"] <- CCME_Al_lt
 
 ####CCME_Cd_lt####
 CCME_Cd_lt <- function(){

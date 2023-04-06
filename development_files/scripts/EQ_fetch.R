@@ -6,7 +6,8 @@
 #' @param stationIDs "all" for all stations(default) OR vector of selected stations as they appear in the EQWin database WITHOUT the EQcode
 #' @param paramIDs "all" for all parameters (default) OR vector of selected parameters exactly as they appear in the EQWin database
 #' @param dates "all" for all dates (default) OR vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")
-#' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5(LOD); 3 = Set to sqrt(2)LOD).
+#' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD).
+#' @param apply_standards TRUE or FALSE, include standards with data
 #'
 #' @return A list of data frames containing sample information and results
 #'
@@ -28,8 +29,8 @@ EQ_fetch <- function(EQcode,
   apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
-  options(dplyr.summarise.inform = FALSE)
-  options(scipen = 999)
+  # options(dplyr.summarise.inform = FALSE)
+  # options(scipen = 999)
 
   dbpath <- "X:/EQWin/WR/DB/Water Resources.mdb"
 
@@ -81,37 +82,45 @@ EQ_fetch <- function(EQcode,
   merge1 <- merge(samps, stns, by.x = "StnId", by.y = "StnId")
   merge2 <- merge(results, merge1, by.x = "SampleId", by.y = "SampleId")
   merge3 <- merge(merge2, params, by.x = "ParamId", by.y = "ParamId")
-  sampledata <- merge3 %>%
+  suppressMessages(sampledata <- merge3 %>%
     dplyr::mutate(Param = paste0(merge3$ParamCode, " (", merge3$Units, ")")) %>%
     dplyr::select(StnCode, CollectDateTime, StnType, Param, Result) %>%
     dplyr::group_by(StnCode, CollectDateTime, StnType, Param) %>%
     dplyr::summarize(Result = mean(as.numeric(Result))) %>%
     tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
-    data.table::as.data.table()
+    data.table::as.data.table())
   sampledata <- sampledata[with(sampledata, order(StnCode)),]
   rownames(sampledata) <- NULL
 
-  # Download all standards, filter by user choice
+  # Download all standards, filter by user choice via popup window
   if(apply_standards == TRUE){
+    # Extract eqstds and eqstdval tables from access database, merge together by StdId
     stds <- merge(data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstds") %>%
                                               subset(select=c("StdId", "StdCode", "StdName", "udf_StnGroup"))),
                   data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstdval") %>%
                                               subset(select=c("StdId", "ParamId", "MaxVal", "MinVal"))),
                   by.x = "StdId", by.y = "StdId")
+    # Filter stds by user choice, merge with parameters to associate standards with parameters by param code
     stds <- dplyr::filter(stds, stds$StdCode %in% select.list(choices = sort(unique(stds$StdCode)),
                                                               title = "Select Standards",
                                                               graphics = TRUE,
-                                                              multiple = TRUE)) %>%
+                                                              multiple = TRUE))
       merge(params, by.x ="ParamId", by.y = "ParamId")
-    stds <- stds[, c("ParamCode", "ParamId", "StdCode", "StdName", "MaxVal", "MinVal","Units")]
-    stds$MaxVal <- stringr::str_remove_all(stds$MaxVal, "=")
-  }
-  rcalcs$MaxVal <- as.character(rcalcs$MaxVal)
-  test <- merge(stds, rcalcs, by.x = "StdCode", by.y = "MaxVal", all.x = T)
+    stds <- stds[, c("ParamCode", "ParamId", "StdCode", "StdName", "MaxVal", "MinVal","Units")] # Select relevant columns, reorder
+    # Process calculated standards
+    std_calcs <- stds %>%
+      dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=") # Extract standards with MaxVal value beginning with "=" (this means calculated standard)
+    std_calcs$MaxVal <- stringr::str_remove_all(std_calcs$MaxVal, "=*") # Remove equal sign, leaving MaxVal with values matching values in eqcalcs access table
+    calcs <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqcalcs")) %>%
+      dplyr::mutate(MaxVal = as.numeric(NA),
+                    MinVal = as.numeric(NA)) %>%
+      dplyr::filter(Category == "Calculated Standard") %>%
+      dplyr::select("CalcId", "CalcCode", "MaxVal", "MinVal")
+      dplyr::right_join(std_calcs, dplyr::join_by("CalcCode" == "MaxVal"))
 
-  # Extract calculated standards
-  std_calcs <- stds %>%
-    dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=")
+
+  }
+
 
   # Extract by-station data and apply standards
   EQfetch_list <- list()
@@ -121,10 +130,9 @@ EQ_fetch <- function(EQcode,
         dplyr::filter(StnCode == i)
       list[["stndata"]] <- stndata
       list[["stnstd"]] <- stds
-
-
     EQfetch_list[[i]] <- list
   }
+
 rcalcs_test <- rcalcs %>%
   dplyr::select(CalcCode, MaxVal)
 stds_test <- stds %>%
