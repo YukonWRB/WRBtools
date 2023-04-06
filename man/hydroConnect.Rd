@@ -4,7 +4,7 @@
 \alias{hydroConnect}
 \title{Connect to hydrology database}
 \usage{
-hydroConnect(path = "default", timeout = 1e+05, silent = FALSE)
+hydroConnect(path = "default", timeout = 100000, silent = FALSE)
 }
 \arguments{
 \item{path}{The path to the database. Currently supports only .sqlite databases. 'default' points to //env-fs/env-data/corp/water/Common_GW_SW/Data/database/hydro.sqlite.}
