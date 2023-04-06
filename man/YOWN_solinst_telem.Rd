@@ -10,7 +10,7 @@ YOWN_solinst_telem(active_telem = c("YOWN-2201S"))
 \item{active_telem}{Character vector of YOWN sites for processing of SOLINST telemetry data}
 }
 \value{
-Returns a .xle file in the XLE_FIle_Dropbox folder on the G drive
+Creates an .xle file in the XLE_File_Dropbox folder on the G drive
 }
 \description{
 This script searches for new messages from the YOWN telemetry gmail inbox by specified sites with active telemetry, then downloads messages and combines each day's report into an XLE file which is then places in the XLE-dropbox folder for processing as usual. Trashed email upon successful creation of a .xle file
