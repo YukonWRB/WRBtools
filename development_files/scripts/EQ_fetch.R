@@ -125,6 +125,7 @@ EQ_fetch <- function(EQcode,
     std_calc <- stds %>%
       dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=") # Extract standards with MaxVal value beginning with "=" (calculated standard)
     std_calc$MaxVal <- stringr::str_remove_all(std_calc$MaxVal, "=*") # Remove equal sign, leaving MaxVal with values matching values in eqcalcs access table
+    std_calc <- EQ_std_calc()
 
     # Process calculated standards
     std_calc <- WRBtools::EQ_std_calc()
