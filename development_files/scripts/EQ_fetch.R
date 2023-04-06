@@ -19,18 +19,18 @@ EQ_fetch <- function(EQcode,
                      paramIDs = "all",
                      dates = "all",
                      BD = 0,
-                     apply_standards = TRUE)
+                     apply_standards = TRUE){
 
   EQcode <- "(LOB)"
   stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn'D") OR "all")
+  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
   dates <- "all"
   BD <- 1
   apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
-  # options(dplyr.summarise.inform = FALSE)
-  # options(scipen = 999)
+  options(dplyr.summarise.inform = FALSE)
+  options(scipen = 999)
 
   dbpath <- "X:/EQWin/WR/DB/Water Resources.mdb"
 
@@ -39,28 +39,38 @@ EQ_fetch <- function(EQcode,
   on.exit(DBI::dbDisconnect(EQWin))
 
   # Download stations and filter to user input
-  stns <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstns") %>%
-                                      subset(select=c("StnId", "StnCode", "StnName", "StnType", "udf_Stn_Status")))
+  eqstns <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstns") %>%
+                                        subset(select=c("StnId", "StnCode", "StnName", "StnType", "udf_Stn_Status")))
   if(tolower(paste(stationIDs, collapse = "") == "all")){
-    stns <- dplyr::filter(stns, grepl(EQcode, StnCode)) %>%
+    stns <- dplyr::filter(eqstns, grepl(EQcode, StnCode)) %>%
       dplyr::mutate(StnCode = gsub(EQcode, "", StnCode, fixed = TRUE))
-  } else {stns <- dplyr::filter(stns, StnCode %in% paste0(EQcode, stationIDs)) %>%
+  } else {stns <- dplyr::filter(eqstns, StnCode %in% paste0(EQcode, stationIDs)) %>%
     dplyr::mutate(StnCode = gsub(EQcode, "", StnCode, fixed = TRUE))}
 
-  # Download all samples for specified stations and filter by specified dates
-  samps <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqsampls") %>%
-                                       subset(select=c("SampleId", "StnId", "CollectDateTime")) %>%
-                                       dplyr::filter(StnId %in% stns$StnId))
+  # Download all samples for specified stations, filter by user choice
+  eqsampls <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqsampls") %>%
+                                          subset(select=c("SampleId", "StnId", "CollectDateTime")) %>%
+                                          dplyr::filter(StnId %in% stns$StnId))
   if(tolower(paste(dates, collapse = "") != "all")){
-    samps <- samps %>%
-      dplyr::filter(between(as.Date(CollectDateTime), as.Date(dates[1]), asDate(dates[2])))}
+    samps <- eqsampls %>%
+      dplyr::filter(between(as.Date(CollectDateTime), as.Date(dates[1]), asDate(dates[2])))
+  } else {
+    samps <- eqsampls
+  }
 
-  # Download list of all parameters
-  params <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqparams") %>%
-                                        subset(select=c("ParamId", "ParamCode", "Units")))
+  # Download list of all parameters, filter to user choice
+  eqparams <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqparams") %>%
+                                          subset(select=c("ParamId", "ParamCode", "Units")))
+  if(tolower(paste(paramIDs, collapse = "") != "all")){
+    params <- eqparams %>%
+      dplyr::filter(paramIDs)
+  } else {
+    params <- eqparams
+  }
+
 
   # Download all results
-  results <- DBI::dbGetQuery(EQWin, paste0("SELECT ", paste0('SampleId', ", ", 'ParamId', ", ", 'Result'), " FROM eqdetail WHERE ParamID IN (", paste(params$ParamId, collapse = ", "),") AND SampleId IN (", paste0(samps$SampleId, collapse = ", "), ")"))
+  results <- DBI::dbGetQuery(EQWin, paste0("SELECT ", paste0('SampleId', ", ", 'ParamId', ", ", 'Result'), " FROM eqdetail WHERE ParamID IN (", paste(eqparams$ParamId, collapse = ", "),") AND SampleId IN (", paste0(eqsampls$SampleId, collapse = ", "), ")"))
 
   # Deal with values below detection limits according to user choice
   if(BD == 0){
@@ -83,12 +93,12 @@ EQ_fetch <- function(EQcode,
   merge2 <- merge(results, merge1, by.x = "SampleId", by.y = "SampleId")
   merge3 <- merge(merge2, params, by.x = "ParamId", by.y = "ParamId")
   suppressMessages(sampledata <- merge3 %>%
-    dplyr::mutate(Param = paste0(merge3$ParamCode, " (", merge3$Units, ")")) %>%
-    dplyr::select(StnCode, CollectDateTime, StnType, Param, Result) %>%
-    dplyr::group_by(StnCode, CollectDateTime, StnType, Param) %>%
-    dplyr::summarize(Result = mean(as.numeric(Result))) %>%
-    tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
-    data.table::as.data.table())
+                     dplyr::mutate(Param = paste0(merge3$ParamCode, " (", merge3$Units, ")")) %>%
+                     dplyr::select(StnCode, CollectDateTime, StnType, Param, Result) %>%
+                     dplyr::group_by(StnCode, CollectDateTime, StnType, Param) %>%
+                     dplyr::summarize(Result = mean(as.numeric(Result))) %>%
+                     tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
+                     data.table::as.data.table())
   sampledata <- sampledata[with(sampledata, order(StnCode)),]
   rownames(sampledata) <- NULL
 
@@ -104,19 +114,34 @@ EQ_fetch <- function(EQcode,
     stds <- dplyr::filter(stds, stds$StdCode %in% select.list(choices = sort(unique(stds$StdCode)),
                                                               title = "Select Standards",
                                                               graphics = TRUE,
-                                                              multiple = TRUE))
+                                                              multiple = TRUE)) %>%
       merge(params, by.x ="ParamId", by.y = "ParamId")
     stds <- stds[, c("ParamCode", "ParamId", "StdCode", "StdName", "MaxVal", "MinVal","Units")] # Select relevant columns, reorder
-    # Process calculated standards
-    std_calcs <- stds %>%
-      dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=") # Extract standards with MaxVal value beginning with "=" (this means calculated standard)
-    std_calcs$MaxVal <- stringr::str_remove_all(std_calcs$MaxVal, "=*") # Remove equal sign, leaving MaxVal with values matching values in eqcalcs access table
-    calcs <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqcalcs")) %>%
+
+    # stdcalcs <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqcalcs")) %>%
+    #   dplyr::mutate(MaxVal = as.numeric(NA),
+    #                 MinVal = as.numeric(NA)) %>%
+    #   dplyr::filter(Category == "Calculated Standard") %>%
+    #   dplyr::select("CalcId", "CalcCode")
+
+    # Separate calculated from set standards
+    std_set <- suppressWarnings(stds %>%
+      dplyr::mutate_at("MaxVal", as.numeric) %>% # Convert MaxVal to numeric
+      tidyr::drop_na("MaxVal"))
+
+    std_calc <- stds %>%
+      dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=") # Extract standards with MaxVal value beginning with "=" (calculated standard)
+    std_calc$MaxVal <- stringr::str_remove_all(std_calc$MaxVal, "=*") # Remove equal sign, leaving MaxVal with values matching values in eqcalcs access table
+
+
+
+
+    eqcalcs <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqcalcs")) %>%
       dplyr::mutate(MaxVal = as.numeric(NA),
                     MinVal = as.numeric(NA)) %>%
       dplyr::filter(Category == "Calculated Standard") %>%
       dplyr::select("CalcId", "CalcCode", "MaxVal", "MinVal")
-      dplyr::right_join(std_calcs, dplyr::join_by("CalcCode" == "MaxVal"))
+    dplyr::right_join(std_calcs, dplyr::join_by("CalcCode" == "MaxVal"))
 
 
   }
@@ -126,16 +151,10 @@ EQ_fetch <- function(EQcode,
   EQfetch_list <- list()
   for(i in unique(stns$StnCode)){
     list <- list()
-      stndata <- sampledata %>%
-        dplyr::filter(StnCode == i)
-      list[["stndata"]] <- stndata
-      list[["stnstd"]] <- stds
+    stndata <- sampledata %>%
+      dplyr::filter(StnCode == i)
+    list[["stndata"]] <- stndata
+    list[["stnstd"]] <- stds
     EQfetch_list[[i]] <- list
   }
-
-rcalcs_test <- rcalcs %>%
-  dplyr::select(CalcCode, MaxVal)
-stds_test <- stds %>%
-  dplyr::select(StdCode, MaxVal)
-
-vec <- intersect(stds$MaxVal, as.numeric(stds$MaxVal))
+}
