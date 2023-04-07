@@ -189,7 +189,7 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   print("Delineating watersheds and creating polygons...")
   count <- 0 #For 'together' shapefiles. Need a feature to create the R object, then features can be appended.
   for(i in 1:nrow(snapped_points)) {
-    print(paste0("Delineating drainage basin for point ", snapped_points[i, points_name_col]))
+    print(paste0("Delineating drainage basin for point ", as.data.frame(snapped_points[i, points_name_col])))
     tryCatch({
       terra::writeVector(snapped_points[i, ], paste0(tempdir(), "/shapefiles/", i,".shp"), overwrite=TRUE)
       suppresssMessages(whitebox::wbt_watershed(d8_pntr = paste0(directory, "/D8pointer.tif"),
