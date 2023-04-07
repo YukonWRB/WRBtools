@@ -189,12 +189,13 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   print("Delineating watersheds and creating polygons...")
   count <- 0 #For 'together' shapefiles. Need a feature to create the R object, then features can be appended.
   for(i in 1:nrow(snapped_points)) {
+    print(paste0("Delineating drainage basin for point ", snapped_points[i, points_name_col]))
     tryCatch({
       terra::writeVector(snapped_points[i, ], paste0(tempdir(), "/shapefiles/", i,".shp"), overwrite=TRUE)
-      whitebox::wbt_watershed(d8_pntr = paste0(directory, "/D8pointer.tif"),
+      suppresssMessages(whitebox::wbt_watershed(d8_pntr = paste0(directory, "/D8pointer.tif"),
                               pour_pts = paste0(tempdir(), "/shapefiles/", i, ".shp"),
                               output = paste0(tempdir(), "/rasters/", i, ".tif")
-      )
+      ))
 
       rast <- terra::rast(paste0(tempdir(), "/rasters/", i, ".tif"))
       poly <- terra::as.polygons(rast)
@@ -247,6 +248,7 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
         input_points <- rbind(input_points, point)
         snapped_pts <- rbind(snapped_pts, snapped_pt)
       }
+      print("Success!")
     }, error = function(e) {
       print(paste0("Failed to delineate watershed for point named ", folder_name))
     })
