@@ -192,9 +192,9 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
     print(paste0("Delineating drainage basin for point ", as.data.frame(snapped_points[i, points_name_col])))
     tryCatch({
       terra::writeVector(snapped_points[i, ], paste0(tempdir(), "/shapefiles/", i,".shp"), overwrite=TRUE)
-      suppresssMessages(whitebox::wbt_watershed(d8_pntr = paste0(directory, "/D8pointer.tif"),
-                              pour_pts = paste0(tempdir(), "/shapefiles/", i, ".shp"),
-                              output = paste0(tempdir(), "/rasters/", i, ".tif")
+      suppressMessages(whitebox::wbt_watershed(d8_pntr = paste0(directory, "/D8pointer.tif"),
+                                               pour_pts = paste0(tempdir(), "/shapefiles/", i, ".shp"),
+                                               output = paste0(tempdir(), "/rasters/", i, ".tif")
       ))
 
       rast <- terra::rast(paste0(tempdir(), "/rasters/", i, ".tif"))
@@ -250,7 +250,7 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
       }
       print("Success!")
     }, error = function(e) {
-      print(paste0("Failed to delineate watershed for point named ", folder_name))
+      print(paste0("Failed to delineate watershed for point named ", as.data.frame(snapped_points[i, points_name_col])))
     })
   }
   #Save the larger shapefiles to disc
