@@ -12,8 +12,7 @@
 #' @return A list of lists, each one containing 2 data frames with sample information and calculated standards
 #'
 #' @export
-#'
-#' @examples
+
 EQ_fetch <- function(EQcode,
                      stationIDs = "all",
                      paramIDs = "all",
@@ -21,12 +20,12 @@ EQ_fetch <- function(EQcode,
                      BD = 1,
                      apply_standards = TRUE){
 
-  # EQcode <- "(LOB)"
-  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  # dates <- "all"
-  # BD <- 1
-  # apply_standards = TRUE
+  EQcode <- "(LOB)"
+  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  dates <- "all"
+  BD <- 1
+  apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
   options(dplyr.summarise.inform = FALSE)
@@ -68,7 +67,6 @@ EQ_fetch <- function(EQcode,
     params <- eqparams
   }
 
-
   # Download all results
   results <- DBI::dbGetQuery(EQWin, paste0("SELECT ", paste0('SampleId', ", ", 'ParamId', ", ", 'Result'), " FROM eqdetail WHERE ParamID IN (", paste(eqparams$ParamId, collapse = ", "),") AND SampleId IN (", paste0(eqsampls$SampleId, collapse = ", "), ")"))
 
@@ -99,7 +97,7 @@ EQ_fetch <- function(EQcode,
                      dplyr::summarize(Result = mean(as.numeric(Result))) %>%
                      tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
                      data.table::as.data.table())
-  sampledata <- sampledata[with(sampledata, order(StnCode)),]
+  sampledata <<- sampledata[with(sampledata, order(StnCode)), ]
   rownames(sampledata) <- NULL
 
   # Download all standards, filter by user choice via popup window
@@ -110,6 +108,7 @@ EQ_fetch <- function(EQcode,
                   data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstdval") %>%
                                               subset(select=c("StdId", "ParamId", "MaxVal", "MinVal"))),
                   by.x = "StdId", by.y = "StdId")
+
     # Filter stds by user choice, merge with parameters to associate standards with parameters by param code
     stds <- dplyr::filter(stds, stds$StdCode %in% select.list(choices = sort(unique(stds$StdCode)),
                                                               title = "Select Standards",
@@ -122,16 +121,15 @@ EQ_fetch <- function(EQcode,
     std_set <- suppressWarnings(stds %>%
                                   dplyr::mutate_at("MaxVal", as.numeric) %>% # Convert MaxVal to numeric
                                   tidyr::drop_na("MaxVal"))
-    std_calc <- stds %>%
+    std_calc <<- stds %>%
       dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=") # Extract standards with MaxVal value beginning with "=" (calculated standard)
     std_calc$MaxVal <- stringr::str_remove_all(std_calc$MaxVal, "=*") # Remove equal sign, leaving MaxVal with values matching values in eqcalcs access table
-    std_calc <- EQ_std_calc()
 
     # Process calculated standards
-    std_calc <- WRBtools::EQ_std_calc()
+    std_calcs <- WRBtools::EQ_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc)
 
     # Combine set and calculated standards, order
-    stddata <- rbind(std_set, std_calc)
+    stddata <- rbind(std_set, std_calcs)
     stddata <- stddata[order(ParamId), ]
     rownames(stddata) <- NULL
   }
@@ -144,9 +142,10 @@ EQ_fetch <- function(EQcode,
       dplyr::filter(StnCode == i)
     list[["stndata"]] <- stndata
     if(apply_standards == TRUE){
-    list[["stnstd"]] <- stddata
+      list[["stnstd"]] <- stddata
     }
     EQ_fetch_list[[i]] <- list
   }
+rm(sampledata, std_calc, envir = .GlobalEnv)
   return(EQ_fetch_list)
 }
