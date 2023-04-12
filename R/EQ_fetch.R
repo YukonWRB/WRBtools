@@ -20,12 +20,12 @@ EQ_fetch <- function(EQcode,
                      BD = 1,
                      apply_standards = TRUE){
 
-  EQcode <- "(LOB)"
-  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  dates <- "all"
-  BD <- 1
-  apply_standards = TRUE
+  # EQcode <- "(LOB)"
+  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  # dates <- "all"
+  # BD <- 1
+  # apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
   options(dplyr.summarise.inform = FALSE)
