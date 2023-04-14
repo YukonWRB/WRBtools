@@ -100,7 +100,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   colnames(lookup) <- suppressWarnings(as.character(plyr::round_any(as.numeric(colnames(lookup)), accuracy = 0.1, f = ceiling)))
   colnames(lookup)[1] <- "Min"
   colnames(lookup)[2] <- "Max"
-  `CCME_Mn-D_lt` <- pull(dplyr::filter(lookup, hardx >= Min & hardx <= Max)[which(colnames(lookup) == as.character(pHx))])
+  `CCME_Mn-D_lt` <- dplyr::pull(dplyr::filter(lookup, hardx >= Min & hardx <= Max)[which(colnames(lookup) == as.character(pHx))])
   std_calc[std_calc$MaxVal == "CCME_Mn-D_lt", "MaxVal"] <- `CCME_Mn-D_lt`
 
   #### CCME Short Term (t/d) ####
@@ -138,7 +138,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   }
 
   lookup <- as.data.frame(readxl::read_xlsx(path="G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="NH4", col_names=TRUE))
-  CCME_NH4_lt <- pull(dplyr::filter(lookup, Temp == tempx)[which(colnames(lookup) == as.character(pHx))])
+  CCME_NH4_lt <- dplyr::pull(dplyr::filter(lookup, Temp == tempx)[which(colnames(lookup) == as.character(pHx))])
   std_calc[std_calc$MaxVal == "CCME_NH4_lt", "MaxVal"] <- CCME_NH4_lt
 
   ####CCME_Ni_lt####
