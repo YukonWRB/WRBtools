@@ -9,7 +9,7 @@
 #' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD).
 #' @param apply_standards TRUE or FALSE, include standards with data
 #'
-#' @return A list of lists, each one containing 2 data frames with sample information and calculated standards
+#' @return A list of lists, each one containing 2 data frames with sample data and calculated standards
 #'
 #' @export
 
