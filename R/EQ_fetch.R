@@ -20,12 +20,12 @@ EQ_fetch <- function(EQcode,
                      BD = 1,
                      apply_standards = TRUE){
 
-  # EQcode <- "(LOB)"
-  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  # dates <- "all"
-  # BD <- 1
-  # apply_standards = TRUE
+  EQcode <- "(EG)"
+  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  dates <- "all"
+  BD <- 1
+  apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
   options(dplyr.summarise.inform = FALSE)
@@ -98,6 +98,7 @@ EQ_fetch <- function(EQcode,
                      tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
                      data.table::as.data.table())
   sampledata <<- sampledata[with(sampledata, order(StnCode)), ]
+  rm(merge1, merge2, merge3)
   rownames(sampledata) <- NULL
 
   # Download all standards, filter by user choice via popup window
@@ -130,7 +131,7 @@ EQ_fetch <- function(EQcode,
 
     # Combine set and calculated standards, order
     stddata <- rbind(std_set, std_calcs)
-    stddata <- stddata[order(ParamId), ]
+    stddata <- stddata[order(stddata$ParamId), ]
     rownames(stddata) <- NULL
   }
 
