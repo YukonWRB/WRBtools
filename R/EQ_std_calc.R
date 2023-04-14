@@ -103,28 +103,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   `CCME_Mn-D_lt` <- dplyr::pull(dplyr::filter(lookup, hardx >= Min & hardx <= Max)[which(colnames(lookup) == as.character(pHx))])
   std_calc[std_calc$MaxVal == "CCME_Mn-D_lt", "MaxVal"] <- `CCME_Mn-D_lt`
 
-  #### CCME Short Term (t/d) ####
-  # CCME_Cd_st
-  if(is.na(hard)){
-    CCME_Cd_st <- 0.11/1000
-  } else if(hard >=5.3 & hard <=360){
-    CCME_Cd_st <- 10^(1.016*(log10(hard))-1.71)/1000
-  } else if(hard > 360){
-    CCME_Cd_st <- 7.7/1000
-  }
-  std_calc[std_calc$MaxVal == "CCME_Cd_st", "MaxVal"] <- CCME_Cd_st
-
-
-  ####CCME_Mn-D_st####
-  if(is.na(hard)){
-    hardx <- 50
-  } else {
-    hardx <- hard
-  }
-  `CCME_Mn-D_st` <- exp((0.878*log(hardx)+4.76))/1000
-  std_calc[std_calc$MaxVal == "CCME_Mn-D_st", "MaxVal"] <- `CCME_Mn-D_st`
-
-  ####CCME_NH4_lt####
+  # CCME_NH4_lt
   if(is.na(pH)){
     pHx <- 7.5
   } else {
@@ -141,7 +120,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   CCME_NH4_lt <- dplyr::pull(dplyr::filter(lookup, Temp == tempx)[which(colnames(lookup) == as.character(pHx))])
   std_calc[std_calc$MaxVal == "CCME_NH4_lt", "MaxVal"] <- CCME_NH4_lt
 
-  ####CCME_Ni_lt####
+  # CCME_Ni_lt
   if(is.na(hard) | hard <= 60){
     CCME_Ni_lt <- 25/1000
   } else if(hard > 60 & hard <=180){
@@ -151,7 +130,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   }
   std_calc[std_calc$MaxVal == "CCME_Ni_lt", "MaxVal"] <- CCME_Ni_lt
 
-  ####CCME_Pb_lt####
+  # CCME_Pb_lt
   if(is.na(hard)){
     CCME_Pb_lt <- 1/1000
   } else if(hard <= 60){
@@ -163,7 +142,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   }
   std_calc[std_calc$MaxVal == "CCME_Pb_lt", "MaxVal"] <- CCME_Pb_lt
 
-  ####CCME_Zn_lt####
+  # CCME_Zn_lt
   if(any(is.na(c(DOC, pH, hard)))){
     CCME_Zn_lt <- NA
   } else if(pH < 6.5 | pH > 8.13 | hard < 23.4 | hard > 399 | DOC < 0.3 | DOC > 22.9){
@@ -173,7 +152,27 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   }
   std_calc[std_calc$MaxVal == "CCME_Zn_lt", "MaxVal"] <- CCME_Zn_lt
 
-  ####CCME_Zn_st####
+  #### CCME Short Term (T/D) ####
+  # CCME_Cd_st
+  if(is.na(hard)){
+    CCME_Cd_st <- 0.11/1000
+  } else if(hard >=5.3 & hard <=360){
+    CCME_Cd_st <- 10^(1.016*(log10(hard))-1.71)/1000
+  } else if(hard > 360){
+    CCME_Cd_st <- 7.7/1000
+  }
+  std_calc[std_calc$MaxVal == "CCME_Cd_st", "MaxVal"] <- CCME_Cd_st
+
+  # CCME_Mn-D_st
+  if(is.na(hard)){
+    hardx <- 50
+  } else {
+    hardx <- hard
+  }
+  `CCME_Mn-D_st` <- exp((0.878*log(hardx)+4.76))/1000
+  std_calc[std_calc$MaxVal == "CCME_Mn-D_st", "MaxVal"] <- `CCME_Mn-D_st`
+
+  # CCME_Zn_st
   if(any(is.na(c(DOC, pH, hard)))){
     CCME_Zn_st <- NA
   } else if(pH < 6.5 | pH > 8.13 | hard < 13.8 | hard > 250.5 | DOC < 0.3 | DOC > 17.3){
