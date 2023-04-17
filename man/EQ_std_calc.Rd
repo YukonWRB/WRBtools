@@ -4,19 +4,19 @@
 \alias{EQ_std_calc}
 \title{Calculated standard processing sub-function required by EQ_fetch function}
 \usage{
-EQ_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc)
+EQ_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc_tmp)
 }
 \arguments{
 \item{fun_sampledata}{Assigned to "sampledata" data frame created during EQ_fetch function process containing sample data}
 
-\item{fun_std_calc}{Assigned to "std_calc" data frame of calculated standards, populated by this function}
+\item{fun_std_calc}{Assigned to "std_calc_tmp" data frame of calculated standards, populated by this function}
 }
 \value{
-Populated std_calc table in EQfetch function
+Populated std_calc_tmp table in EQfetch function
 }
 \description{
-Utility function to populate the std_calc table (product of EQ_fetch function) with calculated values, using averaged or calculated station parameters (pH, hardness, DOC, temp)
+Utility function to populate the std_calc_tmp table (product of EQ_fetch function) with calculated values, using averaged or calculated station parameters (pH, hardness, DOC, temp)
 }
 \details{
-interim parameter vales are assigned on an as-needs basis where required, such as standards where hardness is assigned a certain value if NA. These interim parameters are represented by the .x subscript (ie. pHx, hardx)
+interim parameter values are assigned on an as-needs basis where required, such as standards where hardness is assigned a certain value if NA. These interim parameters are represented by the .x subscript (ie. pHx, hardx)
 }
