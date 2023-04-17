@@ -1,18 +1,18 @@
 #' Calculated standard processing sub-function required by EQ_fetch function
 #'
-#' Utility function to populate the std_calc table (product of EQ_fetch function) with calculated values, using averaged or calculated station parameters (pH, hardness, DOC, temp)
+#' Utility function to populate the std_calc_tmp table (product of EQ_fetch function) with calculated values, using averaged or calculated station parameters (pH, hardness, DOC, temp)
 #'
 #' @param fun_sampledata  Assigned to "sampledata" data frame created during EQ_fetch function process containing sample data
-#' @param fun_std_calc Assigned to "std_calc" data frame of calculated standards, populated by this function
+#' @param fun_std_calc Assigned to "std_calc_tmp" data frame of calculated standards, populated by this function
 #'
-#' @return Populated std_calc table in EQfetch function
+#' @return Populated std_calc_tmp table in EQfetch function
 #'
 #' @export
 #'
 #' @details interim parameter values are assigned on an as-needs basis where required, such as standards where hardness is assigned a certain value if NA. These interim parameters are represented by the .x subscript (ie. pHx, hardx)
 
 EQ_std_calc <- function(fun_sampledata = sampledata,
-                        fun_std_calc = std_calc){
+                        fun_std_calc = std_calc_tmp){
 
   #### Calculate input parameters from data ####
 
@@ -59,7 +59,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
       CCME_Al_lt <- 0.1}
   } else {
     CCME_Al_lt <- NA}
-  std_calc[std_calc$MaxVal == "CCME_Al_lt", "MaxVal"] <- CCME_Al_lt
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Al_lt", "MaxVal"] <- CCME_Al_lt
 
   # CCME_Cd_lt
   if(hard < 17 | is.na(hard)){
@@ -69,7 +69,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   } else if(hard > 280){
     CCME_Cd_lt <- 0.37/1000
   }
-  std_calc[std_calc$MaxVal == "CCME_Cd_lt", "MaxVal"] <- CCME_Cd_lt
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Cd_lt", "MaxVal"] <- CCME_Cd_lt
 
   # CCME_Cu_lt
   if(is.na(hard)){
@@ -79,7 +79,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   } else if(hard > 180){
     CCME_Cu_lt <- 4/1000
   }
-  std_calc[std_calc$MaxVal == "CCME_Cu_lt", "MaxVal"] <- CCME_Cu_lt
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Cu_lt", "MaxVal"] <- CCME_Cu_lt
 
   # CCME_Mn-D_lt
   if(is.na(pH)){
@@ -101,7 +101,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   colnames(lookup)[1] <- "Min"
   colnames(lookup)[2] <- "Max"
   `CCME_Mn-D_lt` <- dplyr::pull(dplyr::filter(lookup, hardx >= Min & hardx <= Max)[which(colnames(lookup) == as.character(pHx))])
-  std_calc[std_calc$MaxVal == "CCME_Mn-D_lt", "MaxVal"] <- `CCME_Mn-D_lt`
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Mn-D_lt", "MaxVal"] <- `CCME_Mn-D_lt`
 
   # CCME_NH4_lt
   if(is.na(pH)){
@@ -118,7 +118,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
 
   lookup <- as.data.frame(readxl::read_xlsx(path="G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="NH4", col_names=TRUE))
   CCME_NH4_lt <- dplyr::pull(dplyr::filter(lookup, Temp == tempx)[which(colnames(lookup) == as.character(pHx))])
-  std_calc[std_calc$MaxVal == "CCME_NH4_lt", "MaxVal"] <- CCME_NH4_lt
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_NH4_lt", "MaxVal"] <- CCME_NH4_lt
 
   # CCME_Ni_lt
   if(is.na(hard) | hard <= 60){
@@ -128,7 +128,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   } else if(hard > 180){
     CCME_Ni_lt <- 150/1000
   }
-  std_calc[std_calc$MaxVal == "CCME_Ni_lt", "MaxVal"] <- CCME_Ni_lt
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Ni_lt", "MaxVal"] <- CCME_Ni_lt
 
   # CCME_Pb_lt
   if(is.na(hard)){
@@ -140,7 +140,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   } else if(hard > 180){
     CCME_Pb_lt <- 7/1000
   }
-  std_calc[std_calc$MaxVal == "CCME_Pb_lt", "MaxVal"] <- CCME_Pb_lt
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Pb_lt", "MaxVal"] <- CCME_Pb_lt
 
   # CCME_Zn_lt
   if(any(is.na(c(DOC, pH, hard)))){
@@ -150,7 +150,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   } else {
     CCME_Zn_lt <- exp((0.947*log(hard)) - (0.815*pH) + (0.398*log(DOC)) + 4.625)/1000
   }
-  std_calc[std_calc$MaxVal == "CCME_Zn_lt", "MaxVal"] <- CCME_Zn_lt
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Zn_lt", "MaxVal"] <- CCME_Zn_lt
 
   #### CCME Short Term (T/D) ####
   # CCME_Cd_st
@@ -161,7 +161,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   } else if(hard > 360){
     CCME_Cd_st <- 7.7/1000
   }
-  std_calc[std_calc$MaxVal == "CCME_Cd_st", "MaxVal"] <- CCME_Cd_st
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Cd_st", "MaxVal"] <- CCME_Cd_st
 
   # CCME_Mn-D_st
   if(is.na(hard)){
@@ -170,7 +170,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
     hardx <- hard
   }
   `CCME_Mn-D_st` <- exp((0.878*log(hardx)+4.76))/1000
-  std_calc[std_calc$MaxVal == "CCME_Mn-D_st", "MaxVal"] <- `CCME_Mn-D_st`
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Mn-D_st", "MaxVal"] <- `CCME_Mn-D_st`
 
   # CCME_Zn_st
   if(any(is.na(c(DOC, pH, hard)))){
@@ -180,7 +180,7 @@ EQ_std_calc <- function(fun_sampledata = sampledata,
   } else {
     CCME_Zn_st <- exp((0.833*log(hard)) + (0.240*log(DOC)) + 0.526)/1000
   }
-  std_calc[std_calc$MaxVal == "CCME_Zn_st", "MaxVal"] <- CCME_Zn_st
+  std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Zn_st", "MaxVal"] <- CCME_Zn_st
 
-  return(std_calc)
+  std_calc_tmp <<- std_calc_tmp
 }

@@ -15,7 +15,7 @@ YOWN_solinst_telem <- function(active_telem = c("YOWN-2201S")){
   for(z in active_telem){
     query <- paste0("from:", z, " ", "subject:(LS Report)") # Create gmail search query
     file <- gmailr::gm_messages(search = query,
-                                num_results = 1000000000) # Generate a list of all emails for active telemetry site, if no results lenght will be 1
+                                num_results = 1000000000) # Generate a list of all emails for active telemetry site, if no results length will be 1
 
     #### Message and report number identification and sorting ####
     if(length(file[[1]]) > 1){
