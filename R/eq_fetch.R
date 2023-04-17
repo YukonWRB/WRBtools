@@ -13,7 +13,7 @@
 #'
 #' @export
 
-EQ_fetch <- function(EQcode,
+eq_fetch <- function(EQcode,
                      stationIDs = "all",
                      paramIDs = "all",
                      dates = "all",
@@ -131,7 +131,7 @@ EQ_fetch <- function(EQcode,
     std_calc_tmp <<- std_calc_tmp
 
     # Process calculated standards ##
-    std_calcs <- WRBtools::EQ_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc_tmp)
+    std_calcs <- eq_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc_tmp)
 
     # Combine set and calculated standards, order
     stddata <- rbind(std_set, std_calcs)
