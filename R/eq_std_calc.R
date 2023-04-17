@@ -11,7 +11,7 @@
 #'
 #' @details interim parameter values are assigned on an as-needs basis where required, such as standards where hardness is assigned a certain value if NA. These interim parameters are represented by the .x subscript (ie. pHx, hardx)
 
-EQ_std_calc <- function(fun_sampledata = sampledata,
+eq_std_calc <- function(fun_sampledata = sampledata,
                         fun_std_calc = std_calc_tmp){
 
   #### Calculate input parameters from data ####
