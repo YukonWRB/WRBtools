@@ -131,7 +131,7 @@ eq_fetch <- function(EQcode,
     std_calc_tmp <<- std_calc_tmp
 
     # Process calculated standards ##
-    std_calcs <- eq_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc_tmp)
+    std_calcs <- WRBtools::eq_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc_tmp)
 
     # Combine set and calculated standards, order
     stddata <- rbind(std_set, std_calcs)
