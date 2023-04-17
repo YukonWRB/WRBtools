@@ -20,12 +20,12 @@ EQ_fetch <- function(EQcode,
                      BD = 1,
                      apply_standards = TRUE){
 
-  # EQcode <- "(KNO)"
-  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  # dates <- "all"
-  # BD <- 1
-  # apply_standards = TRUE
+  EQcode <- "(KNO)"
+  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  dates <- "all"
+  BD <- 1
+  apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
   options(dplyr.summarise.inform = FALSE)
@@ -127,6 +127,7 @@ EQ_fetch <- function(EQcode,
     std_calc_tmp <- stds %>%
       dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=") # Extract standards with MaxVal value beginning with "=" (calculated standard)
     std_calc_tmp$MaxVal <- stringr::str_remove_all(std_calc_tmp$MaxVal, "=*") # Remove equal sign, leaving MaxVal with values matching values in eqcalcs access table
+    # Return std_calc_temp to .GlobalEnv, necessary for next line function to access it
     std_calc_tmp <<- std_calc_tmp
 
     # Process calculated standards ##
@@ -150,6 +151,7 @@ EQ_fetch <- function(EQcode,
     }
     EQ_fetch_list[[i]] <- list
   }
+  # Clean up interim files
   rm(sampledata, std_calc_tmp, envir = .GlobalEnv)
   return(EQ_fetch_list)
 }
