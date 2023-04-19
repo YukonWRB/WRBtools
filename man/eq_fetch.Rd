@@ -9,7 +9,7 @@ eq_fetch(
   stationIDs = "all",
   paramIDs = "all",
   dates = "all",
-  BD = 1,
+  BD = 2,
   apply_standards = TRUE
 )
 }

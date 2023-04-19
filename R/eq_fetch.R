@@ -17,14 +17,14 @@ eq_fetch <- function(EQcode,
                      stationIDs = "all",
                      paramIDs = "all",
                      dates = "all",
-                     BD = 1,
+                     BD = 2,
                      apply_standards = TRUE){
 
-  # EQcode <- "(LOB)"
+  # EQcode <- "(EG)"
   # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
   # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
   # dates <- "all"
-  # BD <- 1
+  # BD <- 2
   # apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
@@ -83,13 +83,16 @@ eq_fetch <- function(EQcode,
     results$Result <- suppressWarnings(as.numeric(results$Result))
   } else if(BD == 2){
     isBD <- grepl("<", results$Result)
-    results$Result[isBD] <- round(as.numeric(gsub("<(.*)", "\\1", results$Result[isBD]))/2, digits = 4)
+    results$Result[isBD] <- round(as.numeric(gsub("<(.*)", "\\1", results$Result[isBD]))/2, digits = 7)
     rm(isBD)
   } else if(BD == 3){
     isBD <- grepl("<", results$Result)
     results$Result[isBD] <- round(as.numeric(gsub("<(.*)", "\\1", results$Result[isBD]))/sqrt(2), digits = 4)
     rm(isBD)
   }
+
+  # Deal with values above the detection limit (frequently occurs with turbidity)
+  results$Result <- gsub(">", "", results$Result)
 
   # Sequentially merge data frames to agglomerate samples, pivot to wide format and minor formatting tweaks
   merge1 <- merge(samps, stns, by.x = "StnId", by.y = "StnId")
@@ -156,7 +159,6 @@ eq_fetch <- function(EQcode,
     }
     EQ_fetch_list[[i]] <- list
   }
-  # Clean up interim files
-  # rm(sampledata, std_calc_tmp, envir = .GlobalEnv)
+
   return(EQ_fetch_list)
 }
