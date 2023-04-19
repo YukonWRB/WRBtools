@@ -2,8 +2,8 @@
 #'
 #' Utility function to populate the std_calc_tmp table (product of EQ_fetch function) with calculated values, using averaged or calculated station parameters (pH, hardness, DOC, temp)
 #'
-#' @param fun_sampledata  Assigned to "sampledata" data frame created during EQ_fetch function process containing sample data
-#' @param fun_std_calc Assigned to "std_calc_tmp" data frame of calculated standards, populated by this function
+#' @param data  Assigned to "sampledata" data frame created during EQ_fetch function process containing sample data
+#' @param calcs Assigned to "std_calc_tmp" data frame of calculated standards, populated by this function
 #'
 #' @return Populated std_calc_tmp table in EQfetch function
 #'
@@ -11,40 +11,41 @@
 #'
 #' @details interim parameter values are assigned on an as-needs basis where required, such as standards where hardness is assigned a certain value if NA. These interim parameters are represented by the .x subscript (ie. pHx, hardx)
 
-eq_std_calc <- function(fun_sampledata = sampledata,
-                        fun_std_calc = std_calc_tmp){
+eq_std_calc <- function(data = sampledata,
+                        calcs = std_calc_tmp){
 
   #### Calculate input parameters from data ####
 
   # Calculate pH with calculation order preference
-  if(!all(is.na(fun_sampledata$`pH-F (pH units)`))) {
-    pH <- mean(na.omit(fun_sampledata$`pH-F (pH units)`))
-  } else if(!all(is.na(fun_sampledata$`pH-L (pH units)`))) {
-    pH <- mean(na.omit(fun_sampledata$`pH-L (pH units)`))
+  if(!all(is.na(data$`pH-F (pH units)`))) {
+    pH <- mean(na.omit(data$`pH-F (pH units)`))
+  } else if(!all(is.na(data$`pH-L (pH units)`))) {
+    pH <- mean(na.omit(data$`pH-L (pH units)`))
   } else {pH <- NA}
 
   # Calculate hardness with calculation order preference
-  if(!all(is.na(fun_sampledata$`Hard-D (mg/L)`))) {
-    hard <- mean(na.omit(fun_sampledata$`Hard-D (mg/L)`))
-  } else if(!is.na(mean(na.omit(fun_sampledata$`Ca-D (mg/L)`))*mean(na.omit(fun_sampledata$`Mg-D (mg/L)`)))) {
-    hard <- 2.497*mean(na.omit(fun_sampledata$`Ca-D (mg/L)`)) + 4.118*mean(na.omit(fun_sampledata$`Mg-D (mg/L)`))
-  } else if(!all(is.na(fun_sampledata$`Hard-T (mg/L)`))){
-    hard <- mean(na.omit(fun_sampledata$`Hard-T (mg/L)`))
-  } else if(!is.na(mean(na.omit(fun_sampledata$`Ca-T (mg/L)`))*mean(na.omit(fun_sampledata$`Mg-T (mg/L)`)))) {
-    hard <- 2.497*mean(na.omit(fun_sampledata$`Ca-T (mg/L)`)) + 4.118*mean(na.omit(fun_sampledata$`Mg-T (mg/L)`))
+  suppressWarnings(if(!all(is.na(data$`Hard-D (mg/L)`))) {
+    hard <- mean(na.omit(data$`Hard-D (mg/L)`))
+  } else if(!is.na(mean(na.omit(data$`Ca-D (mg/L)`))*mean(na.omit(data$`Mg-D (mg/L)`)))) {
+    hard <- 2.497*mean(na.omit(data$`Ca-D (mg/L)`)) + 4.118*mean(na.omit(data$`Mg-D (mg/L)`))
+  } else if(!all(is.na(data$`Hard-T (mg/L)`))){
+    hard <- mean(na.omit(data$`Hard-T (mg/L)`))
+  } else if(!is.na(mean(na.omit(data$`Ca-T (mg/L)`))*mean(na.omit(data$`Mg-T (mg/L)`)))) {
+    hard <- 2.497*mean(na.omit(data$`Ca-T (mg/L)`)) + 4.118*mean(na.omit(data$`Mg-T (mg/L)`))
   } else {
     hard <- NA}
+  )
 
   # Calculate DOC
-  if(!all(is.na(fun_sampledata$`C-DOC (mg/L)`))){
-    DOC <- mean(na.omit(fun_sampledata$`C-DOC (mg/L)`))
+  if(!all(is.na(data$`C-DOC (mg/L)`))){
+    DOC <- mean(na.omit(data$`C-DOC (mg/L)`))
   } else {
     DOC <- NA
   }
 
   # Calculate temp
-  if(!all(is.na(fun_sampledata$`Temp-F (C)`))) {
-    temp <- plyr::round_any(mean(na.omit(fun_sampledata$`Temp-F (C)`)), 5, f = floor)
+  if(!all(is.na(data$`Temp-F (C)`))) {
+    temp <- plyr::round_any(mean(na.omit(data$`Temp-F (C)`)), 5, f = floor)
   } else {
     temp <- NA
   }
@@ -58,9 +59,10 @@ eq_std_calc <- function(fun_sampledata = sampledata,
     else if (pH >= 6.5){
       CCME_Al_lt <- 0.1}
   } else {
-    CCME_Al_lt <- NA}
-  if(is.element("CCME_Al_lt", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Al_lt", "MaxVal"] <- CCME_Al_lt
+    CCME_Al_lt <- NA
+  }
+  if(is.element("CCME_Al_lt", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Al_lt")] <- CCME_Al_lt
   }
 
   # CCME_Cd_lt
@@ -71,20 +73,24 @@ eq_std_calc <- function(fun_sampledata = sampledata,
   } else if(hard > 280){
     CCME_Cd_lt <- 0.37/1000
   }
-  if(is.element("CCME_Cd_lt", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Cd_lt", "MaxVal"] <- CCME_Cd_lt
+  if(is.element("CCME_Cd_lt", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Cd_lt")] <- CCME_Cd_lt
   }
 
   # CCME_Cu_lt
-  if(is.na(hard)){
+  if(!is.na(hard)){
+    if(hard < 82){
+      CCME_Cu_lt <- 2/1000
+    } else if(hard >= 82 & hard <= 180){
+      CCME_Cu_lt <- 0.2*exp((0.8545*log(hard)-1.465))/1000
+    } else if (hard > 180){
+      CCME_Cu_lt <- 4/1000
+    }
+  } else {
     CCME_Cu_lt <- 2/1000
-  } else if(hard >= 82 & hard <= 180){
-    CCME_Cu_lt <- 0.2*exp((0.8545*log(hard)-1.465))/1000
-  } else if(hard > 180){
-    CCME_Cu_lt <- 4/1000
   }
-  if(is.element("CCME_Cu_lt", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Cu_lt", "MaxVal"] <- CCME_Cu_lt
+  if(is.element("CCME_Cu_lt", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Cu_lt")] <- CCME_Cu_lt
   }
 
   # CCME_Mn-D_lt
@@ -107,8 +113,8 @@ eq_std_calc <- function(fun_sampledata = sampledata,
   colnames(lookup)[1] <- "Min"
   colnames(lookup)[2] <- "Max"
   `CCME_Mn-D_lt` <- dplyr::pull(dplyr::filter(lookup, hardx >= Min & hardx <= Max)[which(colnames(lookup) == as.character(pHx))])
-  if(is.element("CCME_Mn-D_lt", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Mn-D_lt", "MaxVal"] <- `CCME_Mn-D_lt`
+  if(is.element("CCME_Mn-D_lt", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Mn-D_lt")] <- `CCME_Mn-D_lt`
   }
 
   # CCME_NH4_lt
@@ -126,8 +132,8 @@ eq_std_calc <- function(fun_sampledata = sampledata,
 
   lookup <- as.data.frame(readxl::read_xlsx(path="G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="NH4", col_names=TRUE))
   CCME_NH4_lt <- dplyr::pull(dplyr::filter(lookup, Temp == tempx)[which(colnames(lookup) == as.character(pHx))])
-  if(is.element("CCME_NH4_lt", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_NH4_lt", "MaxVal"] <- CCME_NH4_lt
+  if(is.element("CCME_NH4_lt", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_NH4_lt")] <- CCME_NH4_lt
   }
 
   # CCME_Ni_lt
@@ -138,8 +144,8 @@ eq_std_calc <- function(fun_sampledata = sampledata,
   } else if(hard > 180){
     CCME_Ni_lt <- 150/1000
   }
-  if(is.element("CCME_Ni_lt", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Ni_lt", "MaxVal"] <- CCME_Ni_lt
+  if(is.element("CCME_Ni_lt", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Ni_lt")] <- CCME_Ni_lt
   }
 
   # CCME_Pb_lt
@@ -152,8 +158,8 @@ eq_std_calc <- function(fun_sampledata = sampledata,
   } else if(hard > 180){
     CCME_Pb_lt <- 7/1000
   }
-  if(is.element("CCME_Pb_lt", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Pb_lt", "MaxVal"] <- CCME_Pb_lt
+  if(is.element("CCME_Pb_lt", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Pb_lt")] <- CCME_Pb_lt
   }
 
   # CCME_Zn_lt
@@ -164,21 +170,24 @@ eq_std_calc <- function(fun_sampledata = sampledata,
   } else {
     CCME_Zn_lt <- exp((0.947*log(hard)) - (0.815*pH) + (0.398*log(DOC)) + 4.625)/1000
   }
-  if(is.element("CCME_Zn_lt", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Zn_lt", "MaxVal"] <- CCME_Zn_lt
+  if(is.element("CCME_Zn_lt", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Zn_lt")] <- CCME_Zn_lt
   }
 
-  #### CCME Short Term (T/D) ####
+  #### CCME_st ####
+
   # CCME_Cd_st
   if(is.na(hard)){
+    CCME_Cd_st <- NA
+  } else if(hard < 5.3){
     CCME_Cd_st <- 0.11/1000
-  } else if(hard >=5.3 & hard <=360){
+  } else if(hard >= 5.3 & hard <= 360){
     CCME_Cd_st <- 10^(1.016*(log10(hard))-1.71)/1000
   } else if(hard > 360){
     CCME_Cd_st <- 7.7/1000
   }
-  if(is.element("CCME_Cd_st", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Cd_st", "MaxVal"] <- CCME_Cd_st
+  if(is.element("CCME_Cd_st", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Cd_st")] <- CCME_Cd_st
   }
 
   # CCME_Mn-D_st
@@ -188,8 +197,8 @@ eq_std_calc <- function(fun_sampledata = sampledata,
     hardx <- hard
   }
   `CCME_Mn-D_st` <- exp((0.878*log(hardx)+4.76))/1000
-  if(is.element("CCME_Mn-D_st", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Mn-D_st", "MaxVal"] <- `CCME_Mn-D_st`
+  if(is.element("CCME_Mn-D_st", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Mn-D_st")] <- `CCME_Mn-D_st`
   }
 
   # CCME_Zn_st
@@ -200,9 +209,8 @@ eq_std_calc <- function(fun_sampledata = sampledata,
   } else {
     CCME_Zn_st <- exp((0.833*log(hard)) + (0.240*log(DOC)) + 0.526)/1000
   }
-  if(is.element("CCME_Zn_st", std_calc_tmp$MaxVal)){
-    std_calc_tmp[std_calc_tmp$MaxVal == "CCME_Zn_st", "MaxVal"] <- CCME_Zn_st
+  if(is.element("CCME_Zn_st", calcs$MaxVal)){
+    calcs$MaxVal[which(calcs$MaxVal == "CCME_Zn_st")] <- CCME_Zn_st
   }
-
-  std_calc_tmp <<- std_calc_tmp
+  return(calcs)
 }

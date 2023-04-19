@@ -20,17 +20,19 @@ eq_fetch <- function(EQcode,
                      BD = 1,
                      apply_standards = TRUE){
 
-  EQcode <- "(KNO)"
-  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  dates <- "all"
-  BD <- 1
-  apply_standards = TRUE
+  # EQcode <- "(LOB)"
+  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  # dates <- "all"
+  # BD <- 1
+  # apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
   options(dplyr.summarise.inform = FALSE)
   options(scipen = 999)
 
+
+  # Set path to access database
   dbpath <- "X:/EQWin/WR/DB/Water Resources.mdb"
 
   #### Begin EQWin fetch ####
@@ -40,8 +42,10 @@ eq_fetch <- function(EQcode,
   # Download stations and filter to user input
   eqstns <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstns") %>%
                                         subset(select=c("StnId", "StnCode", "StnName", "StnType", "udf_Stn_Status")))
-  if(tolower(paste(stationIDs, collapse = "") == "all")){
-    stns <- dplyr::filter(eqstns, grepl(EQcode, StnCode)) %>%
+  SiteCode <- substring(EQcode, first = 2, last = nchar(EQcode)-1)
+  if(tolower(paste(stationIDs, collapse = "")) == "all"){
+    stns <- eqstns %>%
+      dplyr::filter(stringr::str_detect(StnCode, paste0("^", "\\(", SiteCode, "\\)"))) %>%
       dplyr::mutate(StnCode = gsub(EQcode, "", StnCode, fixed = TRUE))
   } else {stns <- dplyr::filter(eqstns, StnCode %in% paste0(EQcode, stationIDs)) %>%
     dplyr::mutate(StnCode = gsub(EQcode, "", StnCode, fixed = TRUE))}
@@ -98,7 +102,7 @@ eq_fetch <- function(EQcode,
                      dplyr::summarize(Result = mean(as.numeric(Result))) %>%
                      tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
                      data.table::as.data.table())
-  sampledata <<- sampledata[with(sampledata, order(StnCode)), ]
+  sampledata <- sampledata[with(sampledata, order(StnCode)), ]
   rm(merge1, merge2, merge3)
   rownames(sampledata) <- NULL
 
@@ -127,11 +131,12 @@ eq_fetch <- function(EQcode,
     std_calc_tmp <- stds %>%
       dplyr::filter(stringr::str_extract(MaxVal, "=*") == "=") # Extract standards with MaxVal value beginning with "=" (calculated standard)
     std_calc_tmp$MaxVal <- stringr::str_remove_all(std_calc_tmp$MaxVal, "=*") # Remove equal sign, leaving MaxVal with values matching values in eqcalcs access table
-    # Return std_calc_temp to .GlobalEnv, necessary for next line function to access it
-    std_calc_tmp <<- std_calc_tmp
 
-    # Process calculated standards ##
-    std_calcs <- WRBtools::eq_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc_tmp)
+    # Process calculated standards
+    # Reframe eq_std_calc function in the environment of the eq_fetch function, necessary to access variables created within eq_fetch function
+    eq_std_calcx <- WRBtools::eq_std_calc
+    environment(eq_std_calcx) <- environment()
+    std_calcs <- eq_std_calcx()
 
     # Combine set and calculated standards, order
     stddata <- rbind(std_set, std_calcs)
@@ -152,6 +157,6 @@ eq_fetch <- function(EQcode,
     EQ_fetch_list[[i]] <- list
   }
   # Clean up interim files
-  rm(sampledata, std_calc_tmp, envir = .GlobalEnv)
+  # rm(sampledata, std_calc_tmp, envir = .GlobalEnv)
   return(EQ_fetch_list)
 }

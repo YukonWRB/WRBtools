@@ -4,12 +4,12 @@
 \alias{eq_std_calc}
 \title{Calculated standard processing sub-function required by EQ_fetch function}
 \usage{
-eq_std_calc(fun_sampledata = sampledata, fun_std_calc = std_calc_tmp)
+eq_std_calc(data = sampledata, calcs = std_calc_tmp)
 }
 \arguments{
-\item{fun_sampledata}{Assigned to "sampledata" data frame created during EQ_fetch function process containing sample data}
+\item{data}{Assigned to "sampledata" data frame created during EQ_fetch function process containing sample data}
 
-\item{fun_std_calc}{Assigned to "std_calc_tmp" data frame of calculated standards, populated by this function}
+\item{calcs}{Assigned to "std_calc_tmp" data frame of calculated standards, populated by this function}
 }
 \value{
 Populated std_calc_tmp table in EQfetch function
