@@ -87,7 +87,7 @@ eq_fetch <- function(EQcode,
     rm(isBD)
   } else if(BD == 3){
     isBD <- grepl("<", results$Result)
-    results$Result[isBD] <- round(as.numeric(gsub("<(.*)", "\\1", results$Result[isBD]))/sqrt(2), digits = 4)
+    results$Result[isBD] <- round(as.numeric(gsub("<(.*)", "\\1", results$Result[isBD]))/sqrt(2), digits = 7)
     rm(isBD)
   }
 
