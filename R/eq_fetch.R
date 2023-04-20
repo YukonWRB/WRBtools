@@ -102,7 +102,7 @@ eq_fetch <- function(EQcode,
                      dplyr::mutate(Param = paste0(merge3$ParamCode, " (", merge3$Units, ")")) %>%
                      dplyr::select(StnCode, CollectDateTime, StnType, Param, Result) %>%
                      dplyr::group_by(StnCode, CollectDateTime, StnType, Param) %>%
-                     dplyr::summarize(Result = mean(as.numeric(Result))) %>%
+                     dplyr::summarize(Result = suppressWarnings(mean(as.numeric(Result)))) %>%
                      tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
                      data.table::as.data.table())
   sampledata <- sampledata[with(sampledata, order(StnCode)), ]
@@ -141,8 +141,10 @@ eq_fetch <- function(EQcode,
     environment(eq_std_calcx) <- environment()
     std_calcs <- eq_std_calcx()
 
-    # Combine set and calculated standards, order
+    # Combine set and calculated standards, format and order
     stddata <- rbind(std_set, std_calcs)
+    stddata <- stddata %>%
+      dplyr::mutate_at(c("MaxVal", "MinVal"), as.numeric)
     stddata <- stddata[order(stddata$ParamId), ]
     rownames(stddata) <- NULL
   }
