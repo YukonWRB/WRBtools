@@ -10,7 +10,7 @@
 #' @param port Connection port.
 #' @param username Username. Refrain from using username with write privileges unless you absolutely know what you're doing.
 #' @param password Password.
-#'
+#' @importFrom RPostgreSQL PostgreSQL
 #' @return A connection to the database
 #'
 #' @seealso [hydroConnect()] for establishing a connection to the WRB's hydrometric database.
@@ -20,7 +20,6 @@
 
 RWISConnect <- function(name = "rwdm", host = "rwis.gov.yk.ca", port = "5432", username = "rwdmread", password = "rwdmread"){
   tryCatch({
-    drv <- DBI::dbDriver("PostgreSQL")
     RWIS <- DBI::dbConnect(drv = RPostgreSQL::PostgreSQL(),
                            dbname = name,
                            host = host,
