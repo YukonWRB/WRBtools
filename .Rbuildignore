@@ -3,3 +3,4 @@
 ^LICENSE\.md$
 ^development_files$
 ^inst\readme.md$
+^\.secret$
