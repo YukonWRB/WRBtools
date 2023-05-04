@@ -401,7 +401,7 @@ snowInfo <- function(db_path ="default", locations = "all", inactive = FALSE, sa
         ggplot2::theme_classic()
       if (plot_type == "separate"){
         plotDensity <- plotDensity +
-          ggplot2::labs(x = "Sample date", y = bquote('Density (g/' ~cm^{"3"} *')'), title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i]))
+          ggplot2::labs(x = "Sample date", y = bquote('Density (g/' ~cm^{"3"} *')'), title = paste0(locations$SNOW_COURSE_ID[i], ": " , locations$SNOW_COURSE_NAME[i]))
       } else {
         plotDensity <- plotDensity +
           ggplot2::labs(x = "Sample date", y = bquote('Density (g/' ~cm^{"3"} *')'))

@@ -43,7 +43,7 @@ DB_get_ts <- function(path = "default", location, parameter, frequency, start = 
 
   ls <- list()
   for (i in location){
-    data <- DBI::dbGetQuery(DB, paste0("SELECT * FROM '", frequency, "' WHERE location = '", i, "' AND parameter = '", parameter, "' AND ", if(frequency == "daily") "date" else if (frequency == "datetime_UTC") "realtime" else if (frequency == "discrete") "sample_date", " BETWEEN '", start, "' AND '", end, "'"))
+    data <- DBI::dbGetQuery(DB, paste0("SELECT * FROM '", frequency, "' WHERE location = '", i, "' AND parameter = '", parameter, "' AND ", if(frequency == "daily") "date" else if (frequency == "realtime") "datetime_UTC" else if (frequency == "discrete") "sample_date", " BETWEEN '", start, "' AND '", end, "'"))
     if (nrow(data) > 0){
       ls[[i]] <- data
     }
@@ -53,7 +53,7 @@ DB_get_ts <- function(path = "default", location, parameter, frequency, start = 
     if (!is.null(save_path)){
       openxlsx::write.xlsx(ls, paste0(save_path, "/db_extract_", Sys.Date(), ".xlsx"))
     }
-    return(data)
+    return(ls)
   } else {
     print("No records matched your inputs.")
   }
