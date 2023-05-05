@@ -2,14 +2,21 @@
 #'
 #' Fetches sample data from the WRB database and returns a list of data frames suitable for modification for plot generation and other comparisons
 #'
+#' @details Insert here what happens to values > DL, where the standards are taken from,
+#'
 #' @param EQcode Site code as it appears in EQWin eg. "(LOB)" or "(KNO)"
+# REVIEW Is this case-sensitive? Ideally will be non-sensitive, perhaps by using touper()
 #' @param stationIDs "all" for all stations(default) OR vector of selected stations as they appear in the EQWin database WITHOUT the EQcode
+# REVIEW A specific example would be nice, no ambiguity. Also, character vector? Numeric?
 #' @param paramIDs "all" for all parameters (default) OR vector of selected parameters exactly as they appear in the EQWin database
 #' @param dates "all" for all dates (default) OR vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")
+# REVIEW possible to pass a Date object here too? Easier to type Sys.Date() for today.
 #' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD).
+# REVIEW option 3: Should it not be sqrt(LOD)?
 #' @param apply_standards TRUE or FALSE, include standards with data
 #'
 #' @return A list of lists, each one containing 2 data frames with sample data and calculated standards
+# REVIEW Is this one list per stationID?
 #'
 #' @export
 
@@ -30,6 +37,7 @@ eq_fetch <- function(EQcode,
   # Set a few options (I'll probs remove these)
   options(dplyr.summarise.inform = FALSE)
   options(scipen = 999)
+  #REVIEW Do these options automatically revert after the function end? If not, you should pull the original option settings and reset them to that after the function ends otherwise you make a change without the user knowing. You can use on.exit(.... add=TRUE)
 
 
   # Set path to access database
@@ -38,8 +46,10 @@ eq_fetch <- function(EQcode,
   #### Begin EQWin fetch ####
   EQWin <- DBI::dbConnect(drv = odbc::odbc(), .connection_string = paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=", dbpath))
   on.exit(DBI::dbDisconnect(EQWin))
+  #NOTE I've realized that if the connection is only closed upon exit that it might lock the DB until function exit, regardless of if DB interaction is happening or not. If the code takes a while to execute between DB calls, consider disconnecting/reconnecting after each DB pull.
 
   # Download stations and filter to user input
+  # REVIEW Would be better to use DBI::dbGetQuery(EQWin, "SELECT StnId, StnCode, StnName, StnType, udf_Stn_Status FROM eqstns WHERE .....) This makes the SQL query much faster for large tables, so really should be applied to eqsampls lower down.
   eqstns <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstns") %>%
                                         subset(select=c("StnId", "StnCode", "StnName", "StnType", "udf_Stn_Status")))
   SiteCode <- substring(EQcode, first = 2, last = nchar(EQcode)-1)
@@ -51,6 +61,7 @@ eq_fetch <- function(EQcode,
     dplyr::mutate(StnCode = gsub(EQcode, "", StnCode, fixed = TRUE))}
 
   # Download all samples for specified stations, filter by user choice
+  # REVIEW See comment at line 49
   eqsampls <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqsampls") %>%
                                           subset(select=c("SampleId", "StnId", "CollectDateTime")) %>%
                                           dplyr::filter(StnId %in% stns$StnId))
@@ -62,6 +73,7 @@ eq_fetch <- function(EQcode,
   }
 
   # Download list of all parameters, filter to user choice
+  # REVIEW See comment at line 49
   eqparams <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqparams") %>%
                                           subset(select=c("ParamId", "ParamCode", "Units")))
   if(tolower(paste(paramIDs, collapse = "") != "all")){
@@ -92,6 +104,7 @@ eq_fetch <- function(EQcode,
   }
 
   # Deal with values above the detection limit (frequently occurs with turbidity)
+  # REVIEW this process should be explained in the function documentation at the top, perhaps in details. Otherwise the user has no idea that >DL values are treated like this!
   results$Result <- gsub(">", "", results$Result)
 
   # Sequentially merge data frames to agglomerate samples, pivot to wide format and minor formatting tweaks
@@ -137,6 +150,7 @@ eq_fetch <- function(EQcode,
 
     # Process calculated standards
     # Reframe eq_std_calc function in the environment of the eq_fetch function, necessary to access variables created within eq_fetch function
+    # REVIEW Since qe_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences.
     eq_std_calcx <- WRBtools::eq_std_calc
     environment(eq_std_calcx) <- environment()
     std_calcs <- eq_std_calcx()
