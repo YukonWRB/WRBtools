@@ -8,6 +8,14 @@
 \description{
 Utility functions for use across the Yukon Water Resources Branch disciplines.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/YukonWRB/WRBtools}
+  \item Report bugs at \url{https://github.com/YukonWRB/WRBtools/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Ghislain de Laplante \email{ghislaindel@gmail.com} (\href{https://orcid.org/0000-0002-5093-9185}{ORCID})
 

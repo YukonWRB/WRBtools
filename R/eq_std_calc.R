@@ -1,3 +1,6 @@
+# REVIEW Cole, is this function *never* meant to be accessed outside of eq_fetch? If so the code could either go right into that function (you can define a function within a function) or it should ge @noRd so that it's not visible to the end-user.
+# REVIEW make sure that all packages called are in the DESCRIPTION file (devtools::check() will tell you if any are missing). readxl is definitely not, but see note below about that problematic package.
+
 #' Calculated standard processing sub-function required by EQ_fetch function
 #'
 #' Utility function to populate the std_calc_tmp table (product of EQ_fetch function) with calculated values, using averaged or calculated station parameters (pH, hardness, DOC, temp)
@@ -6,12 +9,14 @@
 #' @param calcs Assigned to "std_calc_tmp" data frame of calculated standards, populated by this function
 #'
 #' @return Populated std_calc_tmp table in EQfetch function
+# REVIEW clarify if this means filled empty spaces, new cols, etc.
 #'
 #' @noRd
 #'
 #' @export
 #'
 #' @details interim parameter values are assigned on an as-needs basis where required, such as standards where hardness is assigned a certain value if NA. These interim parameters are represented by the .x subscript (ie. pHx, hardx)
+# REVIEW should this also be explained in eq_fetch?
 
 eq_std_calc <- function(data = sampledata,
                         calcs = std_calc_tmp){
@@ -111,6 +116,7 @@ eq_std_calc <- function(data = sampledata,
   hardx <- floor(hardx)
 
   lookup <- as.data.frame(readxl::read_xlsx(path="G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="Mn", col_names=TRUE))
+  # REVIEW much, much better to use openxlsx. Actually essential. readxl depends on Java, which leads to problems in some installations. Found that out the hard way. You should also not need to do as.data.frame. Remember to remove readxl from the DESCRIPTION file after, openxlsx is already there.
   colnames(lookup) <- suppressWarnings(as.character(plyr::round_any(as.numeric(colnames(lookup)), accuracy = 0.1, f = ceiling)))
   colnames(lookup)[1] <- "Min"
   colnames(lookup)[2] <- "Max"
@@ -133,6 +139,7 @@ eq_std_calc <- function(data = sampledata,
   }
 
   lookup <- as.data.frame(readxl::read_xlsx(path="G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="NH4", col_names=TRUE))
+  # REVIEW same comment as above re readxl and as.data.frame
   CCME_NH4_lt <- dplyr::pull(dplyr::filter(lookup, Temp == tempx)[which(colnames(lookup) == as.character(pHx))])
   if(is.element("CCME_NH4_lt", calcs$MaxVal)){
     calcs$MaxVal[which(calcs$MaxVal == "CCME_NH4_lt")] <- CCME_NH4_lt
