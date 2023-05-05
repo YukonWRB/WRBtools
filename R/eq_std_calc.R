@@ -7,6 +7,8 @@
 #'
 #' @return Populated std_calc_tmp table in EQfetch function
 #'
+#' @noRd
+#'
 #' @export
 #'
 #' @details interim parameter values are assigned on an as-needs basis where required, such as standards where hardness is assigned a certain value if NA. These interim parameters are represented by the .x subscript (ie. pHx, hardx)
