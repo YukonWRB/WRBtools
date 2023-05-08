@@ -34,7 +34,7 @@ aq_upload <- function(loc_id,
                       server = "https://yukon.aquaticinformatics.net/AQUARIUS")
 {
   if (overwrite ==TRUE){
-    if (!is.null(start) | !is.null(end)){
+    if (is.null(start) | is.null(end)){
       stop("You input overwrite = TRUE but have not specified an end and/or start time. Both of these parameters must be set for overwrite to work.")
     }
   }
