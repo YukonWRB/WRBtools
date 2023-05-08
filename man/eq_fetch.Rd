@@ -32,3 +32,6 @@ A list of lists, each one containing 2 data frames with sample data and calculat
 \description{
 Fetches sample data from the WRB database and returns a list of data frames suitable for modification for plot generation and other comparisons
 }
+\details{
+Insert here what happens to values > DL, where the standards are taken from,
+}
