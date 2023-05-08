@@ -3,7 +3,7 @@
 #'@description
 #' `r lifecycle::badge("maturing")`
 #'
-#' Bypasses the web GUI and allows you to append data to Aquarius directly.
+#' Bypasses the web GUI and allows you to append data to Aquarius directly. By default (overwrite = FALSE), will NOT overwrite or modify points in Aquarius - even if there is no visible data point but an NA or NULL stored in the Aquarius database. If you get a situation where attempting to append points results in no newly appended points, there may be an 'invisible' point; try an overwrite append once sure that you've got the right 'loc_id' and 'timeseries_name'.
 #'
 #'@details
 #' The parameter `data` should consist of a data.frame with two named columns: Value and Time (case sensitive). Units for the column `Value` are set according the units already in use for the timeseries on the Aquarius server, so it should only contain numbers compatible with this. The `Time` column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
