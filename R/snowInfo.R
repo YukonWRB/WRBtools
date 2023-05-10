@@ -369,10 +369,10 @@ snowInfo <- function(db_path ="default", locations = "all", inactive = FALSE, sa
         ggplot2::theme_classic()
       if (plot_type == "separate"){
         plotSWE <- plotSWE +
-          ggplot2::labs(x = "Sample date", y = "SWE (mm)", title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i]))
+          ggplot2::labs(x = "Sample date", y = "SWE (mm)", title = paste0(locations$SNOW_COURSE_ID[i], ": " , locations$SNOW_COURSE_NAME[i]))
       } else {
         plotSWE <- plotSWE +
-          ggplot2::labs(y = "SWE (mm)", title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i])) +
+          ggplot2::labs(y = "SWE (mm)", title = paste0(locations$SNOW_COURSE_ID[i], ": " , locations$SNOW_COURSE_NAME[i])) +
           ggplot2::theme(axis.title.x = ggplot2::element_blank(),
                          axis.text.x = ggplot2::element_blank(),
                          axis.ticks.x = ggplot2::element_blank())
@@ -385,7 +385,7 @@ snowInfo <- function(db_path ="default", locations = "all", inactive = FALSE, sa
         ggplot2::theme_classic()
       if (plot_type == "separate"){
         plotDepth <- plotDepth +
-          ggplot2::labs(x = "Sample date", y = "Snow depth (cm)", title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i]))
+          ggplot2::labs(x = "Sample date", y = "Snow depth (cm)", title = paste0(locations$SNOW_COURSE_ID[i], ": " , locations$SNOW_COURSE_NAME[i]))
       } else {
         plotDepth <- plotDepth +
           ggplot2::labs(y = "Snow depth (cm)") +
