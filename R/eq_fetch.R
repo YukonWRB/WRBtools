@@ -8,7 +8,7 @@
 #' @param stationIDs "all" for all stations (default) OR character vector of selected stations as they appear in the EQWin database WITHOUT the EQcode c("MW-01", "MW-02)
 #' @param paramIDs "all" for all parameters (default) OR vector of selected parameters exactly as they appear in the EQWin database
 #' @param dates "all" for all dates (default) OR character vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")
-#' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD). Above detection values are set to the uppoer limit of detection.
+#' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD). Above detection values are set to the upper limit of detection.
 #' @param apply_standards TRUE or FALSE, include standards with data. Provides a pop-up list for selection.
 #' @return A list with one sub-list per station, each one containing 2 data frames with sample data and calculated standards
 #'
@@ -158,19 +158,14 @@ eq_fetch <- function(EQcode,
                              calcs = std_calc_tmp)
 
     # Combine set and calculated standards, format and order
-    stddata <- rbind(std_set, std_calcs)
-    stddata <- stddata %>%
+    stnstd <- rbind(std_set, std_calcs)
+    stnstd <- stnstd %>%
       dplyr::mutate_at(c("MaxVal", "MinVal"), as.numeric) %>%
-      dplyr::mutate(Param = paste0(stddata$ParamCode, " (", stddata$Units, ")"))
-    stddata <- stddata[order(stddata$ParamId), ]
-    rownames(stddata) <- NULL
-    stddata <- tidyr::pivot_wider(stddata, id_cols = c("StdName", "StdCode"), names_from = Param, values_from = MaxVal)
+      dplyr::mutate(Param = paste0(stnstd$ParamCode, " (", stnstd$Units, ")"))
+    stnstd <- stnstd[order(stnstd$ParamId), ]
+    rownames(stnstd) <- NULL
+    stnstd <- tidyr::pivot_wider(stnstd, id_cols = c("StdName", "StdCode"), names_from = Param, values_from = MaxVal)
   }
-
-  # Match columns between sampledata and std data frames
-  match <- data.frame(matrix(ncol = ncol(sampledata), nrow = 0))
-  colnames(match) <- colnames(sampledata)
-  stddata <- plyr::rbind.fill(stddata, match)
 
   # Extract by-station data and station standards, put into by-location list then add list to master EQ_fetch output
   EQ_fetch_list <- list()
@@ -181,10 +176,11 @@ eq_fetch <- function(EQcode,
     list[["stndata"]] <- stndata
     if(apply_standards == TRUE){
       # Match columns between sampledata and std data frames
-      match <- data.frame(matrix(ncol = ncol(stndata), nrow = 0))
-      colnames(match) <- colnames(stndata)
-      stddata <- plyr::rbind.fill(stddata, match)
-      list[["stnstd"]] <- stddata
+      match <- data.frame(matrix(ncol = ncol(sampledata), nrow = 0))
+      colnames(match) <- colnames(sampledata)
+      stnstd <- plyr::rbind.fill(match, stnstd)
+      stnstd <- stnstd[, intersect(colnames(stndata), colnames(stnstd)), drop = FALSE]
+      list[["stnstd"]] <- stnstd
     }
     EQ_fetch_list[[i]] <- list
   }
