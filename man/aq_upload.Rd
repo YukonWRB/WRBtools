@@ -38,12 +38,12 @@ Appends points to the Aquarius server.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}
 
-Bypasses the web GUI and allows you to append data to Aquarius directly.
+Bypasses the web GUI and allows you to append data to Aquarius directly. By default (overwrite = FALSE), will NOT overwrite or modify points in Aquarius - even if there is no visible data point but an NA or NULL stored in the Aquarius database. If you get a situation where attempting to append points results in no newly appended points, there may be an 'invisible' point; try an overwrite append once sure that you've got the right 'loc_id' and 'timeseries_name'.
 }
 \details{
 The parameter \code{data} should consist of a data.frame with two named columns: Value and Time (case sensitive). Units for the column \code{Value} are set according the units already in use for the timeseries on the Aquarius server, so it should only contain numbers compatible with this. The \code{Time} column should be formatted as.POSIXct in timezone UTC, keeping in mind that Aquarius will apply the station UTC offset. Failure to ensure the correct timezone of input data will result in offset points.
 
-Deleting or overwriting: this function can be used to simply delete data without appending anything. Simply specify a data.frame with both columns and NA values, set overwrite = TRUE, and specify a start and end time (inclusive)
+Deleting or overwriting: this function can be used to simply delete data without appending anything. Simply specify a data.frame with both columns ('Time' and 'Value')and NA values, set overwrite = TRUE, and specify a start and end time (inclusive)
 
 To store login credentials in your .renviron profile, call \code{\link[usethis:edit]{usethis::edit_r_environ()}} and enter your username and password as value pairs, as AQUSER="your username" and AQPASS = "your password".
 }

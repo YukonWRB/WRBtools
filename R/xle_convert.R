@@ -130,14 +130,14 @@ xle_convert <- function(xle_file = "choose",
                            "unit_proper" = c("kPa", "°C"))
 
   # Storing proper parameter units and their conversions
-  conversions_LTC <- data.frame("parameter" = c("CONDUCTIVITY"),
-                                "unit_proper" = c("µS/cm"),
-                                "unit_current" = c("mS/cm"),
-                                "multiplier" = c(1000))
-  conversions_LT  <- data.frame("parameter" = c("CONDUCTIVITY"),
-                                "unit_proper" = c("µS/cm"),
-                                "unit_current" = c("mS/cm"),
-                                "multiplier" = c(1000))
+  conversions_LTC <- data.frame("parameter" = c("CONDUCTIVITY", "LEVEL", "LEVEL", "LEVEL"),
+                                "unit_proper" = c("µS/cm", "m", "m", "m"),
+                                "unit_current" = c("mS/cm", "kPa", "psi", "mbar"),
+                                "multiplier" = c(1000, 0.101972, 	0.70307, 0.0101971621297))
+  conversions_LT  <- data.frame("parameter" = c("CONDUCTIVITY", "LEVEL", "LEVEL", "LEVEL"),
+                                "unit_proper" = c("µS/cm", "m", "m", "m"),
+                                "unit_current" = c("mS/cm", "kPa", "psi", "mbar"),
+                                "multiplier" = c(1000, 0.101972, 	0.70307, 0.0101971621297))
   conversions_BL  <- data.frame("parameter" = c("LEVEL", "LEVEL", "LEVEL"),
                                 "unit_proper" = c("kPa", "kPa", "kPa"),
                                 "unit_current" = c("psi", "m", "mbar"),
@@ -215,6 +215,8 @@ xle_convert <- function(xle_file = "choose",
         }
       }
     }
+
+
   }
 
   # Just in case. Makes sure columns are in the order shown below

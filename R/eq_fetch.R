@@ -29,18 +29,21 @@ eq_fetch <- function(EQcode,
   apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
+
+  old_scipen <- getOption("scipen")
+  old_dplyr <- getOption("dplyr.summarise.inform")
   options(dplyr.summarise.inform = FALSE)
   options(scipen = 999)
-  #REVIEW Do these options automatically revert after the function end? If not, you should pull the original option settings and reset them to that after the function ends otherwise you make a change without the user knowing. You can use on.exit(.... add=TRUE)
-
+  on.exit(options(scipen = old_scipen), add = TRUE)
+  on.exit(options(dplyr.summarise.inform = old_dplyr), add = TRUE)
 
   # Set path to access database
   dbpath <- "X:/EQWin/WR/DB/Water Resources.mdb"
 
   #### Begin EQWin fetch ####
   EQWin <- DBI::dbConnect(drv = odbc::odbc(), .connection_string = paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=", dbpath))
-  on.exit(DBI::dbDisconnect(EQWin))
-  # NOTE I've realized that if the connection is only closed upon exit that it might lock the DB until function exit, regardless of if DB interaction is happening or not. If the code takes a while to execute between DB calls, consider disconnecting/reconnecting after each DB pull.
+  on.exit(DBI::dbDisconnect(EQWin), add = TRUE)
+  #NOTE I've realized that if the connection is only closed upon exit that it might lock the DB until function exit, regardless of if DB interaction is happening or not. If the code takes a while to execute between DB calls, consider disconnecting/reconnecting after each DB pull.
 
   # Download stations and filter to user input
   eqstns<- DBI::dbGetQuery(EQWin, "SELECT StnId, StnCode, StnName, StnType, udf_Stn_Status FROM eqstns WHERE StnCode")
