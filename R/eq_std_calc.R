@@ -1,4 +1,3 @@
-# REVIEW Cole, is this function *never* meant to be accessed outside of eq_fetch? If so the code could either go right into that function (you can define a function within a function) or it should ge @noRd so that it's not visible to the end-user.
 # REVIEW make sure that all packages called are in the DESCRIPTION file (devtools::check() will tell you if any are missing). readxl is definitely not, but see note below about that problematic package.
 
 #' Calculated standard processing sub-function required by EQ_fetch function
