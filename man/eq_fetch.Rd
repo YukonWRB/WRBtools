@@ -22,7 +22,7 @@ eq_fetch(
 
 \item{dates}{"all" for all dates (default) OR character vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")}
 
-\item{BD}{Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD). Above detection values are set to the uppoer limit of detection.}
+\item{BD}{Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD). Above detection values are set to the upper limit of detection.}
 
 \item{apply_standards}{TRUE or FALSE, include standards with data. Provides a pop-up list for selection.}
 }
