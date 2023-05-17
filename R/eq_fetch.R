@@ -21,12 +21,12 @@ eq_fetch <- function(EQcode,
                      BD = 2,
                      apply_standards = TRUE){
 
-  # EQcode <- "(EG)"
-  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  # dates <- "all"
-  # BD <- 2
-  # apply_standards = TRUE
+  EQcode <- "(EG)"
+  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  dates <- "all"
+  BD <- 2
+  apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
   options(dplyr.summarise.inform = FALSE)
@@ -163,6 +163,11 @@ eq_fetch <- function(EQcode,
     rownames(stddata) <- NULL
     stddata <- tidyr::pivot_wider(stddata, id_cols = c("StdName", "StdCode"), names_from = Param, values_from = MaxVal)
   }
+
+  # Match columns between sampledata and std data frames
+  match <- data.frame(matrix(ncol = ncol(sampledata), nrow = 0))
+  colnames(match) <- colnames(sampledata)
+  stddata <- plyr::rbind.fill(stddata, match)
 
   # Extract by-station data and station standards, put into by-location list then add list to master EQ_fetch output
   EQ_fetch_list <- list()
