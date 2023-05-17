@@ -4,19 +4,13 @@
 #'
 #' @details Insert here what happens to values > DL, where the standards are taken from,
 #'
-#' @param EQcode Site code as it appears in EQWin eg. "(LOB)" or "(KNO)"
-# REVIEW Is this case-sensitive? Ideally will be non-sensitive, perhaps by using touper()
-#' @param stationIDs "all" for all stations(default) OR vector of selected stations as they appear in the EQWin database WITHOUT the EQcode
-# REVIEW A specific example would be nice, no ambiguity. Also, character vector? Numeric?
+#' @param EQcode Site code as it appears in EQWin eg. "(LOB)" or "(KNO)". Function only works for stations with  designated project code in brackets "(KNO)"
+#' @param stationIDs "all" for all stations (default) OR character vector of selected stations as they appear in the EQWin database WITHOUT the EQcode c("MW-01", "MW-02)
 #' @param paramIDs "all" for all parameters (default) OR vector of selected parameters exactly as they appear in the EQWin database
-#' @param dates "all" for all dates (default) OR vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")
-# REVIEW possible to pass a Date object here too? Easier to type Sys.Date() for today.
-#' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD).
-# REVIEW option 3: Should it not be sqrt(LOD)?
-#' @param apply_standards TRUE or FALSE, include standards with data
-#'
-#' @return A list of lists, each one containing 2 data frames with sample data and calculated standards
-# REVIEW Is this one list per stationID?
+#' @param dates "all" for all dates (default) OR character vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")
+#' @param BD Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD). Above detection values are set to the uppoer limit of detection.
+#' @param apply_standards TRUE or FALSE, include standards with data. Provides a pop-up list for selection.
+#' @return A list with one sub-list per station, each one containing 2 data frames with sample data and calculated standards
 #'
 #' @export
 
@@ -52,9 +46,8 @@ eq_fetch <- function(EQcode,
   #NOTE I've realized that if the connection is only closed upon exit that it might lock the DB until function exit, regardless of if DB interaction is happening or not. If the code takes a while to execute between DB calls, consider disconnecting/reconnecting after each DB pull.
 
   # Download stations and filter to user input
-  # REVIEW Would be better to use DBI::dbGetQuery(EQWin, "SELECT StnId, StnCode, StnName, StnType, udf_Stn_Status FROM eqstns WHERE .....) This makes the SQL query much faster for large tables, so really should be applied to eqsampls lower down.
-  eqstns <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstns") %>%
-                                        subset(select=c("StnId", "StnCode", "StnName", "StnType", "udf_Stn_Status")))
+  eqstns<- DBI::dbGetQuery(EQWin, "SELECT StnId, StnCode, StnName, StnType, udf_Stn_Status FROM eqstns WHERE StnCode")
+
   SiteCode <- substring(EQcode, first = 2, last = nchar(EQcode)-1)
   if(tolower(paste(stationIDs, collapse = "")) == "all"){
     stns <- eqstns %>%
@@ -64,10 +57,9 @@ eq_fetch <- function(EQcode,
     dplyr::mutate(StnCode = gsub(EQcode, "", StnCode, fixed = TRUE))}
 
   # Download all samples for specified stations, filter by user choice
-  # REVIEW See comment at line 49
-  eqsampls <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqsampls") %>%
-                                          subset(select=c("SampleId", "StnId", "CollectDateTime")) %>%
-                                          dplyr::filter(StnId %in% stns$StnId))
+  eqsampls <- DBI::dbGetQuery(EQWin, "SELECT SampleId, StnId, CollectDateTime FROM eqsampls") %>%
+    dplyr::filter(StnId %in% stns$StnId)
+
   if(tolower(paste(dates, collapse = "") != "all")){
     samps <- eqsampls %>%
       dplyr::filter(between(as.Date(CollectDateTime), as.Date(dates[1]), asDate(dates[2])))
@@ -77,7 +69,7 @@ eq_fetch <- function(EQcode,
 
   # Download list of all parameters, filter to user choice
   # REVIEW See comment at line 49
-  eqparams <- data.table::as.data.table(DBI::dbReadTable(EQWin, "eqparams") %>%
+  eqparams <- as.data.frame(DBI::dbReadTable(EQWin, "eqparams") %>%
                                           subset(select=c("ParamId", "ParamCode", "Units")))
   if(tolower(paste(paramIDs, collapse = "") != "all")){
     params <- eqparams %>%
@@ -107,7 +99,6 @@ eq_fetch <- function(EQcode,
   }
 
   # Deal with values above the detection limit (frequently occurs with turbidity)
-  # REVIEW this process should be explained in the function documentation at the top, perhaps in details. Otherwise the user has no idea that >DL values are treated like this!
   results$Result <- gsub(">", "", results$Result)
 
   # Sequentially merge data frames to agglomerate samples, pivot to wide format and minor formatting tweaks
@@ -116,11 +107,11 @@ eq_fetch <- function(EQcode,
   merge3 <- merge(merge2, params, by.x = "ParamId", by.y = "ParamId")
   suppressMessages(sampledata <- merge3 %>%
                      dplyr::mutate(Param = paste0(merge3$ParamCode, " (", merge3$Units, ")")) %>%
-                     dplyr::select(StnCode, CollectDateTime, StnType, Param, Result) %>%
+                     dplyr::select(StnCode, CollectDateTime, StnType, Param, Units, Result) %>%
                      dplyr::group_by(StnCode, CollectDateTime, StnType, Param) %>%
                      dplyr::summarize(Result = suppressWarnings(mean(as.numeric(Result)))) %>%
                      tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
-                     data.table::as.data.table())
+                     as.data.frame())
   sampledata <- sampledata[with(sampledata, order(StnCode)), ]
   rm(merge1, merge2, merge3)
   rownames(sampledata) <- NULL
@@ -129,9 +120,16 @@ eq_fetch <- function(EQcode,
   if(apply_standards == TRUE){
     print("Processing standards")
     # Extract eqstds and eqstdval tables from access database, merge together by StdId
-    stds <- merge(data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstds") %>%
+    eqstds <- as.data.frame(DBI::dbReadTable(EQWin, "eqstds") %>%
+                            subset(select=c("StdId", "StdCode", "StdName", "udf_StnGroup")))
+    eqstdval <- as.data.frame(DBI::dbReadTable(EQWin, "eqstdval") %>%
+                              subset(select=c("StdId", "ParamId", "MaxVal", "MinVal")))
+    stdmerge1 <- merge(eqstds, eqstdval, by.x = "StdId", by.y = "StdId")
+    stds <- merge(stdmerge1, params, by.x = "ParamId", by.y = "ParamId")
+
+    stds <- merge(as.data.frame(DBI::dbReadTable(EQWin, "eqstds") %>%
                                               subset(select=c("StdId", "StdCode", "StdName", "udf_StnGroup"))),
-                  data.table::as.data.table(DBI::dbReadTable(EQWin, "eqstdval") %>%
+                  as.data.frame(DBI::dbReadTable(EQWin, "eqstdval") %>%
                                               subset(select=c("StdId", "ParamId", "MaxVal", "MinVal"))),
                   by.x = "StdId", by.y = "StdId")
 
@@ -153,17 +151,20 @@ eq_fetch <- function(EQcode,
 
     # Process calculated standards
     # Reframe eq_std_calc function in the environment of the eq_fetch function, necessary to access variables created within eq_fetch function
-    # REVIEW Since qe_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences.
-    eq_std_calcx <- WRBtools::eq_std_calc
-    environment(eq_std_calcx) <- environment()
-    std_calcs <- eq_std_calcx()
+    # REVIEW Since eq_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences.
+    # eq_std_calcx <- WRBtools::eq_std_calc
+    # environment(eq_std_calcx) <- environment()
+    std_calcs <- WRBtools::eq_std_calc(data = sampledata,
+                             calcs = std_calc_tmp)
 
     # Combine set and calculated standards, format and order
     stddata <- rbind(std_set, std_calcs)
     stddata <- stddata %>%
-      dplyr::mutate_at(c("MaxVal", "MinVal"), as.numeric)
+      dplyr::mutate_at(c("MaxVal", "MinVal"), as.numeric) %>%
+      dplyr::mutate(Param = paste0(stddata$ParamCode, " (", stddata$Units, ")"))
     stddata <- stddata[order(stddata$ParamId), ]
     rownames(stddata) <- NULL
+    stddata <- tidyr::pivot_wider(stddata, id_cols = c("StdName", "StdCode"), names_from = Param, values_from = MaxVal)
   }
 
   # Extract by-station data and station standards, put into by-location list then add list to master EQ_fetch output
@@ -174,6 +175,10 @@ eq_fetch <- function(EQcode,
       dplyr::filter(StnCode == i)
     list[["stndata"]] <- stndata
     if(apply_standards == TRUE){
+      # Match columns between sampledata and std data frames
+      match <- data.frame(matrix(ncol = ncol(stndata), nrow = 0))
+      colnames(match) <- colnames(stndata)
+      stddata <- plyr::rbind.fill(stddata, match)
       list[["stnstd"]] <- stddata
     }
     EQ_fetch_list[[i]] <- list
