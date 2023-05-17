@@ -165,6 +165,7 @@ eq_fetch <- function(EQcode,
     stnstd <- stnstd[order(stnstd$ParamId), ]
     rownames(stnstd) <- NULL
     stnstd <- tidyr::pivot_wider(stnstd, id_cols = c("StdName", "StdCode"), names_from = Param, values_from = MaxVal)
+    colnames(stnstd)[colnames(stnstd) == "StdName"] <- "StnCode"
   }
 
   # Extract by-station data and station standards, put into by-location list then add list to master EQ_fetch output
