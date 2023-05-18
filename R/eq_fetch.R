@@ -21,12 +21,12 @@ eq_fetch <- function(EQcode,
                      BD = 2,
                      apply_standards = TRUE){
 
-  # EQcode <- "(EG)"
-  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  # dates <- "all"
-  # BD <- 2
-  # apply_standards = TRUE
+  EQcode <- "(EG)"
+  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  dates <- "all"
+  BD <- 2
+  apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
 
@@ -165,7 +165,15 @@ eq_fetch <- function(EQcode,
     stnstd <- stnstd[order(stnstd$ParamId), ]
     rownames(stnstd) <- NULL
     stnstd <- tidyr::pivot_wider(stnstd, id_cols = c("StdName", "StdCode"), names_from = Param, values_from = MaxVal)
-    colnames(stnstd)[colnames(stnstd) == "StdName"] <- "StnCode"
+
+    # Match parameter columns between sampledata and std data frames
+    params_data <- grep("\\(.*\\)", colnames(sampledata), value = TRUE)
+    params_std <- grep("\\(.*\\)", colnames(stnstd), value = TRUE)
+    stnstd <- stnstd %>%
+      dplyr::select(c("StdName", "StdCode", params_std[params_std %in% params_data]))
+    match <- data.frame(matrix(ncol = length(params_data), nrow = 0))
+    colnames(match) <- params_data
+    stnstd <- plyr::rbind.fill(stnstd, match)
   }
 
   # Extract by-station data and station standards, put into by-location list then add list to master EQ_fetch output
@@ -176,11 +184,6 @@ eq_fetch <- function(EQcode,
       dplyr::filter(StnCode == i)
     list[["stndata"]] <- stndata
     if(apply_standards == TRUE){
-      # Match columns between sampledata and std data frames
-      match <- data.frame(matrix(ncol = ncol(sampledata), nrow = 0))
-      colnames(match) <- colnames(sampledata)
-      stnstd <- plyr::rbind.fill(match, stnstd)
-      stnstd <- stnstd[, intersect(colnames(stndata), colnames(stnstd)), drop = FALSE]
       list[["stnstd"]] <- stnstd
     }
     EQ_fetch_list[[i]] <- list
