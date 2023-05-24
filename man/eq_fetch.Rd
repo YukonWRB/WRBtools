@@ -14,20 +14,20 @@ eq_fetch(
 )
 }
 \arguments{
-\item{EQcode}{Site code as it appears in EQWin eg. "(LOB)" or "(KNO)"}
+\item{EQcode}{Site code as it appears in EQWin eg. "(LOB)" or "(KNO)". Function only works for stations with  designated project code in brackets "(KNO)"}
 
-\item{stationIDs}{"all" for all stations(default) OR vector of selected stations as they appear in the EQWin database WITHOUT the EQcode}
+\item{stationIDs}{"all" for all stations (default) OR character vector of selected stations as they appear in the EQWin database WITHOUT the EQcode c("MW-01", "MW-02)}
 
 \item{paramIDs}{"all" for all parameters (default) OR vector of selected parameters exactly as they appear in the EQWin database}
 
-\item{dates}{"all" for all dates (default) OR vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")}
+\item{dates}{"all" for all dates (default) OR character vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")}
 
-\item{BD}{Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD).}
+\item{BD}{Treatment of values below detection limits (0 = Set to zero; 1 = Set to NA; 2 = Set to 0.5*(LOD); 3 = Set to sqrt(2)LOD). Above detection values are set to the upper limit of detection.}
 
-\item{apply_standards}{TRUE or FALSE, include standards with data}
+\item{apply_standards}{TRUE or FALSE, include standards with data. Provides a pop-up list for selection.}
 }
 \value{
-A list of lists, each one containing 2 data frames with sample data and calculated standards
+A list with one sub-list per station, each one containing 2 data frames with sample data and calculated standards
 }
 \description{
 Fetches sample data from the WRB database and returns a list of data frames suitable for modification for plot generation and other comparisons
