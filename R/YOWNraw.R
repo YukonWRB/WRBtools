@@ -18,12 +18,12 @@ YOWNraw <- function(AQID,
                     AQTSServerID ="https://yukon.aquaticinformatics.net/AQUARIUS",
                     filename = "leveldata_RAW.csv"){
 
-  # Debug and development params. Leave as comments.
-  AQID = "YOWN-1925"
-  timeSeriesID = "Wlevel_Hgt.level_RAW"
-  saveTo = "desktop"
-  login = Sys.getenv(c("AQUSER", "AQPASS"))
-  AQTSServerID ="https://yukon.aquaticinformatics.net/AQUARIUS"
+  # # Debug and development params. Leave as comments.
+  # AQID = "YOWN-1925"
+  # timeSeriesID = "Wlevel_Hgt.level_RAW"
+  # saveTo = "desktop"
+  # login = Sys.getenv(c("AQUSER", "AQPASS"))
+  # AQTSServerID ="https://yukon.aquaticinformatics.net/AQUARIUS"
 
   #### Setup ####
   # Deal with file save location
