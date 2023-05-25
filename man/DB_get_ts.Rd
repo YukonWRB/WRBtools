@@ -6,31 +6,31 @@
 \usage{
 DB_get_ts(
   path = "default",
-  location,
+  locations,
   parameter,
   frequency,
   start = "1900-01-01",
-  end = Sys.Date(),
+  end = Sys.time(),
   save_path = NULL
 )
 }
 \arguments{
 \item{path}{The path to the database, passed to \code{\link[=hydroConnect]{hydroConnect()}}. Default uses hydroConnect default path.}
 
-\item{location}{The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to \code{\link[=DB_get_ts]{DB_get_ts()}} if unsure of location code.}
+\item{locations}{The location code/id(s) for the requested timeseries as a character vector of 1 or more. Refer to \code{\link[=DB_get_ts]{DB_get_ts()}} if unsure of location code.}
 
 \item{parameter}{The parameter requested for the timeseries.  Refer to \code{\link[=DB_browse_ts]{DB_browse_ts()}} if unsure of parameter spelling.}
 
 \item{frequency}{One of "daily", "realtime", or "discrete".}
 
-\item{start}{The start date or datetime of records requested (inclusive). Specify a Date or poSIXCT object, or a character vector of form "2022-01-01" or "2022-01-01 10:10:10". Set before timeseries start to get all records up to the end date/time.}
+\item{start}{The start date or datetime of records requested (inclusive). Specify a Date or POSIXct object, or a character vector of form "2022-01-01" or "2022-01-01 10:10:10". Set before timeseries start to get all records up to the end date/time. Times are passed to the database with 0 UTC offset: apply the offset yourself if supplying a character vector, or remember that the timezone attribute of POSIXct or Date objects will be changed to UTC 0.}
 
 \item{end}{The end date or datetime of records requested (inclusive). Format as per 'start'. Set after timeseries end to get all records after the start date/time}
 
 \item{save_path}{Specify a path here if you want an Excel workbook saved to disk. "choose" lets you interactively choose your folder.}
 }
 \value{
-A list of data frames containing the information requested and, optionally, an Excel workbook saved to disk.
+A list of data frames (one per location) containing the information requested and, optionally, an Excel workbook saved to disk with one tab per location.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}

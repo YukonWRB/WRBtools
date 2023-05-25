@@ -2,5 +2,5 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^development_files$
-^inst\readme.md$
 ^\.secret$
+^data-raw$
