@@ -50,7 +50,7 @@ YOWNraw <- function(AQID,
     # final format, write to .csv
     fulldf <- timeseries %>%
       dplyr::select(c("timestamp_MST", "value", "grade_level", "grade_description"))
-    write.csv(fulldf, paste0(saveTo, "/", AQID, "_", i, ".csv"))
+    write.csv(fulldf, paste0(saveTo, "/", AQID, "_", i, ".csv"), row.names = FALSE)
   }
 
 }
