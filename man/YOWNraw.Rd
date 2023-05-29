@@ -2,29 +2,35 @@
 % Please edit documentation in R/YOWNraw.R
 \name{YOWNraw}
 \alias{YOWNraw}
-\title{YOWNraw}
+\title{Export raw data from Aquarius}
 \usage{
 YOWNraw(
   AQID,
   dateRange = "all",
   saveTo = "desktop",
   login = Sys.getenv(c("AQUSER", "AQPASS")),
-  AQTSServerID = "https://yukon.aquaticinformatics.net/AQUARIUS",
+  server = "https://yukon.aquaticinformatics.net/AQUARIUS",
   filename = "leveldata_RAW.csv"
 )
 }
 \arguments{
 \item{AQID}{YOWN location}
 
+\item{dateRange}{?????}
+
 \item{saveTo}{Directory in which the data will be saved. Can specify "desktop" to automatically create YOWN ID folder on desktop as save directory.}
 
 \item{login}{Aquarius username and password, taken from Renviron files}
 
-\item{AQTSServerID}{Aquarius server ID}
+\item{server}{Aquarius server ID}
+
+\item{filename}{?????}
 }
 \value{
 Writes three csv files containing YOWN data in the specified directory.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Export of raw data from aquarius to csv, writes 3 data frames for raw data, compensated data, and manually corrected data
 }
