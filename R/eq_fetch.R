@@ -62,7 +62,7 @@ eq_fetch <- function(EQcode,
 
   if(tolower(paste(dates, collapse = "") != "all")){
     samps <- eqsampls %>%
-      dplyr::filter(between(as.Date(CollectDateTime), as.Date(dates[1]), asDate(dates[2])))
+      dplyr::filter(dplyr::between(as.Date(CollectDateTime), as.Date(dates[1]), as.Date(dates[2])))
   } else {
     samps <- eqsampls
   }
@@ -134,7 +134,7 @@ eq_fetch <- function(EQcode,
                   by.x = "StdId", by.y = "StdId")
 
     # Filter stds by user choice, merge with parameters to associate standards with parameters by param code
-    stds <- dplyr::filter(stds, stds$StdCode %in% select.list(choices = sort(unique(stds$StdCode)),
+    stds <- dplyr::filter(stds, stds$StdCode %in% utils::select.list(choices = sort(unique(stds$StdCode)),
                                                               title = "Select Standards",
                                                               graphics = TRUE,
                                                               multiple = TRUE)) %>%
