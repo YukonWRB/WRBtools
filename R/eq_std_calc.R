@@ -24,34 +24,34 @@ eq_std_calc <- function(data = sampledata,
 
   # Calculate pH with calculation order preference
   if(!all(is.na(data$`pH-F (pH units)`))) {
-    pH <- mean(na.omit(data$`pH-F (pH units)`))
+    pH <- mean(stats::na.omit(data$`pH-F (pH units)`))
   } else if(!all(is.na(data$`pH-L (pH units)`))) {
-    pH <- mean(na.omit(data$`pH-L (pH units)`))
+    pH <- mean(stats::na.omit(data$`pH-L (pH units)`))
   } else {pH <- NA}
 
   # Calculate hardness with calculation order preference
   suppressWarnings(if(!all(is.na(data$`Hard-D (mg/L)`))) {
-    hard <- mean(na.omit(data$`Hard-D (mg/L)`))
-  } else if(!is.na(mean(na.omit(data$`Ca-D (mg/L)`))*mean(na.omit(data$`Mg-D (mg/L)`)))) {
-    hard <- 2.497*mean(na.omit(data$`Ca-D (mg/L)`)) + 4.118*mean(na.omit(data$`Mg-D (mg/L)`))
+    hard <- mean(stats::na.omit(data$`Hard-D (mg/L)`))
+  } else if(!is.na(mean(stats::na.omit(data$`Ca-D (mg/L)`))*mean(stats::na.omit(data$`Mg-D (mg/L)`)))) {
+    hard <- 2.497*mean(stats::na.omit(data$`Ca-D (mg/L)`)) + 4.118*mean(stats::na.omit(data$`Mg-D (mg/L)`))
   } else if(!all(is.na(data$`Hard-T (mg/L)`))){
-    hard <- mean(na.omit(data$`Hard-T (mg/L)`))
-  } else if(!is.na(mean(na.omit(data$`Ca-T (mg/L)`))*mean(na.omit(data$`Mg-T (mg/L)`)))) {
-    hard <- 2.497*mean(na.omit(data$`Ca-T (mg/L)`)) + 4.118*mean(na.omit(data$`Mg-T (mg/L)`))
+    hard <- mean(stats::na.omit(data$`Hard-T (mg/L)`))
+  } else if(!is.na(mean(stats::na.omit(data$`Ca-T (mg/L)`))*mean(stats::na.omit(data$`Mg-T (mg/L)`)))) {
+    hard <- 2.497*mean(stats::na.omit(data$`Ca-T (mg/L)`)) + 4.118*mean(stats::na.omit(data$`Mg-T (mg/L)`))
   } else {
     hard <- NA}
   )
 
   # Calculate DOC
   if(!all(is.na(data$`C-DOC (mg/L)`))){
-    DOC <- mean(na.omit(data$`C-DOC (mg/L)`))
+    DOC <- mean(stats::na.omit(data$`C-DOC (mg/L)`))
   } else {
     DOC <- NA
   }
 
   # Calculate temp
   if(!all(is.na(data$`Temp-F (C)`))) {
-    temp <- plyr::round_any(mean(na.omit(data$`Temp-F (C)`)), 5, f = floor)
+    temp <- plyr::round_any(mean(stats::na.omit(data$`Temp-F (C)`)), 5, f = floor)
   } else {
     temp <- NA
   }

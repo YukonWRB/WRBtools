@@ -19,5 +19,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Ghislain de Laplante \email{ghislaindel@gmail.com} (\href{https://orcid.org/0000-0002-5093-9185}{ORCID})
 
+Authors:
+\itemize{
+  \item Cole Fischer \email{cole.fischer@hotmail.com} (\href{https://orcid.org/0000-0002-7266-5760}{ORCID})
+}
+
 }
 \keyword{internal}

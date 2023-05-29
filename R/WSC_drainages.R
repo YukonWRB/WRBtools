@@ -14,6 +14,7 @@
 #' @return Two ESRI shapefiles (points + polygons) saved in the directory you specified.
 #'
 #' @seealso [drainageBasins()] to generate drainage polygons for any user-specified pour point.
+#' @import sf
 #' @export
 #'
 

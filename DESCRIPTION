@@ -1,57 +1,63 @@
 Package: WRBtools
 Title: Utility functions for the Yukon Water Resources Branch
-Version: 1.4.4-8
+Version: 1.4.5-0
 Date: 2023-05-03
 Authors@R: 
-    person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-5093-9185"))
+    c(person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-5093-9185")),
+           person("Cole", "Fischer", , "cole.fischer@hotmail.com", role = c("aut"),
+           comment = c(ORCID = "0000-0002-7266-5760")))
 Description: Utility functions for use across the Yukon Water Resources
     Branch disciplines.
 License: AGPL (>= 3) + file LICENSE
+URL: https://github.com/YukonWRB/WRBtools
+BugReports: https://github.com/YukonWRB/WRBtools/issues
 Depends: 
-    R (>= 2.10),
-    sf
+    R (>= 2.10)
 Imports:
     crayon,
     DBI,
     dplyr,
-    fuzzyjoin,
     fasstr,
+    fuzzyjoin,
     ggplot2,
+    gmailr,
+    grid,
     gridExtra,
     hablar,
     httr,
+    lifecycle,
     lubridate,
     magrittr,
     odbc,
     openxlsx,
     plyr,
+    readxl,
     rlang,
     RPostgreSQL,
     RSQLite,
     rvest,
+    sf,
     stats,
     stringr,
     terra,
     tidyhydat,
     tidyr,
     trend,
+    utils,
     weathercan,
+    whitebox,
     XML,
-    xml2,
-    lifecycle
+    xml2
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0),
-    whitebox
-Remotes:
-    github::ropensci/weathercan
+    testthat (>= 3.0.0)
 VignetteBuilder: 
     knitr
+Remotes:
+    github::ropensci/weathercan
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
-URL: https://github.com/YukonWRB/WRBtools
-BugReports: https://github.com/YukonWRB/WRBtools/issues

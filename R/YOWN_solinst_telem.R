@@ -37,8 +37,8 @@ YOWN_solinst_telem <- function(active_telem = c("YOWN-2201S")){
         rptlist[[i]] <- raw
       }
       report <- stringr::word(do.call(rbind, rptlist), start = 4, end = 4) # extract all report numbers (ie. 64-1) and combine into vector
-      id_rpt <- setNames(data.frame(messages, report), c("ID", "Report")) # Combine message ID and report number into a df
-      id_rpt <- tidyr::separate(setNames(data.frame(messages, report), c("ID", "Report")), "Report", into = c("Report", "Number"), sep = "-") # Separate report number from sub-report number
+      id_rpt <- stats::setNames(data.frame(messages, report), c("ID", "Report")) # Combine message ID and report number into a df
+      id_rpt <- tidyr::separate(stats::setNames(data.frame(messages, report), c("ID", "Report")), "Report", into = c("Report", "Number"), sep = "-") # Separate report number from sub-report number
       row.names(id_rpt) <- NULL
 
       #### Download and merge all emails for each report by subreport number, extract LevelSender and LevelLogger headers, extract data, format all into data frames
