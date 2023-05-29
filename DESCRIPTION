@@ -3,8 +3,10 @@ Title: Utility functions for the Yukon Water Resources Branch
 Version: 1.4.5-0
 Date: 2023-05-03
 Authors@R: 
-    person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-5093-9185"))
+    c(person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-5093-9185")),
+           person("Cole", "Fischer", , "cole.fischer@hotmail.com", role = c("aut"),
+           comment = c(ORCID = "0000-0002-7266-5760")))
 Description: Utility functions for use across the Yukon Water Resources
     Branch disciplines.
 License: AGPL (>= 3) + file LICENSE
