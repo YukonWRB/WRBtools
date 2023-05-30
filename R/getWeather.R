@@ -3,7 +3,7 @@
 #'#' @description
 #' `r lifecycle::badge("stable")`
 #'
-#' This script downloads data from an ECCC station for a given date range, calling weathercan::weather_dl to download the data. This function facilitates interaction with that package by modifying start and end dates if your request is out of range, and allows you to interactively search for locations by name. Note that this function may take a long time to complete if you are requesting multiple years of data!
+#' This script downloads data from an ECCC station for a given date range, calling [weathercan::weather_dl()] to download the data. This function facilitates interaction with that package by modifying start and end dates if your request is out of range, and allows you to interactively search for locations by name. Note that this function may take a long time to complete if you are requesting multiple years of data!
 #'
 #' @param station The station for which you want data. You can specify the 7-digit/letter Climate ID, the 4 or 5 digit ECCC station ID, the 5-digit WMO ID (starts with a 7), or the three-letter Transport Canada ID (i.e YDA and not CYDA). If working interactively you can also specify the station name or part thereof (as character vector) and select from a list.
 #' @param start The start date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.
@@ -48,7 +48,7 @@ getWeather <- function(station,
   station <- as.character(station)
   station <- toupper(station)
 
-  #Match the input numbers to the proper ECCC station ID
+  # Check if station list needs to be updated
   if(weathercan::stations_meta()$ECCC_modified < Sys.time() - 30*24*60*60){
     tryCatch({
       suppressWarnings(weathercan::stations_dl(quiet=TRUE))
@@ -56,6 +56,8 @@ getWeather <- function(station,
       warning("The local list of stations is outdated and automatically updating it failed. Please update it by running weathercan::stations_dl(), especially if there's an issue running this function.")
     })
   }
+
+  #Match the input numbers to the proper ECCC station ID
   stations <- weathercan::stations()
     if (grepl("^[7]{1}", station)){ #Then WMO ID
       station <- stations[stations$WMO_id==station & !is.na(stations$WMO_id) & stations$interval == interval,]

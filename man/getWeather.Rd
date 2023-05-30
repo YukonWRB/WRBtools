@@ -34,7 +34,7 @@ A data.frame of weather data and, if save_path is specified, a csv of this same 
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 }
 \details{
-This script downloads data from an ECCC station for a given date range, calling weathercan::weather_dl to download the data. This function facilitates interaction with that package by modifying start and end dates if your request is out of range, and allows you to interactively search for locations by name. Note that this function may take a long time to complete if you are requesting multiple years of data!
+This script downloads data from an ECCC station for a given date range, calling \code{\link[weathercan:weather_dl]{weathercan::weather_dl()}} to download the data. This function facilitates interaction with that package by modifying start and end dates if your request is out of range, and allows you to interactively search for locations by name. Note that this function may take a long time to complete if you are requesting multiple years of data!
 }
 \seealso{
 \code{\link[weathercan:weather_dl]{weathercan::weather_dl()}} for a simpler, pared-down means of downloading ECCC weather data. For nice precipitation maps and tabular reports of precipitation (past or future), try \code{\link[WRBfloods:basinPrecip]{WRBfloods::basinPrecip()}}.
