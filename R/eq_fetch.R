@@ -105,16 +105,16 @@ eq_fetch <- function(EQcode,
   merge1 <- merge(samps, stns, by.x = "StnId", by.y = "StnId")
   merge2 <- merge(results, merge1, by.x = "SampleId", by.y = "SampleId")
   merge3 <- merge(merge2, params, by.x = "ParamId", by.y = "ParamId")
-  suppressMessages(sampledata <- merge3 %>%
+  suppressMessages(stndata <- merge3 %>%
                      dplyr::mutate(Param = paste0(merge3$ParamCode, " (", merge3$Units, ")")) %>%
                      dplyr::select(StnCode, CollectDateTime, StnType, Param, Units, Result) %>%
                      dplyr::group_by(StnCode, CollectDateTime, StnType, Param) %>%
                      dplyr::summarize(Result = suppressWarnings(mean(as.numeric(Result)))) %>%
                      tidyr::pivot_wider(id_cols = c("StnCode", "CollectDateTime", "StnType"), names_from = Param, values_from = Result) %>%
                      as.data.frame())
-  sampledata <- sampledata[with(sampledata, order(StnCode)), ]
+  stndata <- stndata[with(stndata, order(StnCode)), ]
   rm(merge1, merge2, merge3)
-  rownames(sampledata) <- NULL
+  rownames(stndata) <- NULL
 
   # Download all standards, filter by user choice via popup window
   if(apply_standards == TRUE){
@@ -154,7 +154,7 @@ eq_fetch <- function(EQcode,
     # REVIEW Since eq_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences.
     # eq_std_calcx <- WRBtools::eq_std_calc
     # environment(eq_std_calcx) <- environment()
-    std_calcs <- WRBtools::eq_std_calc(data = sampledata,
+    std_calcs <- WRBtools::eq_std_calc(data = stndata,
                                        calcs = std_calc_tmp)
 
     # Combine set and calculated standards, format and order
@@ -165,7 +165,7 @@ eq_fetch <- function(EQcode,
     stnstd <- stnstd[order(stnstd$ParamId), ]
     rownames(stnstd) <- NULL
     stnstd <- tidyr::pivot_wider(stnstd, id_cols = c("StdName", "StdCode"), names_from = Param, values_from = MaxVal)
-
+    
     # Match parameter columns between sampledata and std data frames
     params_data <- grep("\\(.*\\)", colnames(sampledata), value = TRUE) # Extract data parameters
     params_std <- grep("\\(.*\\)", colnames(stnstd), value = TRUE) # Extract std parameters
@@ -174,6 +174,7 @@ eq_fetch <- function(EQcode,
     stnstd <- stnstd %>% # Remove std params that do not have exist in sampledata
       dplyr::select(c("StdName", "StdCode", params_std[params_std %in% params_data]))
     match <- data.frame(matrix(ncol = length(params_data), nrow = 0)) # Create data frame containing all parameters that exist in sampledata
+
     colnames(match) <- params_data
     stnstd <- plyr::rbind.fill(stnstd, match) # Fill in match with stnstd
     stnstd <- stnstd %>% #Convert columns containing all NA to numeric
@@ -187,7 +188,7 @@ eq_fetch <- function(EQcode,
   EQ_fetch_list <- list()
   for(i in unique(stns$StnCode)){
     list <- list()
-    stndata <- sampledata %>%
+    stndata <- stndata %>%
       dplyr::filter(StnCode == i)
     list[["stndata"]] <- stndata
     if(apply_standards == TRUE){
