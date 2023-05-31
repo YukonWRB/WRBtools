@@ -180,6 +180,7 @@ eq_fetch <- function(EQcode,
       dplyr::mutate_if(is.logical, as.numeric)
     stnstd <- stnstd %>% # Arrange stnstd such that parameter order matches stndata
       dplyr::select(all_of(c(head_stds, params_data)))
+
   }
 
   # Extract by-station data and station standards, put into by-location list then add list to master EQ_fetch output
