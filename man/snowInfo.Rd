@@ -5,7 +5,7 @@
 \title{Plots and tabular data for snow survey locations}
 \usage{
 snowInfo(
-  db_path = "X:/Snow/DB/SnowDB.mdb",
+  db_path = "default",
   locations = "all",
   inactive = FALSE,
   save_path = "choose",
@@ -17,7 +17,7 @@ snowInfo(
 )
 }
 \arguments{
-\item{db_path}{The path to the local Snow Survey database including extension.}
+\item{db_path}{The path to the local Snow Survey database including extension, passed to \code{\link[=snowConnect]{snowConnect()}}.}
 
 \item{locations}{The list of locations requested, as a character vector of length n. Default "all" fetches all stations.}
 
@@ -39,5 +39,10 @@ snowInfo(
 A list with four data.frames: location metadata, basic statistics, trend information, and snow course measurements is returned to the R environment. In addition, an Excel workbook is saved to the save_path with the four data.frames, and a new folder created to hold SWE and depth plots for each station requested.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
 This function is intended to facilitate the reporting of snow survey data by compiling basic statistics (years of record, missing years, mean, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of SWE, depth, and density for all requested stations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
+}
+\seealso{
+\code{\link[=waterInfo]{waterInfo()}} for a similar function dealing with water flow/level.
 }

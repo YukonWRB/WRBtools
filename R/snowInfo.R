@@ -1,8 +1,11 @@
 #' Plots and tabular data for snow survey locations
 #'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
 #' This function is intended to facilitate the reporting of snow survey data by compiling basic statistics (years of record, missing years, mean, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of SWE, depth, and density for all requested stations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
 #'
-#' @param db_path The path to the local Snow Survey database including extension.
+#' @param db_path The path to the local Snow Survey database including extension, passed to [snowConnect()].
 #' @param locations The list of locations requested, as a character vector of length n. Default "all" fetches all stations.
 #' @param inactive Boolean specifying whether to include inactive stations. For 10AD-SC01 and 09BA-SC02 which require conversion factors due to moved measurement locations, this filter is applied after conversion. Therefore, if set to TRUE while 10AD-SC01B or 09BA-SC02B are active then the returned data will include measurements taken at 10AD-SC01 and 09BA-SC02A under their respective current "sister" locations, with conversion factors applied.
 #' @param save_path The path where the .csv(s) and plots should be saved. Set to NULL for data only as an R object. Plots are not created if there is no save path.
@@ -13,11 +16,13 @@
 #' @param quiet Suppresses most messages and warnings.
 #'
 #' @return A list with four data.frames: location metadata, basic statistics, trend information, and snow course measurements is returned to the R environment. In addition, an Excel workbook is saved to the save_path with the four data.frames, and a new folder created to hold SWE and depth plots for each station requested.
+#'
+#' @seealso [waterInfo()] for a similar function dealing with water flow/level.
 #' @export
 #'
 #TODO: This function should really be getting data from the hydro database.
 
-snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inactive = FALSE, save_path = "choose", stats = TRUE, complete_yrs = TRUE, plots = TRUE, plot_type = "combined", quiet = FALSE) {
+snowInfo <- function(db_path ="default", locations = "all", inactive = FALSE, save_path = "choose", stats = TRUE, complete_yrs = TRUE, plots = TRUE, plot_type = "combined", quiet = FALSE) {
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
@@ -35,7 +40,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     stop("The parameter 'plot_type' must be set to either 'separate' or 'combined'.")
   }
 
-  snowCon <- snowConnect(path = db_path)
+  snowCon <- snowConnect(path = db_path, silent=TRUE)
   on.exit(DBI::dbDisconnect(snowCon))
 
   location_table <- DBI::dbReadTable(snowCon, "SNOW_COURSE")
@@ -235,8 +240,8 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
     for (i in 1:nrow(trends)){
       subset <- meas[meas$SNOW_COURSE_ID == trends$location_ID[i] & meas$SNOW_WATER_EQUIV > 0,]
       intercept_yr <- min(subset$year)
-      intercept_value_SWE <- unname(lm(formula = subset$SNOW_WATER_EQUIV ~ subset$SAMPLE_DATE)$coefficients[1])
-      intercept_value_depth <- unname(lm(formula = subset$DEPTH ~ subset$SAMPLE_DATE)$coefficients[1])
+      intercept_value_SWE <- unname(stats::lm(formula = subset$SNOW_WATER_EQUIV ~ subset$SAMPLE_DATE)$coefficients[1])
+      intercept_value_depth <- unname(stats::lm(formula = subset$DEPTH ~ subset$SAMPLE_DATE)$coefficients[1])
       trends$annual_prct_chg_SWE[i] <- trends[trends$location_ID == trends$location_ID[i] , "sens.slope_SWE_max"] / intercept_value_SWE
       trends$annual_prct_chg_DEPTH[i] <- trends[trends$location_ID == trends$location_ID[i] , "sens.slope_DEPTH_max"] / intercept_value_depth
       trends$note[i] <- paste0("Prct chg based on linear model intercepts of ", round(intercept_value_SWE, 1), " and ", round(intercept_value_depth,1), " for SWE and depth at the start year.")
@@ -327,15 +332,15 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
                               "p.val_DEPTH_mean" = c(round(unname(meanMaxDepthSens$p.value), 3), round(unname(meanApr1DepthSens$p.value), 3)),
                               "sens.slope_DEPTH_mean" = c(round(unname(meanMaxDepthSens$estimates), 3), round(unname(meanApr1DepthSens$estimates), 3)),
                               "annual_prct_chg_SWE" = c(
-                                unname(meanMaxSWESens$estimates) / unname(lm(plot_all$SNOW_WATER_EQUIV ~ plot_meas$SAMPLE_DATE)$coefficients[1]),
-                                unname(meanApr1SWESens$estimates) / unname(lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
+                                unname(meanMaxSWESens$estimates) / unname(stats::lm(plot_all$SNOW_WATER_EQUIV ~ plot_all$SAMPLE_DATE)$coefficients[1]),
+                                unname(meanApr1SWESens$estimates) / unname(stats::lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
                               ),
                               "annual_prct_chg_DEPTH" = c(
-                                unname(meanMaxDepthSens$estimates) / unname(lm(plot_all$DEPTH ~ plot_meas$SAMPLE_DATE)$coefficients[1]),
-                                unname(meanApr1DepthSens$estimates) / unname(lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
+                                unname(meanMaxDepthSens$estimates) / unname(stats::lm(plot_all$DEPTH ~ plot_all$SAMPLE_DATE)$coefficients[1]),
+                                unname(meanApr1DepthSens$estimates) / unname(stats::lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1])
                                 ),
-                              "description" = c(paste0("Computed on one data point per year, consisting of the mean of maximum values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(lm(plot_all$SNOW_WATER_EQUIV ~ plot_meas$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(lm(plot_all$DEPTH ~ plot_meas$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."),
-                                                paste0("Computed on one data point per year, consisting of April 1 values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."))
+                              "description" = c(paste0("Computed on one data point per year, consisting of the mean of maximum values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(stats::lm(plot_all$SNOW_WATER_EQUIV ~ plot_all$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(stats::lm(plot_all$DEPTH ~ plot_all$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."),
+                                                paste0("Computed on one data point per year, consisting of April 1 values reported for each location. Percent annual change calculated based on linear model intercepts of ", round(unname(stats::lm(plot_apr1$SNOW_WATER_EQUIV ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " mm SWE and ", round(unname(stats::lm(plot_apr1$DEPTH ~ plot_apr1$SAMPLE_DATE)$coefficients[1]), 0), " cm depth at start year."))
       )
     }
   } #End of stats loop
@@ -364,10 +369,10 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
         ggplot2::theme_classic()
       if (plot_type == "separate"){
         plotSWE <- plotSWE +
-          ggplot2::labs(x = "Sample date", y = "SWE (mm)", title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i]))
+          ggplot2::labs(x = "Sample date", y = "SWE (mm)", title = paste0(locations$SNOW_COURSE_ID[i], ": " , locations$SNOW_COURSE_NAME[i]))
       } else {
         plotSWE <- plotSWE +
-          ggplot2::labs(y = "SWE (mm)", title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i])) +
+          ggplot2::labs(y = "SWE (mm)", title = paste0(locations$SNOW_COURSE_ID[i], ": " , locations$SNOW_COURSE_NAME[i])) +
           ggplot2::theme(axis.title.x = ggplot2::element_blank(),
                          axis.text.x = ggplot2::element_blank(),
                          axis.ticks.x = ggplot2::element_blank())
@@ -380,7 +385,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
         ggplot2::theme_classic()
       if (plot_type == "separate"){
         plotDepth <- plotDepth +
-          ggplot2::labs(x = "Sample date", y = "Snow depth (cm)", title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i]))
+          ggplot2::labs(x = "Sample date", y = "Snow depth (cm)", title = paste0(locations$SNOW_COURSE_ID[i], ": " , locations$SNOW_COURSE_NAME[i]))
       } else {
         plotDepth <- plotDepth +
           ggplot2::labs(y = "Snow depth (cm)") +
@@ -396,7 +401,7 @@ snowInfo <- function(db_path ="X:/Snow/DB/SnowDB.mdb", locations = "all", inacti
         ggplot2::theme_classic()
       if (plot_type == "separate"){
         plotDensity <- plotDensity +
-          ggplot2::labs(x = "Sample date", y = bquote('Density (g/' ~cm^{"3"} *')'), title = paste0(locations$SNOW_COURSE_ID, ": " , locations$SNOW_COURSE_NAME[i]))
+          ggplot2::labs(x = "Sample date", y = bquote('Density (g/' ~cm^{"3"} *')'), title = paste0(locations$SNOW_COURSE_ID[i], ": " , locations$SNOW_COURSE_NAME[i]))
       } else {
         plotDensity <- plotDensity +
           ggplot2::labs(x = "Sample date", y = bquote('Density (g/' ~cm^{"3"} *')'))

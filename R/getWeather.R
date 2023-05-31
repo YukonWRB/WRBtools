@@ -1,12 +1,18 @@
 #' Download ECCC weather station data
 #'
-#' This script downloads data from ECCC stations for a given date range, combines the resultant .csv sheets, manipulates the data to make the date a POSIXct object, and removes redundant and unnecessary fields. Note that this function may take a long time to complete if you are requesting multiple years of data!
+#'#' @description
+#' `r lifecycle::badge("stable")`
 #'
+#' This script downloads data from an ECCC station for a given date range, calling [weathercan::weather_dl()] to download the data. This function facilitates interaction with that package by modifying start and end dates if your request is out of range, and allows you to interactively search for locations by name. Note that this function may take a long time to complete if you are requesting multiple years of data!
 #'
 #' @param station The station for which you want data. You can specify the 7-digit/letter Climate ID, the 4 or 5 digit ECCC station ID, the 5-digit WMO ID (starts with a 7), or the three-letter Transport Canada ID (i.e YDA and not CYDA). If working interactively you can also specify the station name or part thereof (as character vector) and select from a list.
-#' @param start The start date for which you want data. Will download whole months only. Input either a character vector of form "2022-12-30" or a Date formatted object.
+#' @param start The start date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.
 #' @param end The end date for which you want data. Input either a character vector of form "2022-12-30" or a Date formatted object.
 #' @param save_path The path where you wish to save the resultant .csv file. Defaults to NULL, in which case you should assign the function to an R object. Set to "choose" to interactively select the location.
+#' @param tzone Choose from "local" or "UTC". Note that "local" is whatever ECCC thinks the station local TZ is: this might be inaccurate in Yukon, where many (maybe even all) stations report in UTC-8.
+#' @param interval Select from 'hour', 'day', or 'month'. However, if requesting a location by name you will need to select your chosen interval  interactively (so don't bother modifying the default).
+#'
+#'@seealso [weathercan::weather_dl()] for a simpler, pared-down means of downloading ECCC weather data. For nice precipitation maps and tabular reports of precipitation (past or future), try [WRBfloods::basinPrecip()].
 #'
 #' @return A data.frame of weather data and, if save_path is specified, a csv of this same data located in the save_path.
 #' @export
@@ -14,8 +20,19 @@
 getWeather <- function(station,
                        start,
                        end = Sys.Date(),
+                       tzone = "UTC",
+                       interval = "hour",
                        save_path = NULL)
 {
+
+  if(!(tzone %in% c("UTC", "local"))){
+    stop("The parameter tzone must be one of 'UTC' or 'local'.")
+  }
+  if (tzone == "local") tzone <- "none" #the parameter has a stupid name in weathercan::weather_dl.
+  interval <- tolower(interval)
+  if (!(interval %in% c("hour", "day", "month"))){
+    stop("The parameter interval must be one of 'hour', 'day', 'month'.")
+  }
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
@@ -28,105 +45,74 @@ getWeather <- function(station,
     }
   }
 
-  start <- as.Date(start)
-  end <- as.Date(end)
-
   station <- as.character(station)
   station <- toupper(station)
 
+  # Check if station list needs to be updated
+  if(weathercan::stations_meta()$ECCC_modified < Sys.time() - 30*24*60*60){
+    tryCatch({
+      suppressWarnings(weathercan::stations_dl(quiet=TRUE))
+    }, error = function(e) {
+      warning("The local list of stations is outdated and automatically updating it failed. Please update it by running weathercan::stations_dl(), especially if there's an issue running this function.")
+    })
+  }
+
   #Match the input numbers to the proper ECCC station ID
+  stations <- weathercan::stations()
     if (grepl("^[7]{1}", station)){ #Then WMO ID
-      station <- data$ECCC_stations[data$ECCC_stations$WMO.ID==station & !is.na(data$ECCC_stations$WMO.ID),]
+      station <- stations[stations$WMO_id==station & !is.na(stations$WMO_id) & stations$interval == interval,]
     } else if (grepl("^[0-9]{4}[0-9A-Za-z]{3}$", station)){ #Climate ID
-      station <- data$ECCC_stations[data$ECCC_stations$Climate.ID==station & !is.na(data$ECCC_stations$Climate.ID),]
+      station <- stations[stations$climate_id==station & !is.na(stations$climate_id) & stations$interval == interval,]
     } else if (grepl("^[0-6,8-9]{1}", station)){ #Station ID
-      station <- data$ECCC_stations[data$ECCC_stations$Station.ID==station & !is.na(data$ECCC_stations$Station.ID),]
+      station <- stations[stations$station_id==station & !is.na(stations$station_id) & stations$interval == interval,]
     } else if (grepl("^[A-Za-z]{3}$", station)) { #TC ID
-      station <- data$ECCC_stations[data$ECCC_stations$TC.ID==station & !is.na(data$ECCC_stations$TC.ID),]
+      station <- stations[stations$TC_id==station & !is.na(stations$TC_id) & stations$interval == interval,]
     } else if (grepl("^[A-Za-z]{4,}", station)){ #station name or part of
-      possibilities <- dplyr::filter(data$ECCC_stations, grepl(station, Name))
-      possible_names <- possibilities$Name
-      possible_yrs <- paste0(possibilities$First.Year, " to ", possibilities$Last.Year)
-      possible_coords <- paste0(substr(possibilities$Latitude, 1, 2), ".", substr(possibilities$Latitude, 3, 3), ", ", substr(possibilities$Longitude, 1, 4), ".", substr(possibilities$Longitude, 5, 5))
+      possibilities <- dplyr::filter(stations, grepl(station, station_name))
+      possible_names <- possibilities$station_name
+      possible_yrs <- paste0(possibilities$start, " to ", possibilities$end)
+      possible_coords <- paste0(substr(possibilities$lat, 1, 7), ", ", substr(possibilities$lon, 1, 9))
+      possible_interval <- possibilities$interval
       print("The following ECCC stations are possible matches for your input:")
       for (i in 1:nrow(possibilities)) {
-        cat(crayon::bold$blue$underline("Choice", i, ":"), possible_names[i], crayon::bold$green(" Years"), possible_yrs[i], crayon::bold$green(" Coords"), possible_coords[i], "\n")
+        cat(crayon::bold$blue$underline("Choice", i, ":"), possible_names[i], crayon::bold$green(" Interval"), possible_interval[i], crayon::bold$green(" Years"), possible_yrs[i], crayon::bold$green(" Coords"), possible_coords[i], "\n")
       }
       choice <- readline(prompt =
                            writeLines(crayon::bold$red("\nChoose your desired station from the list and enter the number corresponding to the choice below:")))
       station <- possibilities[choice,]
+      interval <- station$interval
     }
+  if (nrow(station) < 1){
+    stop("The station you requested could not be found in my internal tables. You could try again by typing the station name (partial is ok). If that fails, try updating the internal table by running weathercan::stations_dl().")
+  } else if (nrow(station) > 1){
+    stop("Something strange happened: we've got more than one station selected here! Check your options, but if everything looks ok you should try typing in the station name (partial is ok) and selecting form the list.")
+  }
 
   yr_start <- substr(start, 1, 4)
   yr_end <- substr(end, 1, 4)
 
-  if (station$Last.Year+2 < yr_start){
-    stop(paste0("You are requesting data prior to the start of records. Records at this station are from ", station$First.Year, " to ", station$Last.Year))
+  if (is.na(station$end) | is.na(station$start)){
+    stop("Looks like you've selected a station with no data: the start and end years I have for that location are empty. Try again with a different interval.")
   }
 
-  if (station$Last.Year+2 < yr_end){
-    end <- gsub(substr(end, 1, 4), as.numeric(station$Last.Year)+2, end)
-    message(paste0("Your specified end date is long after the last available records. The end date year has been modified to ", as.numeric(station$Last.Year)+1), ".")
+  if (station$end+1 < yr_end){
+    end <- gsub(substr(end, 1, 4), as.numeric(station$end)+1, end)
+    message(paste0("Your specified end date is after the last available records. The end date year has been modified to ", as.numeric(station$end)), ".")
   }
 
-  if (station$First.Year > yr_start){
-    start <- gsub(substr(start, 1, 4), station$First.Year, start)
-    message(paste0("Your specified start date is before the actual start of records. The start date has been modified to begin in year ", station$First.Year))
+  if (station$start > yr_start){
+    start <- gsub(substr(start, 1, 4), station$start, start)
+    message(paste0("Your specified start date is before the actual start of records. The start date has been modified to begin in year ", station$start))
   }
-  start <- lubridate::floor_date(start, unit = "month")
-  end <- lubridate::floor_date(end, unit="month")
 
-  DateSequence <- format(seq(as.Date(start), as.Date(end), by="month")) #create date sequence according to user inputs or defaults; truncate according to first/last available data
+  data <- suppressMessages(weathercan::weather_dl(station$station_id, start = as.character(start), end = as.character(end), interval = interval, time_disp = tzone))
 
-  #download the data
-  suppressWarnings(dir.create(paste0(tempdir(), "/", station$Station.ID)))
-  on.exit(unlink(paste0(tempdir(), "/", station$Station.ID), recursive = TRUE))
-  pb <- utils::txtProgressBar(min = 0,
-                              max = length(DateSequence),
-                              style = 3,
-                              width = 50,
-                              char = "=")
-  for(i in 1:length(DateSequence)){
-    utils::download.file(paste0("https://climate.weather.gc.ca/climate_data/bulk_data_e.html?format=csv&stationID=",
-                         station$Station.ID, "&Year=",
-                         substr(DateSequence[i], start=1, stop=4),
-                         "&Month=",
-                         substr(DateSequence[i], start=6, stop=7),
-                         "&Day=14&timeframe=1&submit=%20Download+Data"),
-                  destfile=paste0(tempdir(), "/", station$Station.ID, "/", DateSequence[i]),
-                  method = "curl", extra = "-k",
-                  quiet=TRUE)
-    utils::setTxtProgressBar(pb, i)
-    #TODO: replace method = curl and -k to use standard libcurl ASAP
-  }
-  close(pb)
-
-
-  #combine the many csv files generated, sort the file, and delete the old ones
-  filenames <- list.files(paste0(tempdir(), "/", station$Station.ID), full.names=TRUE) #stores each month's csv name
-  #unlink(list.files(paste0(tempdir(), "/", station$Station.ID), full.names = TRUE))
-  files <- lapply(filenames, utils::read.csv) #stores the contents in a list
-
-  files_stacked <- do.call("rbind", files)
-
-  #manipulate sheet to remove unnecessary fields and rows
-  files_stacked <- files_stacked[-c(6:9, 22:23, 26:30)] #drop redundant columns
-  files_stacked <- tidyr::drop_na(files_stacked, Date.Time..LST.) #drop rows missing datetime
-  files_stacked[,6:19][files_stacked[,6:19] == ""] <- NA #Set blank spaces to NA
-  files_stacked <- files_stacked[rowSums(is.na(files_stacked[,6:19]))!=14,] #Drop rows that have no data anywhere
-
-  colnames(files_stacked) <- c("Latitude", "Longitude", "Station_Name", "Climate_ID", "Datetime_LST", "Temp_C", "Temp_Flag", "Dew_Point_Temp_C", "Dew_Point_Flag", "Rel_Humidity", "Rel_Humidity_Flag", "Precip_mm", "Precip_Flag", "Wind_Dir_Deg_x10", "Wind_Dir_Flag", "Wind_Spd_kmh", "Wind_Spd_Flag", "Stn_Press_kPa", "Stn_Press_Flag")#Rename columns
-
-  files_stacked$Datetime_LST <- as.POSIXct(files_stacked$Datetime_LST, tz = "MST", format = "%Y-%m-%d %H:%M")  #make sure dttm is correctly formatted as POSIXct objects
-  files_stacked <- files_stacked[order(files_stacked$Datetime_LST),] #order the whole deal
-
-
-  #write the output to a .csv file for upload into Aquarius.
+  #write the output to a .csv file for upload into Aquarius or other end use.
   if (!(is.null(save_path))){
-    utils::write.csv(files_stacked, file=paste0(save_path, "/ECCC_station",station$Station.ID,"_from",start,"_to",end,".csv"), row.names=FALSE)
+    utils::write.csv(data, file=paste0(save_path, "/ECCC_station", station$station_id, "_from", start, "_to", end, ".csv"), row.names=FALSE)
 
     writeLines(paste0("All done! Your data is in the folder ", save_path))
   }
 
-  return(files_stacked)
+  return(data)
 }

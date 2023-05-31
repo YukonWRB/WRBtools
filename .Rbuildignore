@@ -1,5 +1,6 @@
 ^WRBtools\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
-^development_files$
-^inst\readme.md$
+^dev$
+^\.secret$
+^data-raw$

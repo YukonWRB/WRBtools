@@ -1,24 +1,31 @@
 #' Connect to the RWIS database
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' Establishes a connection to the RWIS (Road Weather Information System) database. Only works from within YG networks.
+#'
 #' @param name Database name.
 #' @param host Database host address.
 #' @param port Connection port.
 #' @param username Username. Refrain from using username with write privileges unless you absolutely know what you're doing.
 #' @param password Password.
-#'
+#' @importFrom RPostgreSQL PostgreSQL
 #' @return A connection to the database
+#'
+#' @seealso [hydroConnect()] for establishing a connection to the WRB's hydrometric database.
+#'
 #' @export
 #'
 
 RWISConnect <- function(name = "rwdm", host = "rwis.gov.yk.ca", port = "5432", username = "rwdmread", password = "rwdmread"){
   tryCatch({
-    drv <- DBI::dbDriver("PostgreSQL")
     RWIS <- DBI::dbConnect(drv = RPostgreSQL::PostgreSQL(),
-                           dbname = dsn_database,
-                           host = dsn_hostname,
-                           port = dsn_port,
-                           user = dsn_uid,
-                           password = dsn_pwd)
+                           dbname = name,
+                           host = host,
+                           port = port,
+                           user = username,
+                           password = password)
     return(RWIS)
   }, error=function(e) {
     print("Connection failed.")

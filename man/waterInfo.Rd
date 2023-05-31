@@ -5,12 +5,12 @@
 \title{Plots and tabular data for hydrometric locations}
 \usage{
 waterInfo(
-  db_path = "//env-fs/env-data/corp/water/Common_GW_SW/Data/database/hydro.sqlite",
+  db_path = "default",
   locations = "all",
   level_flow = "both",
   end_date = Sys.Date(),
   months_min = c(1:4),
-  months_max = c(4:9),
+  months_max = c(5:9),
   allowed_missing = 10,
   save_path = "choose",
   plots = TRUE,
@@ -19,7 +19,7 @@ waterInfo(
 )
 }
 \arguments{
-\item{db_path}{The path to the local hydro database including extension. See WRBtools::hydroConnect for supported database types.}
+\item{db_path}{The path to the local hydro database including extension. Default will use \code{\link[=hydroConnect]{hydroConnect()}} default path.}
 
 \item{locations}{The list of locations requested, as either a vector of location IDs or one of "WRB" (only WRB stations selected), "WSC" (only), or "all". Default "all" fetches all stations.}
 
@@ -27,7 +27,7 @@ waterInfo(
 
 \item{end_date}{The most recent day to include in calculations. Defaults to today.}
 
-\item{months_min}{The month range in which to look for minimums.}
+\item{months_min}{The month range in which to look for minimums. Does \emph{not} currently support a month range overlapping two years.}
 
 \item{months_max}{The month range in which to look for maximums.}
 
@@ -45,5 +45,13 @@ waterInfo(
 A list with four data.frames: location metadata, basic statistics, trend information, and daily measurements is returned to the R environment. In addition, an Excel workbook is saved to the save_path with the four data.frames as tabs, and a new folder created to hold level/flow plots for each station requested.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+
 This function is intended to facilitate the reporting of hydrology data by compiling basic statistics (years of record, months of operation, min, max, etc.), trend information (Mann-Kendall direction and p-value, Sen's slope), and creating simple plots of level (for lakes) or flow for all requested locations. At its most basic (parameters to FALSE or NULL where applicable), the result is a list of two data.frames to the R environment with location metadata and field measurements.
+}
+\details{
+Sites that routinely see 0 values for flow or level in mid-winter may report a negative annual percent change \emph{even if} the sens's slope is positive. This is due to the intercept of a linear model calculated using minimum flows and years being below 0 at the first year of record. Unfortunately there is no fix, but the Sen's value is still valid.
+}
+\seealso{
+\code{\link[=snowInfo]{snowInfo()}} for a similar function dealing with snowpack data.
 }

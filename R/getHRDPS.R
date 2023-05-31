@@ -1,22 +1,24 @@
-
-#' Retrieve HRDPS rasters
+#' Download/proces ECCC HRDPS rasters
+#'
+#' @description
+#' `r lifecycle::badge("stable")`
 #'
 #' Utility function to retrieve gridded predictions output from the [HRDPS model](https://weather.gc.ca/grib/grib2_HRDPS_HR_e.html). In current form will delete all old files in the save directory.
 #'
 #' @param clip The two-digit abbreviation(s) as per [Canadian Census](https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/tab/index-eng.cfm?ID=t1_8) for the province(s) with which to clip the HRDPA. A 300 km buffer is added beyond the provincial boundaries. Set to NULL for no clip
 #' @param save_path The path to the directory (folder) where the rasters should be saved. A new sub-directory will be created based on the `param` selected if not already present. Default `"choose"` lets you select your folder (do not choose the one named after the `param`), or enter the path as a character string.
-#' @param param The HRDPS parameter you wish to download, from the list of published abbreviations at [https://weather.gc.ca/grib/HRDPS_HR/HRDPS_ps2p5km_PNONZERO_deterministic_e.html](https://weather.gc.ca/grib/HRDPS_HR/HRDPS_ps2p5km_PNONZERO_deterministic_e.html). Defaults to accumulated precipitation at the surface.
+#' @param param The HRDPS parameter you wish to download. As of 2023-04-15, this list of [published abbreviations](https://weather.gc.ca/grib/HRDPS_HR/HRDPS_ps2p5km_PNONZERO_deterministic_e.html) is out of date, so cross-reference it with those of the [model outputs](https://dd.weather.gc.ca/model_hrdps/continental/2.5km/12/010/). Defaults to accumulated precipitation at the surface.
 #'
-#' @return Up to 48 rasters representing the HRDPS modeled output for the parameter selected.
+#' @seealso [getHRDPA()] if looking for precipitation reanalysis rasters instead. For nice precipitation maps and tabular reports of precipitation (past or future), try [WRBfloods::basinPrecip()].
+#'
+#' @return Up to 48 rasters (one per hour) representing the HRDPS modeled output for the parameter selected.
 #' @export
 #'
 
 getHRDPS <- function(clip = c("YT"),
                      save_path = "choose",
-                     param = "APCP_SFC_0")
+                     param = "APCP_Sfc")
 {
-
-  terra::setGDALconfig("GDAL_PAM_ENABLED", "FALSE") #prevents writting auxiliary files along with the .tiff
 
   #Save path
   if (save_path == "choose") {
@@ -24,7 +26,7 @@ getHRDPS <- function(clip = c("YT"),
     save_path <- as.character(utils::choose.dir(caption = "Select Save Folder"))
   }
 
-  suppressWarnings(dir.create(paste0(save_path, "\\", param)))
+  suppressWarnings(dir.create(paste0(save_path, "/", param)))
 
   save_path <- paste0(save_path, "/", param)
 
@@ -36,7 +38,9 @@ getHRDPS <- function(clip = c("YT"),
     latest_run <- paste0(latest_run, " 00:00")
   }
   issue_timedate <- gsub("-", "", latest_run)
-  issue_timedate <- substr(gsub(" ", "", issue_timedate), 1, 10)
+  issue_date <- substr(gsub(" ", "", issue_timedate), 1, 8)
+  issue_hour <- substr(issue_timedate, 10, 11)
+  issue_timedate <- paste0(issue_date, "T", issue_hour, "Z")
 
   #Delete old files with the same param and NOT the same issue_timedate
   existing <- list.files(save_path, full.names = TRUE)
@@ -58,10 +62,14 @@ getHRDPS <- function(clip = c("YT"),
       i <- paste0("0", i)
     }
 
-    name <- paste0(param, "_", issue_timedate, "_", i, ".tiff")
+    if (!is.null(clip)){
+      name <- paste0(param, "_", issue_timedate, "_", i, "_clipped_", extent, ".tiff")
+    } else {
+      name <- paste0(param, "_", issue_timedate, "_", i, ".tiff")
+    }
     if (!(TRUE %in% grepl(name, existing))) { #Checks if the file exists already, runs if not.
       tryCatch({
-        raster <- terra::rast(paste0("https://dd.weather.gc.ca/model_hrdps/continental/grib2/", substr(issue_timedate, 9, 10), "/0", i, "/CMC_hrdps_continental_", param, "_ps2.5km_", issue_timedate, "_P0", i, "-00.grib2"))
+        raster <- terra::rast(paste0("https://dd.weather.gc.ca/model_hrdps/continental/2.5km/", issue_hour, "/0", i, "/", issue_timedate, "_MSC_HRDPS_", param, "_RLatLon0.0225_PT0", i, "H.grib2"))
 
         if (clipped == FALSE){
           if (!is.null(clip)){
@@ -74,9 +82,8 @@ getHRDPS <- function(clip = c("YT"),
           raster <- terra::trim(raster) #Trims the NA values
         }
         terra::writeRaster(raster, paste0(save_path, "/", name), overwrite=TRUE)
-        unlink(paste0(tempdir(), "/HRDPS", i))
       }, error = function(e){
-        cat(crayon::red(paste0("Fetching rasters failed on file https://dd.weather.gc.ca/model_hrdps/continental/grib2/", substr(issue_timedate, 9, 10), "/0", i, "/CMC_hrdps_continental_", param, "_SFC_0_ps2.5km_", issue_timedate, "_P0", i, "-00.grib2. This is likely temporary, try again once the files have been written to the url.")))
+        cat(crayon::red(paste0("Fetching rasters failed on file https://dd.weather.gc.ca/model_hrdps/continental/2.5km/", issue_hour, "/0", i, "/", issue_timedate, "_MSC_HRDPS_", param, "_RLatLon0.0225_PT0", i, "H.grib2. This might be temporary, try again once the files have been written to the url.")))
       })
     }
   }

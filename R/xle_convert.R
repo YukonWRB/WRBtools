@@ -1,5 +1,8 @@
 #' Convert Solinst logger files to csv format
 #'
+#' @description
+#' `r lifecycle::badge("stable")`
+#'
 #' Reads a Solinst .xle file and converts it into a .csv with proper column names. Converts units to those in common usage at the Yukon Water Resources Branch, standardizes file naming, and ensures that times are represented in UTC-7.
 #'
 #' Currently works with Solinst LT, LTC, and baro loggers. Note that LTs and baro loggers are functionally identical: they are differentiated solely by the pressure scale specified in the logger file header. Barologgers are labelled "M1.5" or similar (1.5 m water column), while the shallowest LT model is an "M5" or similar. Issues will arise if future baro loggers do not use the "1.5" designation, or if you are actually using a barologger to monitor very shallow water columns.
@@ -13,10 +16,10 @@
 #' @export
 #'
 xle_convert <- function(xle_file = "choose",
-                           location,
-                           save_path = "choose",
-                           YOWN_master = "//env-fs/env-data/corp/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/2_SPREADSHEETS/1_YOWN_MASTER_TABLE/MASTER for R - remember to update.xlsx"
-                           )
+                        location,
+                        save_path = "choose",
+                        YOWN_master = "//env-fs/env-data/corp/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/2_SPREADSHEETS/1_YOWN_MASTER_TABLE/MASTER for R - remember to update.xlsx"
+)
 {
 
   if (xle_file == "choose"){
@@ -127,14 +130,14 @@ xle_convert <- function(xle_file = "choose",
                            "unit_proper" = c("kPa", "°C"))
 
   # Storing proper parameter units and their conversions
-  conversions_LTC <- data.frame("parameter" = c("CONDUCTIVITY"),
-                                "unit_proper" = c("µS/cm"),
-                                "unit_current" = c("mS/cm"),
-                                "multiplier" = c(1000))
-  conversions_LT  <- data.frame("parameter" = c("CONDUCTIVITY"),
-                                "unit_proper" = c("µS/cm"),
-                                "unit_current" = c("mS/cm"),
-                                "multiplier" = c(1000))
+  conversions_LTC <- data.frame("parameter" = c("CONDUCTIVITY", "LEVEL", "LEVEL", "LEVEL"),
+                                "unit_proper" = c("µS/cm", "m", "m", "m"),
+                                "unit_current" = c("mS/cm", "kPa", "psi", "mbar"),
+                                "multiplier" = c(1000, 0.101972, 	0.70307, 0.0101971621297))
+  conversions_LT  <- data.frame("parameter" = c("CONDUCTIVITY", "LEVEL", "LEVEL", "LEVEL"),
+                                "unit_proper" = c("µS/cm", "m", "m", "m"),
+                                "unit_current" = c("mS/cm", "kPa", "psi", "mbar"),
+                                "multiplier" = c(1000, 0.101972, 	0.70307, 0.0101971621297))
   conversions_BL  <- data.frame("parameter" = c("LEVEL", "LEVEL", "LEVEL"),
                                 "unit_proper" = c("kPa", "kPa", "kPa"),
                                 "unit_current" = c("psi", "m", "mbar"),
@@ -212,6 +215,8 @@ xle_convert <- function(xle_file = "choose",
         }
       }
     }
+
+
   }
 
   # Just in case. Makes sure columns are in the order shown below
