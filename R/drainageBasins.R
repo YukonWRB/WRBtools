@@ -1,7 +1,7 @@
 #' Watershed/basin delineation
 #'
 #' @description
-#' `r lifecycle::badge("maturing")`
+#' `r lifecycle::badge("experimental")`
 #'
 #' Delineates watersheds above one or more points using [Whitebox Tools](www.whiteboxgeo.com/). To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement (see details). Many time-consuming raster operations are performed, so the function will attempt to use already-calculated rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See additional details below for processing steps.
 #'
@@ -40,6 +40,8 @@
 drainageBasins <- function(DEM, points, points_name_col, streams = NULL, projection = NULL, snap = "nearest", snap_dist = 200, breach_dist = 10000, overwrite = FALSE, save_path = "choose", force_update_wbt = FALSE) {
 
   #initial checks
+  rlang::check_installed("whitebox", reason = "Package whitebox is required to use function drainageBasins") #This is here because whitebox is not a 'depends' of this package; it is only necessary for this function and is therefore in "suggests"
+
   if (!(snap %in% c("nearest", "greatest"))){
     stop("The parameter 'snap' must be one of 'nearest' or 'greatest'.")
   }

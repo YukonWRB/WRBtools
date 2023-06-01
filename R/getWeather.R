@@ -25,6 +25,14 @@ getWeather <- function(station,
                        save_path = NULL)
 {
 
+  #initial checks
+  rlang::check_installed("remotes", reason = "Remotes is necessary to update dependencies for this function.")
+  if (!rlang::is_installed("weathercan")) { #This is here because getWeather is not a 'depends' of this package; it is only necessary for this function and is therefore in "suggests"
+    print("Installing dependency 'weathercan'...")
+    remotes::install_github("ropensci/weathercan")
+    print("Package weathercan successfully installed.")
+  }
+
   if(!(tzone %in% c("UTC", "local"))){
     stop("The parameter tzone must be one of 'UTC' or 'local'.")
   }

@@ -1,12 +1,13 @@
 Package: WRBtools
 Title: Utility functions for the Yukon Water Resources Branch
-Version: 1.4.5-0
+Version: 1.4.6-0
 Date: 2023-05-03
-Authors@R: 
-    c(person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
+Authors@R: c(
+    person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-5093-9185")),
-           person("Cole", "Fischer", , "cole.fischer@hotmail.com", role = c("aut"),
-           comment = c(ORCID = "0000-0002-7266-5760")))
+    person("Cole", "Fischer", , "cole.fischer@hotmail.com", role = "aut",
+           comment = c(ORCID = "0000-0002-7266-5760"))
+  )
 Description: Utility functions for use across the Yukon Water Resources
     Branch disciplines.
 License: AGPL (>= 3) + file LICENSE
@@ -21,7 +22,6 @@ Imports:
     fasstr,
     fuzzyjoin,
     ggplot2,
-    gmailr,
     grid,
     gridExtra,
     hablar,
@@ -34,25 +34,27 @@ Imports:
     plyr,
     readxl,
     rlang,
-    RPostgreSQL,
     RSQLite,
     rvest,
-    sf,
     stats,
     stringr,
     terra,
-    tidyhydat,
     tidyr,
     trend,
     utils,
-    weathercan,
-    whitebox,
     XML,
     xml2
 Suggests: 
+    gmailr,
     knitr,
+    remotes,
     rmarkdown,
-    testthat (>= 3.0.0)
+    sf,
+    testthat (>= 3.0.0),
+    tidyhydat,
+    weathercan,
+    whitebox,
+    RPostgreSQL
 VignetteBuilder: 
     knitr
 Remotes:

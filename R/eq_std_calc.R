@@ -11,8 +11,7 @@
 # REVIEW clarify if this means filled empty spaces, new cols, etc.
 #'
 #' @noRd
-#'
-#' @export
+#' @keywords internal
 #'
 #' @details interim parameter values are assigned on an as-needs basis where required, such as standards where hardness is assigned a certain value if NA. These interim parameters are represented by the .x subscript (ie. pHx, hardx)
 # REVIEW should this also be explained in eq_fetch?
