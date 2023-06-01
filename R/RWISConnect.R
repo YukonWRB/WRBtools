@@ -19,6 +19,13 @@
 #'
 
 RWISConnect <- function(name = "rwdm", host = "rwis.gov.yk.ca", port = "5432", username = "rwdmread", password = "rwdmread"){
+
+  #initial checks
+  rlang::check_installed("RPostgreSQL", reason = "Package RPostgreSQL is required to use function RWISConnect") #This is here because RPostgreSQL is not a 'depends' of this package; it is only necessary for this function and is therefore in "suggests"
+
+  library(RPostgreSQL) #library calls should not usually be in a package... but this doesn't work without it!
+  on.exit(detach("package:RPostgreSQL", unload = TRUE))
+
   tryCatch({
     RWIS <- DBI::dbConnect(drv = RPostgreSQL::PostgreSQL(),
                            dbname = name,
