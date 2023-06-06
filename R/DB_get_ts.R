@@ -1,7 +1,7 @@
 #' Get timeseries data from the hydromet database
 #'
 #' @description
-#' `r lifecycle::badge("maturing")`
+#' `r lifecycle::badge("stable")`
 #'
 #' Extracts timeseries information from the WRB's hydrometric database. Refer to [DB_browse_ts()] if unsure of how to formulate your query.
 #'

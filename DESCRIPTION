@@ -1,6 +1,6 @@
 Package: WRBtools
 Title: Utility functions for the Yukon Water Resources Branch
-Version: 1.4.6
+Version: 1.5.0
 Date: 2023-05-03
 Authors@R: c(
     person("Ghislain", "de Laplante", , "ghislaindel@gmail.com", role = c("aut", "cre"),
@@ -22,7 +22,6 @@ Imports:
     fasstr,
     fuzzyjoin,
     ggplot2,
-    grid,
     gridExtra,
     hablar,
     httr,
@@ -54,7 +53,7 @@ Suggests:
     tidyhydat,
     weathercan,
     whitebox,
-    RPostgreSQL
+    RPostgres
 VignetteBuilder: 
     knitr
 Remotes:

@@ -27,9 +27,6 @@ WSC_drainages <- function(inputs_folder = "choose",
   #Initial setup
   rlang::check_installed("sf", reason = "Package sf is required to use function drainageBasins") #This is here because whitebox is not a 'depends' of this package; it is only necessary for this function.
 
-  library(sf) #library calls should not usually be in a package... but sf doesn't work without it!
-  on.exit(detach("package:sf", unload = TRUE))
-
   if (inputs_folder == "choose") {
     print("Select the inputs folder.")
     inputs_folder <- as.character(utils::choose.dir(caption="Select Inputs Folder"))
