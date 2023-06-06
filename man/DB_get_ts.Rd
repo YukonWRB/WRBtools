@@ -33,7 +33,7 @@ DB_get_ts(
 A list of data frames (one per location) containing the information requested and, optionally, an Excel workbook saved to disk with one tab per location.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Extracts timeseries information from the WRB's hydrometric database. Refer to \code{\link[=DB_browse_ts]{DB_browse_ts()}} if unsure of how to formulate your query.
 }

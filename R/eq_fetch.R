@@ -151,11 +151,10 @@ eq_fetch <- function(EQcode,
 
     # Process calculated standards
     # Reframe eq_std_calc function in the environment of the eq_fetch function, necessary to access variables created within eq_fetch function
-    # REVIEW Since eq_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences.
-    # eq_std_calcx <- WRBtools::eq_std_calc
-    # environment(eq_std_calcx) <- environment()
-    std_calcs <- WRBtools::eq_std_calc(data = sampledata,
-                                       calcs = std_calc_tmp)
+    #
+    # REVIEW Since eq_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences. EDIT: I've removed the package call already.
+    std_calcs <- eq_std_calc(data = sampledata,
+                             calcs = std_calc_tmp)
 
     # Combine set and calculated standards, format and order
     stnstd <- rbind(std_set, std_calcs)
