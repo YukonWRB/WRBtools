@@ -32,7 +32,7 @@
 #' @param save_path The path where you want the output shapefiles saved. Default "choose" lets you choose interactively.
 #' @param force_update_wbt WhiteboxTools is by default only downloaded if it cannot be found on the computer, and no check are performed to ensure the local version is current. Set to TRUE if you know that there is a new version and you would like to use it.
 #'
-#' @return Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin within the 'save_path'. In addition, three corresponding larger shapefiles will be created at the save directory with features for all polygons. The drainage basin polygons inherit the associated point attributes.
+#' @return Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin within the 'save_path'. In addition, three corresponding larger shapefiles will be created with features for all polygons (folder combined_shapefiles). The drainage basin polygons inherit the associated point attributes.
 #'
 #' @seealso [WSC_drainages()] if looking for drainages associated with a WSC monitoring location.
 #' @export
@@ -63,12 +63,12 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   #Check whitebox existence and version, install if necessary or if force_update_wbt = TRUE.
   wbt_check <- whitebox::check_whitebox_binary()
   if (wbt_check){
-    version <- suppresMessages(whitebox::wbt_version())
+    version <- invisible(utils::capture.output(whitebox::wbt_version()))
     print(paste0("Using WhiteboxTools version ", substr(version[1], 16, 20), ". If this is out of date, run function with force_update_wbt = TRUE."))
   } else {
     print("Installing WhiteboxTools binaries...")
     whitebox::wbt_install()
-    version <- suppressMessages(whitebox::wbt_version())
+    version <- invisible(utils::capture.output(whitebox::wbt_version()))
     print(paste0("Installed WhiteboxTools version ", substr(version[1], 16, 20)))
   }
   if (force_update_wbt) {
@@ -100,7 +100,7 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   d8pntr_exists <- FALSE
   streams_derived_exists <- FALSE
   d8fac_exists <- FALSE
-  if (is.null(streams) | overwrite){ #no point in checking the derived rasters if a new streams layer is specified or if we're overwriting anyways
+  if (!is.null(streams) | !overwrite){ #no point in checking the derived rasters if a new streams layer is specified or if we're overwriting anyways
     print("Checking if the right layers already exist...")
     if (file.exists(paste0(directory, "/D8pointer.tif")) & !overwrite){
       d8pntr <- terra::rast(paste0(directory, "/D8pointer.tif"))
@@ -199,14 +199,15 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   unlink(list.files(paste0(save_path, "/watersheds_", Sys.Date()), full.names = TRUE), recursive = TRUE)
   print("Delineating watersheds and creating polygons...")
   count <- 0 #For 'together' shapefiles. Need a feature to create the R object, then features can be appended.
+  failed <- character() #Gets populated with each failed point
   for(i in 1:nrow(snapped_points)) {
-    print(paste0("Delineating drainage basin for point ", as.data.frame(snapped_points[i, points_name_col])))
+    print(paste0("Delineating drainage basin for point ", as.data.frame(snapped_points[i, points_name_col]), " (", i, " of ", nrow(snapped_points), ")"))
     tryCatch({
       terra::writeVector(snapped_points[i, ], paste0(tempdir(), "/shapefiles/", i,".shp"), overwrite=TRUE)
-      suppressMessages(whitebox::wbt_watershed(d8_pntr = paste0(directory, "/D8pointer.tif"),
-                                               pour_pts = paste0(tempdir(), "/shapefiles/", i, ".shp"),
-                                               output = paste0(tempdir(), "/rasters/", i, ".tif")
-      ))
+      invisible(utils::capture.output(whitebox::wbt_watershed(d8_pntr = paste0(directory, "/D8pointer.tif"),
+                                                              pour_pts = paste0(tempdir(), "/shapefiles/", i, ".shp"),
+                                                              output = paste0(tempdir(), "/rasters/", i, ".tif")
+      )))
 
       rast <- terra::rast(paste0(tempdir(), "/rasters/", i, ".tif"))
       poly <- terra::as.polygons(rast)
@@ -259,15 +260,24 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
         input_points <- rbind(input_points, point)
         snapped_pts <- rbind(snapped_pts, snapped_pt)
       }
-      print(crayon::blue("Success!"))
+      cat(crayon::blue("Success!  \n"))
     }, error = function(e) {
-      print(crayon::red(paste0("Failed to delineate watershed for point named ", as.data.frame(snapped_points[i, points_name_col]))))
+      cat(crayon::red(paste0("Failed to delineate watershed for point named ", as.data.frame(snapped_points[i, points_name_col]), "  \n")))
+      failed <- c(failed, as.data.frame(snapped_points[i, points_name_col]))
     })
   }
+
   #Save the larger shapefiles to disc
   dir.create(paste0(save_path, "/watersheds_", Sys.Date(), "/combined_shapefiles"))
   terra::writeVector(output_basins, paste0(save_path, "/watersheds_", Sys.Date(), "/combined_shapefiles/all_drainage_basin.shp"), overwrite=TRUE)
   terra::writeVector(input_points, paste0(save_path, "/watersheds_", Sys.Date(), "/combined_shapefiles/all_input_points.shp"), overwrite=TRUE)
   terra::writeVector(snapped_points, paste0(save_path, "/watersheds_", Sys.Date(), "/combined_shapefiles/all_snapped_points.shp"), overwrite=TRUE)
+
+  if (length(failed) == nrow(snapped_points){
+    cat(crayon::red$bold("Failed to delineate all points. Re-check your inputs carefully, and if the issue persists troubleshoot by running the function line by line."))
+  })
+    if (length(failed) > 0){
+      cat(crayon::red$bold(paste0("Failed to delineate points ", paste(failed, collapse = ", "), ".")))
+    }
 
 } #End of function
