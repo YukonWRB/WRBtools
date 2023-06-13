@@ -197,9 +197,9 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   unlink(list.files(paste0(tempdir(), "/rasters"), full.names=TRUE)) #ensure clear dir for repeat runs in same session
   dir.create(paste0(save_path, "/watersheds_", Sys.Date())) #The desired outputs will go here
   unlink(list.files(paste0(save_path, "/watersheds_", Sys.Date()), full.names = TRUE), recursive = TRUE)
-  print("Delineating watersheds and creating polygons...")
   count <- 0 #For 'together' shapefiles. Need a feature to create the R object, then features can be appended.
   failed <- character() #Gets populated with each failed point
+  cat(crayon::blue$bold("\n  Starting watershed delineation. This can take a long time so get yourself a tea/coffee.  \n"))
   for(i in 1:nrow(snapped_points)) {
     print(paste0("Delineating drainage basin for point ", as.data.frame(snapped_points[i, points_name_col]), " (", i, " of ", nrow(snapped_points), ")"))
     tryCatch({
@@ -273,11 +273,11 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   terra::writeVector(input_points, paste0(save_path, "/watersheds_", Sys.Date(), "/combined_shapefiles/all_input_points.shp"), overwrite=TRUE)
   terra::writeVector(snapped_points, paste0(save_path, "/watersheds_", Sys.Date(), "/combined_shapefiles/all_snapped_points.shp"), overwrite=TRUE)
 
-  if (length(failed) == nrow(snapped_points){
+  if (length(failed) == nrow(snapped_points)){
     cat(crayon::red$bold("Failed to delineate all points. Re-check your inputs carefully, and if the issue persists troubleshoot by running the function line by line."))
-  })
-    if (length(failed) > 0){
-      cat(crayon::red$bold(paste0("Failed to delineate points ", paste(failed, collapse = ", "), ".")))
-    }
+  }
+  if (length(failed) > 0){
+    cat(crayon::red$bold(paste0("Failed to delineate points ", paste(failed, collapse = ", "), ".")))
+  }
 
 } #End of function
