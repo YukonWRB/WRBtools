@@ -4,7 +4,7 @@
 #'
 #' @details Insert here what happens to values > DL, where the standards are taken from,
 #'
-#' @param EQcode Site code as it appears in EQWin eg. "(LOB)" or "(KNO)". Function only works for stations with  designated project code in brackets "(KNO)"
+#' @param EQcode Site code as it appears in EQWin eg. "(LOB)" or "(KNO)". Function only works for stations with  designated project code in brackets
 #' @param stationIDs "all" for all stations (default) OR character vector of selected stations as they appear in the EQWin database WITHOUT the EQcode c("MW-01", "MW-02)
 #' @param paramIDs "all" for all parameters (default) OR vector of selected parameters exactly as they appear in the EQWin database
 #' @param dates "all" for all dates (default) OR character vector of length 2 of start and end date in format c("YYYY-MM-DD", "YYYY-MM-DD")
@@ -38,7 +38,7 @@ eq_fetch <- function(EQcode,
   on.exit(options(dplyr.summarise.inform = old_dplyr), add = TRUE)
 
   # Set path to access database
-  dbpath <- "X:/EQWin/WR/DB/Water Resources.mdb"
+  dbpath <- "X:/EQWin/WR/DB/Water_Resources.mdb"
 
   #### Begin EQWin fetch ####
   EQWin <- DBI::dbConnect(drv = odbc::odbc(), .connection_string = paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=", dbpath))
@@ -151,10 +151,12 @@ eq_fetch <- function(EQcode,
 
     # Process calculated standards
     # Reframe eq_std_calc function in the environment of the eq_fetch function, necessary to access variables created within eq_fetch function
-    #
-    # REVIEW Since eq_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences. EDIT: I've removed the package call already.
-    std_calcs <- eq_std_calc(data = sampledata,
-                             calcs = std_calc_tmp)
+    # REVIEW Since eq_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences.
+    # eq_std_calcx <- WRBtools::eq_std_calc
+    # environment(eq_std_calcx) <- environment()
+    std_calcs <- WRBtools::eq_std_calc(data = sampledata,
+                                       calcs = std_calc_tmp)
+
 
     # Combine set and calculated standards, format and order
     stnstd <- rbind(std_set, std_calcs)
