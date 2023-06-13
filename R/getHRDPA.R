@@ -81,7 +81,7 @@ getHRDPA <- function(start = Sys.time()-60*60*24,
   #Make clip polygon
   extent <- paste(clip, collapse="_")
   if (!is.null(clip)){
-    clip <- data$prov_buff[data$prov_buff$PREABBR %in% clip, ]
+    clip <- prov_buff[prov_buff$PREABBR %in% clip, ]
     clip <- terra::vect(clip)
   }
 

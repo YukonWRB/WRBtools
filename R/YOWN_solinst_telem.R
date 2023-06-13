@@ -1,16 +1,23 @@
 #' YOWN Solinst LevelSender Telemetry Processing
 #'
-#' @description This script searches for new messages from the YOWN telemetry gmail inbox by specified sites with active telemetry, then downloads messages and combines each day's report into an XLE file which is then places in the XLE-dropbox folder for processing as usual. Trashed email upon successful creation of a .xle file
+#' @description
+#' This script searches for new messages from the YOWN telemetry gmail inbox by specified sites with active telemetry, then downloads messages and combines each day's report into an XLE file which is then places in the XLE-dropbox folder for processing as usual. Trashed email upon successful creation of a .xle file.
 #'
-#' @param active_telem Character vector of YOWN sites for processing of SOLINST telemetry data
+#' @param active_telem Character vector of YOWN sites for processing of SOLINST telemetry data.
+#' @param path The path to the folder in which to save the .xle file.
+#' @param auth_json The path to the .json file used for connection to gmail.
 #'
-#' @return Creates an .xle file in the XLE_File_Dropbox folder on the G drive
+#' @return Creates an .xle file in the folder specified by parameter `path`.
 #' @export
 #'
-YOWN_solinst_telem <- function(active_telem = c("YOWN-2201S")){
+YOWN_solinst_telem <- function(active_telem = c("YOWN-2201S"), path = "G:/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/9_XLE_file_dropbox/", auth_json = "G:\\water\\Groundwater\\2_YUKON_OBSERVATION_WELL_NETWORK\\4_YOWN_DATA_ANALYSIS\\1_WATER LEVEL\\00_AUTOMATED_REPORTING\\04_TELEMETRY\\gmail_interface.json"){
+
+
+  #Initial setup
+  rlang::check_installed("gmailr", reason = "Package gmailr is required to use function YOWN_solinst_telem") #This is here because gmailr is not a 'depends' of this package; it is only necessary for this function and this function isn't use by many users.
 
   #### Gmail configuration ####
-  gmailr::gm_auth_configure(path = "G:\\water\\Groundwater\\2_YUKON_OBSERVATION_WELL_NETWORK\\4_YOWN_DATA_ANALYSIS\\1_WATER LEVEL\\00_AUTOMATED_REPORTING\\04_TELEMETRY\\gmail_interface.json")
+  gmailr::gm_auth_configure(path = auth_json)
   gmailr::gm_auth(email = T, cache = ".secret")
   for(z in active_telem){
     query <- paste0("from:", z, " ", "subject:(LS Report)") # Create gmail search query
@@ -188,7 +195,7 @@ YOWN_solinst_telem <- function(active_telem = c("YOWN-2201S")){
         }
 
         # Save file into the XLE_File_Dropbox folder for normal processing
-        XML::saveXML(xml, file = paste0("G:/water/Groundwater/2_YUKON_OBSERVATION_WELL_NETWORK/9_XLE_file_dropbox/", LL_header[LL_header$Param == "Location", 2], "_", gsub("/", "", substr(as.character(min(data$Timestamp_MST)), start = 1, stop = 10)), "_to_", gsub("/", "", substr(as.character(max(data$Timestamp_MST)), start = 1, stop = 10)), "_TELEM.xle"))
+        XML::saveXML(xml, file = paste0(path, LL_header[LL_header$Param == "Location", 2], "_", gsub("/", "", substr(as.character(min(data$Timestamp_MST)), start = 1, stop = 10)), "_to_", gsub("/", "", substr(as.character(max(data$Timestamp_MST)), start = 1, stop = 10)), "_TELEM.xle"))
 
       }
     }
