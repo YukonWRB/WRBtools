@@ -32,7 +32,7 @@
 #' @param save_path The path where you want the output shapefiles saved. Default "choose" lets you choose interactively.
 #' @param force_update_wbt WhiteboxTools is by default only downloaded if it cannot be found on the computer, and no check are performed to ensure the local version is current. Set to TRUE if you know that there is a new version and you would like to use it.
 #'
-#' @return Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin. The drainage basin polygons inherit the associated point attributes.
+#' @return Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin within the 'save_path'. In addition, three corresponding larger shapefiles will be created at the save directory with features for all polygons. The drainage basin polygons inherit the associated point attributes.
 #'
 #' @seealso [WSC_drainages()] if looking for drainages associated with a WSC monitoring location.
 #' @export
@@ -63,13 +63,18 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   #Check whitebox existence and version, install if necessary or if force_update_wbt = TRUE.
   wbt_check <- whitebox::check_whitebox_binary()
   if (wbt_check){
-    version <- whitebox::wbt_version()
+    version <- suppresMessages(whitebox::wbt_version())
     print(paste0("Using WhiteboxTools version ", substr(version[1], 16, 20), ". If this is out of date, run function with force_update_wbt = TRUE."))
-  } else if (!wbt_check | force_update_wbt){
+  } else {
     print("Installing WhiteboxTools binaries...")
     whitebox::wbt_install()
-    version <- whitebox::wbt_version()
+    version <- suppressMessages(whitebox::wbt_version())
     print(paste0("Installed WhiteboxTools version ", substr(version[1], 16, 20)))
+  }
+  if (force_update_wbt) {
+    whitebox::wbt_install()
+    version <- whitebox::wbt_version()
+    print(paste0("Installed WhiteboxTools version ", substr(version[1], 16, 20), " (force update)."))
   }
 
   #change terra options
@@ -81,6 +86,10 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
   if (!(points_name_col %in% names(points))){
     stop("The column name you passed to parameter points_name_col does not appear to be in the points shapefile. If the column name had spaces, slashes, or other problematic characters, it might have been modified upon reading it in. To see what R thinks the column names are you could load the layer using names(terra::vect('path_to_your_shp')).")
   }
+  if (is.na(terra::crs(points))){
+    stop("The points shapefile does not have a coordinate reference system specified. Please fix this issue and try again.")
+  }
+
   original_projection <- paste0("epsg:", terra::crs(points, describe=TRUE)$code)
   DEM <- terra::rast(DEM) #load the DEM to R environment
   points <- terra::project(points, DEM)
@@ -250,9 +259,9 @@ drainageBasins <- function(DEM, points, points_name_col, streams = NULL, project
         input_points <- rbind(input_points, point)
         snapped_pts <- rbind(snapped_pts, snapped_pt)
       }
-      print("Success!")
+      print(crayon::blue("Success!"))
     }, error = function(e) {
-      print(paste0("Failed to delineate watershed for point named ", as.data.frame(snapped_points[i, points_name_col])))
+      print(crayon::red(paste0("Failed to delineate watershed for point named ", as.data.frame(snapped_points[i, points_name_col]))))
     })
   }
   #Save the larger shapefiles to disc
