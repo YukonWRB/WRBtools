@@ -155,7 +155,6 @@ eq_fetch <- function(EQcode,
     # eq_std_calcx <- WRBtools::eq_std_calc
     # environment(eq_std_calcx) <- environment()
     std_calcs <- eq_std_calc(data = sampledata,
-                                       calcs = std_calc_tmp)
 
 
     # Combine set and calculated standards, format and order
