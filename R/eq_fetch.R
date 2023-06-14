@@ -154,7 +154,7 @@ eq_fetch <- function(EQcode,
     # REVIEW Since eq_std_calc is in this same package, you can call the function directly like eq_std_calc. Assigning to the global environment is also never a good idea, possible unintended consequences.
     # eq_std_calcx <- WRBtools::eq_std_calc
     # environment(eq_std_calcx) <- environment()
-    std_calcs <- WRBtools::eq_std_calc(data = sampledata,
+    std_calcs <- eq_std_calc(data = sampledata,
                                        calcs = std_calc_tmp)
 
 
@@ -191,7 +191,7 @@ eq_fetch <- function(EQcode,
     list <- list()
     stndata <- sampledata %>%
       dplyr::filter(StnCode == i)
-    list[["sampledata"]] <- stndata
+    list[["stndata"]] <- stndata
     if(apply_standards == TRUE){
       list[["stnstd"]] <- stnstd
     }
