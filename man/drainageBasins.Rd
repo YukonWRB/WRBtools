@@ -42,7 +42,7 @@ drainageBasins(
 \item{force_update_wbt}{WhiteboxTools is by default only downloaded if it cannot be found on the computer, and no check are performed to ensure the local version is current. Set to TRUE if you know that there is a new version and you would like to use it.}
 }
 \value{
-Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin. The drainage basin polygons inherit the associated point attributes.
+Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin within the 'save_path'. In addition, three corresponding larger shapefiles will be created with features for all polygons (folder combined_shapefiles). The drainage basin polygons inherit the associated point attributes.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
