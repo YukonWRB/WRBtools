@@ -1,7 +1,7 @@
 #' Export raw data from Aquarius
 #'
 #' @description
-#' `r lifecycle::badge("experimental")`
+#' Wrapper around aq_download function to export three types of data for YOWN sites
 #'
 #' Export of raw data from aquarius to csv, writes 3 data frames for raw data, compensated data, and manually corrected data
 #'
@@ -17,16 +17,13 @@
 #REVIEW Right now you've got this set up to work only for the water level timeseries. Can you make a new parameter, perhaps called tsid or something, where the user can specify the timeseries? That would make this function more versatile.
 #REVIEW It would be great if the user could specify, as a parameter, the cut-off grade at or below which "redacted" is applied. Consider adding this as a parameter.
 #NOTE: This function should return the data.frames as an environment object.
-#NOTE: It's unclear which .csv the parameter filename refers to.
-#NOTE: Consider returning a single Excel workbook with a tab per data.frame. Use openxlsx.
-#NOTE: This function is really a wrapper/enhancer on top of aq_download. You should explain that in the @description or @details; refer to other functions like DB_browse_ts or similar functions to see how I've linked to other functions.
 
 YOWNraw <- function(AQID,
                     dateRange = "all",
                     saveTo = "desktop",
                     login = Sys.getenv(c("AQUSER", "AQPASS")),
-                    server ="https://yukon.aquaticinformatics.net/AQUARIUS",
-                    filename = "leveldata_RAW.csv"){
+                    server ="https://yukon.aquaticinformatics.net/AQUARIUS")
+  {
 
   # # Debug and development params. Leave as comments.
   # AQID = "YOWN-0101"
@@ -47,7 +44,7 @@ YOWNraw <- function(AQID,
   #### Download time series data from Aquarius, preliminary formatting ####
   # Download data from Aquarius
   list <- list()
-  for(i in c("Wlevel_Hgt.level_RAW", "Wlevel_Hgt.Compensated", "Wlevel_btoc.Calculated")){
+  for(i in c("Wlevel_Hgt.level_RAW", "Wlevel_Hgt.Compensated", "Wlevel_bgs.Calculated")){
     datalist <- suppressMessages(WRBtools::aq_download(loc_id = AQID,
                                                        ts_name = i,
                                                        server = server,
@@ -63,12 +60,18 @@ YOWNraw <- function(AQID,
     attr(timeseries$timestamp_UTC , "tzone") <- "MST"
     names(timeseries)[names(timeseries) == "timestamp_UTC"] <- "timestamp_MST"
     # final format, write to .csv
-    fulldf <- timeseries %>%
-      dplyr::select(c("timestamp_MST", "value", "grade_level", "grade_description"))
+    if(i == "Wlevel_Hgt.level_RAW"| i == "Wlevel_Hgt.Compensated"){
+      fulldf <- timeseries %>%
+      dplyr::select(c("timestamp_MST", "value"))
+    } else {
+      fulldf <- timeseries %>%
+        dplyr::select(c("timestamp_MST", "value", "grade_level", "grade_description"))
+    }
     list[[i]] <- fulldf
   }
-  utils::write.csv(fulldf, paste0(saveTo, "/", AQID, "_", i, ".csv"), row.names = FALSE)
-
+  openxlsx::write.xlsx(x = list, file = paste0(saveTo, "/", AQID, "_RAW.xlsx"), rowNames = FALSE)
 }
+
+
 
 
