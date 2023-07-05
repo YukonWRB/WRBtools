@@ -6,9 +6,7 @@
 #' Export of raw data from aquarius to csv, writes 3 data frames for raw data, compensated data, and manually corrected data
 #'
 #' @param AQID YOWN location
-#' @param dateRange  ?????
 #' @param saveTo Directory in which the data will be saved. Can specify "desktop" to automatically create YOWN ID folder on desktop as save directory.
-#' @param filename ?????
 #' @param login Aquarius username and password, taken from Renviron files
 #' @param server Aquarius server ID
 #'
@@ -48,6 +46,7 @@ YOWNraw <- function(AQID,
 
   #### Download time series data from Aquarius, preliminary formatting ####
   # Download data from Aquarius
+  list <- list()
   for(i in c("Wlevel_Hgt.level_RAW", "Wlevel_Hgt.Compensated", "Wlevel_btoc.Calculated")){
     datalist <- suppressMessages(WRBtools::aq_download(loc_id = AQID,
                                                        ts_name = i,
@@ -63,12 +62,13 @@ YOWNraw <- function(AQID,
     # Change timestamps from UTC to MST
     attr(timeseries$timestamp_UTC , "tzone") <- "MST"
     names(timeseries)[names(timeseries) == "timestamp_UTC"] <- "timestamp_MST"
-
     # final format, write to .csv
     fulldf <- timeseries %>%
       dplyr::select(c("timestamp_MST", "value", "grade_level", "grade_description"))
-    utils::write.csv(fulldf, paste0(saveTo, "/", AQID, "_", i, ".csv"), row.names = FALSE)
+    list[[i]] <- fulldf
   }
+  utils::write.csv(fulldf, paste0(saveTo, "/", AQID, "_", i, ".csv"), row.names = FALSE)
+}
 
 }
 

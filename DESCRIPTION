@@ -32,7 +32,6 @@ Imports:
     odbc,
     openxlsx,
     plyr,
-    readxl,
     rlang,
     RPostgreSQL,
     RSQLite,
