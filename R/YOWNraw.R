@@ -13,6 +13,9 @@
 #' @return Writes three csv files containing YOWN data in the specified directory.
 #' @export
 
+#REVIEW This function looks like it could easily be used for data other than just YOWN. Consider renaming the function and reviewing the parameters to make it clear to the user that it can work with any AQID
+#REVIEW Right now you've got this set up to work only for the water level timeseries. Can you make a new parameter, perhaps called tsid or something, where the user can specify the timeseries? That would make this function more versatile.
+#REVIEW It would be great if the user could specify, as a parameter, the cut-off grade at or below which "redacted" is applied. Consider adding this as a parameter.
 #NOTE: This function should return the data.frames as an environment object.
 #NOTE: It's unclear which .csv the parameter filename refers to.
 #NOTE: Consider returning a single Excel workbook with a tab per data.frame. Use openxlsx.
@@ -26,7 +29,7 @@ YOWNraw <- function(AQID,
                     filename = "leveldata_RAW.csv"){
 
   # # Debug and development params. Leave as comments.
-  # AQID = "YOWN-1925"
+  # AQID = "YOWN-0101"
   # timeSeriesID = "Wlevel_Hgt.level_RAW"
   # saveTo = "desktop"
   # login = Sys.getenv(c("AQUSER", "AQPASS"))
@@ -35,10 +38,7 @@ YOWNraw <- function(AQID,
   #### Setup ####
   # Sort out save location
   saveTo <- tolower(saveTo)
-  if (save_path %in% c("Choose", "choose")) {
-    print("Select the folder where you want this graph saved.")
-    save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
-  } else if(saveTo == "desktop") {
+  if(saveTo == "desktop") {
     saveTo <- paste0("C:/Users/", Sys.getenv("USERNAME"), "/Desktop/")
   } else if (dir.exists(saveTo) == FALSE) {
     stop("Specified directory does not exist. Consider specifying save path as one of 'choose' or 'desktop'; refer to help file.")
@@ -68,5 +68,7 @@ YOWNraw <- function(AQID,
     list[[i]] <- fulldf
   }
   utils::write.csv(fulldf, paste0(saveTo, "/", AQID, "_", i, ".csv"), row.names = FALSE)
+
 }
+
 

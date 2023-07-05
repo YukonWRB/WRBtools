@@ -17,7 +17,7 @@ DB_get_meta(path = "default", location = "all", save_path = NULL)
 A list of two data.frames: one with the location code, name, latitude, and longitude, and another with vertical datum information. Optionally, an Excel workbook saved to disk.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Retrieves metadata for any valid location ID in the database. Returns the name of the location, the lat/long and (if possible) vertical datum information.
 }

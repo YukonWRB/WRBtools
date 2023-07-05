@@ -10,7 +10,7 @@
 #'
 #' Deleting or overwriting: this function can be used to simply delete data without appending anything. Simply specify a data.frame with both columns ('Time' and 'Value')and NA values, set overwrite = TRUE, and specify a start and end time (inclusive)
 #'
-#' To store login credentials in your .renviron profile, call [usethis::edit_r_environ()] and enter your username and password as value pairs, as AQUSER="your username" and AQPASS = "your password".
+#' To store login credentials in your .renviron profile, call [usethis::edit_r_environ()] and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password".
 #'
 #' @param loc_id The location ID, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `29EA001` or `YOWN-0804`.
 #' @param ts_name The timeseries name exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `Wlevel_bgs.Calculated`.

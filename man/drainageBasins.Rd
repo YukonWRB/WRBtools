@@ -42,10 +42,10 @@ drainageBasins(
 \item{force_update_wbt}{WhiteboxTools is by default only downloaded if it cannot be found on the computer, and no check are performed to ensure the local version is current. Set to TRUE if you know that there is a new version and you would like to use it.}
 }
 \value{
-Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin. The drainage basin polygons inherit the associated point attributes.
+Saved to disk: an ESRI shapefile for each drainage basin, plus the associated "snapped" pour point and the point as provided, all in a separate folder for each basin within the 'save_path'. In addition, three corresponding larger shapefiles will be created with features for all polygons (folder combined_shapefiles). The drainage basin polygons inherit the associated point attributes.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#maturing}{\figure{lifecycle-maturing.svg}{options: alt='[Maturing]'}}}{\strong{[Maturing]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Delineates watersheds above one or more points using \href{www.whiteboxgeo.com/}{Whitebox Tools}. To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement (see details). Many time-consuming raster operations are performed, so the function will attempt to use already-calculated rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See additional details below for processing steps.
 
