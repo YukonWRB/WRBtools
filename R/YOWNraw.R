@@ -30,20 +30,17 @@ YOWNraw <- function(AQID,
                     server ="https://yukon.aquaticinformatics.net/AQUARIUS",
                     filename = "leveldata_RAW.csv"){
 
-  # # Debug and development params. Leave as comments.
-  # AQID = "YOWN-1925"
-  # timeSeriesID = "Wlevel_Hgt.level_RAW"
-  # saveTo = "desktop"
-  # login = Sys.getenv(c("AQUSER", "AQPASS"))
-  # server ="https://yukon.aquaticinformatics.net/AQUARIUS"
+  # Debug and development params. Leave as comments.
+  AQID = "YOWN-0101"
+  timeSeriesID = "Wlevel_Hgt.level_RAW"
+  saveTo = "desktop"
+  login = Sys.getenv(c("AQUSER", "AQPASS"))
+  server ="https://yukon.aquaticinformatics.net/AQUARIUS"
 
   #### Setup ####
   # Sort out save location
   saveTo <- tolower(saveTo)
-  if (save_path %in% c("Choose", "choose")) {
-    print("Select the folder where you want this graph saved.")
-    save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
-  } else if(saveTo == "desktop") {
+  if(saveTo == "desktop") {
     saveTo <- paste0("C:/Users/", Sys.getenv("USERNAME"), "/Desktop/")
   } else if (dir.exists(saveTo) == FALSE) {
     stop("Specified directory does not exist. Consider specifying save path as one of 'choose' or 'desktop'; refer to help file.")
