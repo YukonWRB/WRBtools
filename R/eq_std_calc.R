@@ -113,8 +113,7 @@ eq_std_calc <- function(data = sampledata,
   }
   hardx <- floor(hardx)
 
-  lookup <- as.data.frame(readxl::read_xlsx(path="G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="Mn", col_names=TRUE))
-  # REVIEW much, much better to use openxlsx. Actually essential. readxl depends on Java, which leads to problems in some installations. Found that out the hard way. You should also not need to do as.data.frame. Remember to remove readxl from the DESCRIPTION file after, openxlsx is already there.
+  lookup <- as.data.frame(openxlsx::read.xlsx(xlsxFile = "G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="Mn", colNames=TRUE))
   colnames(lookup) <- suppressWarnings(as.character(plyr::round_any(as.numeric(colnames(lookup)), accuracy = 0.1, f = ceiling)))
   colnames(lookup)[1] <- "Min"
   colnames(lookup)[2] <- "Max"
@@ -136,8 +135,7 @@ eq_std_calc <- function(data = sampledata,
     tempx <- temp
   }
 
-  lookup <- as.data.frame(readxl::read_xlsx(path="G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="NH4", col_names=TRUE))
-  # REVIEW same comment as above re readxl and as.data.frame
+  lookup <- as.data.frame(openxlsx::read.xlsx(xlsxFile = "G:/water/Common_GW_SW/R-packages/WRBtools/EQfetch_std_lookup.xlsx",sheet="NH4", colNames=TRUE))
   CCME_NH4_lt <- dplyr::pull(dplyr::filter(lookup, Temp == tempx)[which(colnames(lookup) == as.character(pHx))])
   if(is.element("CCME_NH4_lt", calcs$MaxVal)){
     calcs$MaxVal[which(calcs$MaxVal == "CCME_NH4_lt")] <- CCME_NH4_lt
