@@ -68,7 +68,7 @@ YOWNraw <- function(AQID,
     list[[i]] <- fulldf
   }
   utils::write.csv(fulldf, paste0(saveTo, "/", AQID, "_", i, ".csv"), row.names = FALSE)
-}
 
 }
+
 

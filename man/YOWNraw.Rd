@@ -16,15 +16,11 @@ YOWNraw(
 \arguments{
 \item{AQID}{YOWN location}
 
-\item{dateRange}{?????}
-
 \item{saveTo}{Directory in which the data will be saved. Can specify "desktop" to automatically create YOWN ID folder on desktop as save directory.}
 
 \item{login}{Aquarius username and password, taken from Renviron files}
 
 \item{server}{Aquarius server ID}
-
-\item{filename}{?????}
 }
 \value{
 Writes three csv files containing YOWN data in the specified directory.
