@@ -21,12 +21,12 @@ eq_fetch <- function(EQcode,
                      BD = 2,
                      apply_standards = TRUE){
 
-  # EQcode <- "(EG)"
-  # stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
-  # paramIDs <- "all" # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
-  # dates <- "all"
-  # BD <- 2
-  # apply_standards = TRUE
+  EQcode <- "(EG)"
+  stationIDs <- "all"# Specify a vector of station IDs without the EQWin code (eg. c("GW-4", "GW-5") OR "all")
+  paramIDs <- c("Al-T", "Al-D", "As-T", "As-D", "Cu-T", "Cu-D", "Fe-T", "Fe-D") # Specify a vector of parameter IDs exactly as they appear in EQWin (eg. c("Zn-T, Zn-D") OR "all")
+  dates <- "all"
+  BD <- 2
+  apply_standards = TRUE
 
   # Set a few options (I'll probs remove these)
 
@@ -72,8 +72,7 @@ eq_fetch <- function(EQcode,
   eqparams <- as.data.frame(DBI::dbReadTable(EQWin, "eqparams") %>%
                               subset(select=c("ParamId", "ParamCode", "Units")))
   if(tolower(paste(paramIDs, collapse = "") != "all")){
-    params <- eqparams %>%
-      dplyr::filter(paramIDs)
+    params <- subset(eqparams,ParamCode %in% paramIDs)
   } else {
     params <- eqparams
   }
