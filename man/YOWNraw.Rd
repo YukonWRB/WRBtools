@@ -9,8 +9,7 @@ YOWNraw(
   dateRange = "all",
   saveTo = "desktop",
   login = Sys.getenv(c("AQUSER", "AQPASS")),
-  server = "https://yukon.aquaticinformatics.net/AQUARIUS",
-  filename = "leveldata_RAW.csv"
+  server = "https://yukon.aquaticinformatics.net/AQUARIUS"
 )
 }
 \arguments{
@@ -26,7 +25,7 @@ YOWNraw(
 Writes three csv files containing YOWN data in the specified directory.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+Wrapper around aq_download function to export three types of data for YOWN sites
 
 Export of raw data from aquarius to csv, writes 3 data frames for raw data, compensated data, and manually corrected data
 }

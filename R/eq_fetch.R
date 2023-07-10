@@ -72,8 +72,7 @@ eq_fetch <- function(EQcode,
   eqparams <- as.data.frame(DBI::dbReadTable(EQWin, "eqparams") %>%
                               subset(select=c("ParamId", "ParamCode", "Units")))
   if(tolower(paste(paramIDs, collapse = "") != "all")){
-    params <- eqparams %>%
-      dplyr::filter(paramIDs)
+    params <- subset(eqparams,ParamCode %in% paramIDs)
   } else {
     params <- eqparams
   }
