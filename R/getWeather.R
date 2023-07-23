@@ -1,6 +1,6 @@
 #' Download ECCC weather station data
 #'
-#'#' @description
+#' @description
 #' `r lifecycle::badge("stable")`
 #'
 #' This script downloads data from an ECCC station for a given date range, calling [weathercan::weather_dl()] to download the data. This function facilitates interaction with that package by modifying start and end dates if your request is out of range, and allows you to interactively search for locations by name. Note that this function may take a long time to complete if you are requesting multiple years of data!
@@ -26,11 +26,16 @@ getWeather <- function(station,
 {
 
   #initial checks
-  rlang::check_installed("remotes", reason = "Remotes is necessary to update dependencies for this function.")
+  rlang::check_installed("remotes", reason = "to update dependencies for this function.")
   if (!rlang::is_installed("weathercan")) { #This is here because getWeather is not a 'depends' of this package; it is only necessary for this function and is therefore in "suggests"
     print("Installing dependency 'weathercan'...")
     remotes::install_github("ropensci/weathercan")
-    print("Package weathercan successfully installed.")
+    if (rlang::is_installed("weathercan")){
+      print("Package weathercan successfully installed.")
+    } else {
+      stop("Failed to install package weathercan. You could troubleshoot by running 'remotes::install_github('ropensci/weathercan')' by itself.")
+    }
+
   }
 
   if(!(tzone %in% c("UTC", "local"))){
@@ -57,12 +62,16 @@ getWeather <- function(station,
   station <- toupper(station)
 
   # Check if station list needs to be updated
-  if(weathercan::stations_meta()$ECCC_modified < Sys.time() - 30*24*60*60){
+  if(weathercan::stations_meta()$ECCC_modified < Sys.time() - 180*24*60*60){
     tryCatch({
+      rlang::check_installed("lutz", reason = "to update the station list.")
+      rlang::check_installed("sf", reason = "to update the station list.")
       suppressWarnings(weathercan::stations_dl(quiet=TRUE))
     }, error = function(e) {
       warning("The local list of stations is outdated and automatically updating it failed. Please update it by running weathercan::stations_dl(), especially if there's an issue running this function.")
     })
+  } else {
+    message(paste0("Station list was last updated on ", substr(weathercan::stations_meta()$ECCC_modified, 1, 10), ". You can manually update it by running weathercan::stations_dl() if you think this is needed."))
   }
 
   #Match the input numbers to the proper ECCC station ID
@@ -100,12 +109,7 @@ getWeather <- function(station,
   yr_end <- substr(end, 1, 4)
 
   if (is.na(station$end) | is.na(station$start)){
-    stop("Looks like you've selected a station with no data: the start and end years I have for that location are empty. Try again with a different interval.")
-  }
-
-  if (station$end+1 < yr_end){
-    end <- gsub(substr(end, 1, 4), as.numeric(station$end)+1, end)
-    message(paste0("Your specified end date is after the last available records. The end date year has been modified to ", as.numeric(station$end)), ".")
+    stop("Looks like you've selected a station with no data for the time range: the start and end years I have for that location are empty. Try again with a different interval.")
   }
 
   if (station$start > yr_start){
@@ -113,7 +117,12 @@ getWeather <- function(station,
     message(paste0("Your specified start date is before the actual start of records. The start date has been modified to begin in year ", station$start))
   }
 
-  data <- suppressMessages(weathercan::weather_dl(station$station_id, start = as.character(start), end = as.character(end), interval = interval, time_disp = tzone))
+  if (station$end+1 < yr_end){
+    end <- gsub(substr(end, 1, 4), as.numeric(station$end)+1, end)
+    message(paste0("Your specified end date is after the last available records. The end date year has been modified to ", as.numeric(station$end)), ".")
+  }
+
+  data <- suppressWarnings(weathercan::weather_dl(station$station_id, start = as.character(start), end = as.character(end), interval = interval, time_disp = tzone))
 
   #write the output to a .csv file for upload into Aquarius or other end use.
   if (!(is.null(save_path))){
