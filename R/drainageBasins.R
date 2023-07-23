@@ -3,13 +3,15 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #'
-#' Hydro-processes a DEM, creating flow accumulation, direction, and streams rasters, and (optionally) delineates watersheds above one or more points using [Whitebox Tools](www.whiteboxgeo.com/). To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement (see details). Many time-consuming raster operations are performed, so the function will attempt to use existing rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See additional details below for processing steps.
+#' Hydro-processes a DEM, creating flow accumulation, direction, and streams rasters, and (optionally) delineates watersheds above one or more points using [Whitebox Tools](www.whiteboxgeo.com/). To facilitate this task in areas with poor quality/low resolution DEMs, can "burn-in" a stream network to the DEM to ensure proper stream placement (see details). Many time-consuming raster operations are performed, so the function will attempt to use existing rasters if they are present in the same path as the base DEM and named according to the function's naming conventions. In practice, this means that only the first run of the function needs to be very time consuming. See details for more information.
 #'
 #' NOTE 1: This tool can be slow to execute, and will use a lot of memory. Be patient, it might take several hours with a large DEM.
 #'
-#' NOTE 2: If you are have already run this tool and are using a DEM in the same directory as last time, you only need to specify the DEM and the points (and, optionally, a projection for the points output). Operations using the optional streams shapefile and generating flow accumulation direction, and the artificial streams raster do not need to be repeated unless you want to use a different DEM or streams shapefile.
+#' NOTE 2: ESRI shapefiles, on which the Whitebox Tools functions depend, truncate column names to 10 characters. You may want to save and re-assign column names to the output {terra} object after this function has run.
 #'
-#' NOTE 3: This function is very memory (RAM) intensive. You'll want at least 16GB of RAM, and to ensure that most of it is free. If you get an error such as 'cannot allocate xxxxx bytes', you probably don't have the resources to run the tool. The WhiteboxTool functions are memory hungry: all rasters are un-compressed and converted to 64-bit float type before starting work, and there needs to be room to store more than twice that uncompressed raster size in memory. Example: for the Yukon at a resolution of 16.9 meters (the highest resolution CDEM) the tool attempts to allocate 36GB of memory.
+#' NOTE 3: If you are have already run this tool and are using a DEM in the same directory as last time, you only need to specify the DEM and the points (and, optionally, a projection for the points output). Operations using the optional streams shapefile and generating flow accumulation direction, and the artificial streams raster do not need to be repeated unless you want to use a different DEM or streams shapefile.
+#'
+#' NOTE 4: This function is very memory (RAM) intensive. You'll want at least 16GB of RAM, and to ensure that most of it is free. If you get an error such as 'cannot allocate xxxxx bytes', you probably don't have the resources to run the tool. The WhiteboxTool functions are memory hungry: all rasters are un-compressed and converted to 64-bit float type before starting work, and there needs to be room to store more than twice that uncompressed raster size in memory. Example: for the Yukon at a resolution of 16.9 meters (the highest resolution CDEM) the tool attempts to allocate 36GB of memory.
 #'
 #' @details
 #' This function uses software from the Whitebox geospatial analysis package, built by Prof. John Lindsay. Refer to [this link](https://www.whiteboxgeo.com/manual/wbt_book/intro.html) for more information.
@@ -20,7 +22,7 @@
 #' ## Explanation of process:
 #' Starting from a supplied DEM, the function will fill single-cell pits, burn-in a stream network depression if requested (ensuring that flow accumulations happen in the correct location), breach depressions in the digital elevation model using a least-cost algorithm (i.e. using the pathway resulting in minimal changes to the DEM considering distance and elevation) then calculate flow accumulation and direction rasters. Then, a raster of streams is created where flow accumulation is greatest. The points provided by the user are then snapped to the derived streams raster and watersheds are computed using the flow direction rasters. Finally, the watershed/drainage basin polygons are saved to the specified save path along with the provided points and the snapped pour points.
 #'
-#' ### Using a streams shapefile to burn-in depressions to the DEM:
+#' ## Using a streams shapefile to burn-in depressions to the DEM:
 #' Be aware that this part of the function should ideally be used with a "simplified" streams shapefile. In particular, avoid or pre-process stream shapefiles that represent side-channels, as these will burn-in several parallel tracks to the DEM. ESRI has a tool called "simplify hydrology lines" which is great if you can ever get it to work, and WhiteboxTools has functions [whitebox::wbt_remove_short_streams()] to trim the streams raster, and [whitebox::wbt_repair_stream_vector_topology()] to help in converting a corrected streams vector to raster in the first place.
 #'
 #' @param DEM The path to a DEM including extension from which to delineate watersheds/catchments. Must be in .tif format. Derived layers such as flow accumulation, flow direction, and streams will inherit the DEM coordinate reference system.
@@ -98,7 +100,7 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
     original_projection <- paste0("epsg:", terra::crs(points, describe=TRUE)$code)
     DEM <- terra::rast(DEM) #load the DEM to R environment
     points <- terra::project(points, DEM)
-    dir.create(paste0(tempdir(), "/temp_inputs"))
+    suppressWarnings(dir.create(paste0(tempdir(), "/temp_inputs")))
     terra::writeVector(points, paste0(tempdir(), "/temp_inputs/points.shp"), overwrite=TRUE)
   }
 
@@ -187,7 +189,7 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
   #Now snap the points and delineate watersheds, returning polygons.
   if(!is.null(points)){
     print("Snapping points according to the parameters selected...")
-    dir.create(paste0(tempdir(), "/shapefiles"))
+    suppressWarnings(dir.create(paste0(tempdir(), "/shapefiles")))
     unlink(list.files(paste0(tempdir(), "/shapefiles"), full.names=TRUE))
     if (snap == "nearest"){
       whitebox::wbt_jenson_snap_pour_points(pour_pts = paste0(tempdir(), "/temp_inputs/points.shp"),
@@ -202,9 +204,9 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
     }
 
     snapped_points <- terra::vect(paste0(tempdir(), "/shapefiles/snapped_points.shp")) #load to memory so as to iterate over each point, allowing for looping. Otherwise the tool creates non-overlapping rasters.
-    dir.create(paste0(tempdir(), "/rasters")) #watershed tool outputs rasters (it works off a grid), but polygons are desired output. These are not saved.
+    suppressWarnings(dir.create(paste0(tempdir(), "/rasters"))) #watershed tool outputs rasters (it works off a grid), but polygons are desired output. These are not saved.
     unlink(list.files(paste0(tempdir(), "/rasters"), full.names=TRUE)) #ensure clear dir for repeat runs in same session
-    dir.create(paste0(save_path, "/watersheds_", Sys.Date())) #The desired outputs will go here
+    suppressWarnings(dir.create(paste0(save_path, "/watersheds_", Sys.Date()))) #The desired outputs will go here
     unlink(list.files(paste0(save_path, "/watersheds_", Sys.Date()), full.names = TRUE), recursive = TRUE)
     count <- 0 #For 'together' shapefiles. Need a feature to create the R object, then features can be appended.
     failed <- character()
@@ -234,6 +236,7 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
           point <- terra::project(point, original_projection)
         }
         poly <- cbind(poly, as.data.frame(point)) #attach the point attributes to the polygon
+        poly <- poly[, -1] #Remove a pesky identifier column that is now superfluous
 
         #and now that everything worked, create the directories and populate them.
         folder_name <- as.data.frame(snapped_pt[1, points_name_col])
@@ -276,7 +279,7 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
       })
     }
     #Save the larger shapefiles to disc
-    dir.create(paste0(save_path, "/watersheds_", Sys.Date(), "/"))
+    suppressWarnings(dir.create(paste0(save_path, "/watersheds_", Sys.Date(), "/")))
     terra::writeVector(output_basins, paste0(save_path, "/watersheds_", Sys.Date(), "/drainage_basins.shp"), overwrite=TRUE)
     terra::writeVector(input_points, paste0(save_path, "/watersheds_", Sys.Date(), "/input_points.shp"), overwrite=TRUE)
     terra::writeVector(snapped_points, paste0(save_path, "/watersheds_", Sys.Date(), "/snapped_points.shp"), overwrite=TRUE)
