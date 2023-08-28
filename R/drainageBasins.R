@@ -1,4 +1,4 @@
-#' Watershed/basin delineation (from WRBtools)
+#' Watershed/basin delineation
 #'
 #' @description
 #' `r lifecycle::badge("experimental")`
@@ -52,8 +52,11 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
     stop("The parameter 'snap' must be one of 'nearest' or 'greatest'.")
   }
   if (save_path == "choose") {
-    print("Select the output folder for shapefiles...")
+    message("Select the output folder for shapefiles...")
     save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
+  }
+  if (!dir.exists(save_path)){
+    stop("The save path (folder) you specified does not seem to exist. Do you need to create the folder, or did you point to a file?")
   }
   if (!file.exists(DEM)){
     stop("The DEM you pointed to does not exist. Perhaps your file path is wrong?")
@@ -70,17 +73,17 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
   wbt_check <- whitebox::check_whitebox_binary()
   if (wbt_check){
     version <- invisible(utils::capture.output(whitebox::wbt_version()))
-    print(paste0("Using WhiteboxTools version ", substr(version[1], 16, 20), ". If this is out of date, run function with force_update_wbt = TRUE."))
+    message("Using WhiteboxTools version ", substr(version[1], 16, 20), ". If this is out of date, run function with force_update_wbt = TRUE.")
   } else {
-    print("Installing WhiteboxTools binaries...")
+    message("Installing WhiteboxTools binaries...")
     whitebox::wbt_install()
     version <- invisible(utils::capture.output(whitebox::wbt_version()))
-    print(paste0("Installed WhiteboxTools version ", substr(version[1], 16, 20)))
+    message("Installed WhiteboxTools version ", substr(version[1], 16, 20))
   }
   if (force_update_wbt) {
     whitebox::wbt_install()
     version <- whitebox::wbt_version()
-    print(paste0("Installed WhiteboxTools version ", substr(version[1], 16, 20), " (force update)."))
+    message("Installed WhiteboxTools version ", substr(version[1], 16, 20), " (force update).")
   }
 
   #change terra options
@@ -109,7 +112,7 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
   streams_derived_exists <- FALSE
   d8fac_exists <- FALSE
   if (!is.null(streams) | !overwrite){ #no point in checking the derived rasters if a new streams layer is specified or if we're overwriting anyways
-    print("Checking if the right layers already exist...")
+    message("Checking if the right layers already exist...")
     if (file.exists(paste0(directory, "/D8pointer.tif")) & !overwrite){
       d8pntr <- terra::rast(paste0(directory, "/D8pointer.tif"))
       if (terra::compareGeom(d8pntr, DEM)){
@@ -135,26 +138,26 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
   }
 
   if (!streams_derived_exists | !d8pntr_exists | !d8fac_exists | overwrite){
-    print("Caculating layers derived from the DEM as they are either missing, have different extents as the provided DEM, you've requested an overwrite of calculated layers, or you specified a streams shapefile.")
+    message("Caculating layers derived from the DEM as they are either missing, have different extents as the provided DEM, you've requested an overwrite of calculated layers, or you specified a streams shapefile.")
 
-    print("Filling single-cell pits in the DEM...")
+    message("Filling single-cell pits in the DEM...")
     whitebox::wbt_fill_single_cell_pits(dem = input_DEM,
                                         output = paste0(directory, "/filled_single_cells.tif"))
 
     if (!is.null(streams)){ #load streams, process to raster, and burn-in the DEM
-      print("Creating a stream raster from the provided stream shapefile...")
+      message("Creating a stream raster from the provided stream shapefile...")
       streams_input <- terra::vect(streams)
       streams_input <- terra::project(streams_input, DEM)
       streams_input <- terra::rasterize(streams_input, DEM, touches = TRUE, filename = paste0(tempdir(), "/temp_inputs/streams_input_rasterized.tif"), overwrite=TRUE) #Make raster stream network. Background has values NA. Write to disk to avoid memory restrictions.
       streams_input <- (streams_input/streams_input) * 20 #Make each cell value = 20 to later burn in a 20 meter depression
       streams_input <- terra::subst(streams_input, NA, 0) #replace background NAs with 0 so that it subtracts (nothing) from the DEM later; subtracting NA results in NA cells.
-      print("Creating depressions in the DEM where streams should be...")
+      message("Creating depressions in the DEM where streams should be...")
       filled_single_cells <- terra::rast(paste0(directory, "/filled_single_cells.tif"))
       DEM_burned <- filled_single_cells - streams_input #burn-in the DEM
       terra::writeRaster(DEM_burned, paste0(directory, "/DEM_burned.tif"), overwrite = TRUE)
     }
 
-    print("Breaching depressions in the DEM to ensure continuous flow paths...")
+    message("Breaching depressions in the DEM to ensure continuous flow paths...")
     whitebox::wbt_breach_depressions_least_cost(
       dem = if (!is.null(streams)) paste0(directory, "/DEM_burned.tif") else paste0 (directory, "/filled_single_cells.tif"),
       output = paste0(directory, "/FilledDEM.tif"),
@@ -162,33 +165,33 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
       fill = TRUE,
       flat_increment = 0.0001)
 
-    print("Calculating a flow accumulation raster...")
+    message("Calculating a flow accumulation raster...")
     whitebox::wbt_d8_flow_accumulation(input = paste0(directory, "/FilledDEM.tif"),
                                        output = paste0(directory, "/D8fac.tif"))
     d8fac <- terra::rast(paste0(directory, "/D8fac.tif"))
 
-    print("Calculating a flow directions raster...")
+    message("Calculating a flow directions raster...")
     whitebox::wbt_d8_pointer(dem = paste0(directory, "/FilledDEM.tif"),
                              output = paste0(directory, "/D8pointer.tif"))
     d8pntr <- terra::rast(paste0(directory, "/D8pointer.tif"))
 
     # Make a raster of streams only from the DEM, with a threshold (in cells) for flow accumulation
-    print("Creating a raster of streams based on the flow accumulation raster...")
+    message("Creating a raster of streams based on the flow accumulation raster...")
     whitebox::wbt_extract_streams(flow_accum = paste0(directory, "/D8fac.tif"),
                                   output = paste0(directory, "/streams_derived.tif"),
                                   threshold = threshold)
     streams_derived <- terra::rast(paste0(directory, "/streams_derived.tif"))
   } else {
     if (!is.null(streams)){
-      print("Using pre-calculated derived layers for basin delineation. NOTE: you specified a streams shapefile which won't be used. If you want to incorporate it run this function again with overwrite = TRUE.")
+      message("Using pre-calculated derived layers for basin delineation. NOTE: you specified a streams shapefile which won't be used. If you want to incorporate it run this function again with overwrite = TRUE.")
     } else {
-      print("Using pre-calculated derived layers for basin delineation. If you are trying to change the streams threshold you must specify overwrite = TRUE for this to take effect.")
+      message("Using pre-calculated derived layers for basin delineation. If you are trying to change the streams threshold you must specify overwrite = TRUE for this to take effect.")
     }
   }
 
   #Now snap the points and delineate watersheds, returning polygons.
   if(!is.null(points)){
-    print("Snapping points according to the parameters selected...")
+    message("Snapping points according to the parameters selected...")
     suppressWarnings(dir.create(paste0(tempdir(), "/shapefiles")))
     unlink(list.files(paste0(tempdir(), "/shapefiles"), full.names=TRUE))
     if (snap == "nearest"){
@@ -212,7 +215,7 @@ drainageBasins <- function(DEM, streams = NULL, breach_dist = 10000, threshold =
     failed <- character()
     cat(crayon::blue$bold("\n  Starting watershed delineation. This can take a long time so get yourself a tea/coffee.  \n"))
     for(i in 1:nrow(snapped_points)) {
-      print(paste0("Delineating drainage basin for point ", as.data.frame(snapped_points[i, points_name_col]), " (", i, " of ", nrow(snapped_points), ")"))
+      message("Delineating drainage basin for point ", as.data.frame(snapped_points[i, points_name_col]), " (", i, " of ", nrow(snapped_points), ")")
       tryCatch({
         terra::writeVector(snapped_points[i, ], paste0(tempdir(), "/shapefiles/", i,".shp"), overwrite=TRUE)
         invisible(utils::capture.output(whitebox::wbt_watershed(d8_pntr = paste0(directory, "/D8pointer.tif"),
