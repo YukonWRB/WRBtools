@@ -10,7 +10,7 @@ aq_download(
   start = "1950-01-01",
   end = Sys.Date(),
   login = Sys.getenv(c("AQUSER", "AQPASS")),
-  server = "https://yukon.aquaticinformatics.net/AQUARIUS"
+  server = Sys.getenv("AQSERVER")
 )
 }
 \arguments{
@@ -22,9 +22,9 @@ aq_download(
 
 \item{end}{The last day or instant for which you want information, in UTC 0. You can specify a Date object, POSIXct object, or character vector of form yyyy-mm-dd or yyyy-mm-dd HH:mm:ss. If specifying date or POSIXct objects, the timezone attribute will be ignored. If only a date is specified it will be assigned the last moment of the day. Times requested prior to the actual timeseries end will be adjusted to match available data.}
 
-\item{login}{Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.}
+\item{login}{Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron file; see details.}
 
-\item{server}{The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.}
+\item{server}{The URL for your organization's Aquarius web server. Default pulls from your .renviron file; see details.}
 }
 \value{
 A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. IMPORTANT: all times in this returned list are in UTC.
@@ -35,5 +35,5 @@ A list with four data.frames: station metadata; timeseries information consistin
 Fetches and processes data downloaded from an Aquarius web-hosted server and returns it in a concise format. Note that any times returned by this function are in UTC.
 }
 \details{
-To store login credentials in your .renviron profile, call \code{\link[usethis:edit]{usethis::edit_r_environ()}} and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password".
+To store login credentials in your .renviron file, call \code{\link[usethis:edit]{usethis::edit_r_environ()}} and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password". The server should be entered at server="your_server_url".
 }

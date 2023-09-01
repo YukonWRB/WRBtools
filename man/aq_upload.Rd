@@ -12,7 +12,7 @@ aq_upload(
   start = NULL,
   end = NULL,
   login = Sys.getenv(c("AQUSER", "AQPASS")),
-  server = "https://yukon.aquaticinformatics.net/AQUARIUS"
+  server = Sys.getenv("AQSERVER")
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ aq_upload(
 
 \item{login}{Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.}
 
-\item{server}{The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.}
+\item{server}{The URL for your organization's Aquarius web server. Default pulls from your .renviron file; see details.}
 }
 \value{
 Appends points to the Aquarius server.
@@ -45,5 +45,5 @@ The parameter \code{data} should consist of a data.frame with two named columns:
 
 Deleting or overwriting: this function can be used to simply delete data without appending anything. Simply specify a data.frame with both columns ('Time' and 'Value')and NA values, set overwrite = TRUE, and specify a start and end time (inclusive)
 
-To store login credentials in your .renviron profile, call \code{\link[usethis:edit]{usethis::edit_r_environ()}} and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password".
+To store login credentials in your .renviron profile, call \code{\link[usethis:edit]{usethis::edit_r_environ()}} and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password". The server should be entered at server="your_server_url".
 }

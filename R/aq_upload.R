@@ -10,7 +10,7 @@
 #'
 #' Deleting or overwriting: this function can be used to simply delete data without appending anything. Simply specify a data.frame with both columns ('Time' and 'Value')and NA values, set overwrite = TRUE, and specify a start and end time (inclusive)
 #'
-#' To store login credentials in your .renviron profile, call [usethis::edit_r_environ()] and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password".
+#' To store login credentials in your .renviron profile, call [usethis::edit_r_environ()] and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password". The server should be entered at server="your_server_url".
 #'
 #' @param loc_id The location ID, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `29EA001` or `YOWN-0804`.
 #' @param ts_name The timeseries name exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `Wlevel_bgs.Calculated`.
@@ -19,7 +19,7 @@
 #' @param start Not required; specify only if you with to overwrite existing data, as a character string of format "2022-01-01 00:00:00" or as a POSIXct object. Inclusive, must be >= to the first data point in data. Timezones should match that of data$Time.
 #' @param end Not required; specify only if you with to overwrite existing data, as a character string of format "2022-01-01 00:00:00" or as a POSIXct object. Inclusive, must be <= to the final data point in data. Timezones should match that of data$Time.
 #' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.
-#' @param server The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.
+#' @param server The URL for your organization's Aquarius web server. Default pulls from your .renviron file; see details.
 #'
 #' @return Appends points to the Aquarius server.
 #' @export
@@ -31,7 +31,7 @@ aq_upload <- function(loc_id,
                       start = NULL,
                       end = NULL,
                       login = Sys.getenv(c("AQUSER", "AQPASS")),
-                      server = "https://yukon.aquaticinformatics.net/AQUARIUS")
+                      server = Sys.getenv("AQSERVER"))
 {
   if (overwrite ==TRUE){
     if (is.null(start) | is.null(end)){

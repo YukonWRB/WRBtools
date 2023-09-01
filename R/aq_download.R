@@ -6,15 +6,15 @@
 #' Fetches and processes data downloaded from an Aquarius web-hosted server and returns it in a concise format. Note that any times returned by this function are in UTC.
 #'
 #'@details
-#' To store login credentials in your .renviron profile, call [usethis::edit_r_environ()] and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password".
+#' To store login credentials in your .renviron file, call [usethis::edit_r_environ()] and enter your username and password as value pairs, as AQUSER="your username" and AQPASS="your password". The server should be entered at server="your_server_url".
 #'
 #'
 #' @param loc_id The location ID, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `29EA001` or `YOWN-0804`.
 #' @param ts_name The timeseries name, exactly as visible in Aquarius web portal, as a character vector of length 1. Typically of form `Wlevel_bgs.Calculated`.
 #' @param start The first day or instant for which you want information, in UTC 0 timezone. You can specify a Date object, POSIXct object, or character vector of form yyyy-mm-dd or yyyy-mm-dd HH:mm:ss. If specifying date or POSIXct objects, the timezone attribute will be ignored. If only a date is specified it will be assigned the first moment of the day. Times requested prior to the actual timeseries start will be adjusted to match available data.
 #' @param end The last day or instant for which you want information, in UTC 0. You can specify a Date object, POSIXct object, or character vector of form yyyy-mm-dd or yyyy-mm-dd HH:mm:ss. If specifying date or POSIXct objects, the timezone attribute will be ignored. If only a date is specified it will be assigned the last moment of the day. Times requested prior to the actual timeseries end will be adjusted to match available data.
-#' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron profile; see details.
-#' @param server The URL for your organization's Aquarius web server. Default is for the Yukon Water Resources Branch.
+#' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron file; see details.
+#' @param server The URL for your organization's Aquarius web server. Default pulls from your .renviron file; see details.
 #'
 #' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. IMPORTANT: all times in this returned list are in UTC.
 #'
@@ -25,7 +25,7 @@ aq_download <- function(loc_id,
                         start = "1950-01-01",
                         end = Sys.Date(),
                         login = Sys.getenv(c("AQUSER", "AQPASS")),
-                        server = "https://yukon.aquaticinformatics.net/AQUARIUS"
+                        server = Sys.getenv("AQSERVER")
 )
 {
 
