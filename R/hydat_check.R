@@ -31,11 +31,11 @@ hydat_check <- function(silent = FALSE){
       if (local_hydat == remote_hydat){
         new_hydat <- TRUE
         if (!silent){
-          print("The local WSC HYDAT database was updated.")
+          message("The local WSC HYDAT database was updated.")
         }
       } else {
         if (!silent){
-          print("Failed to update the local HYDAT database. There is probably an active connection to the database preventing an overwrite, this function will try again at next run.")
+          warning("Failed to update the local HYDAT database. There is probably an active connection to the database preventing an overwrite.")
         }
       }
     }
@@ -46,11 +46,11 @@ hydat_check <- function(silent = FALSE){
     local_hydat <- as.Date(tidyhydat::hy_version(hydat_path)$Date)
     local_hydat <- gsub("-", "", as.character(local_hydat))
     if (!silent){
-      print("A local copy of the WSC HYDAT database was installed.")
+      message("A local copy of the WSC HYDAT database was installed.")
     }
   }
 
   if (!silent){
-    print("hydat_check completed.")
+    message("hydat_check completed.")
   }
 }
