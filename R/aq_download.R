@@ -16,7 +16,7 @@
 #' @param login Your Aquarius login credentials as a character vector of two. Default pulls information from your .renviron file; see details.
 #' @param server The URL for your organization's Aquarius web server. Default pulls from your .renviron file; see details.
 #'
-#' @return A list with four data.frames: station metadata; timeseries information consisting of timestamps, values, applicable grade and approval levels; approval level change summary; grade level change summary. IMPORTANT: all times in this returned list are in UTC.
+#' @return A list with four data.frames: station metadata; timeseries information consisting of datetimes, values, applicable grade and approval levels; approval level change summary; grade level change summary. IMPORTANT: all times in this returned list are in UTC.
 #'
 #' @export
 
@@ -76,12 +76,12 @@ aq_download <- function(loc_id,
   offset <- as.numeric(substr(locationData$UtcOffset, 1, 3))
 
   #Make the basic timeseries
-  ts <- data.frame(timestamp = RawDL$Points$Timestamp,
+  ts <- data.frame(datetime = RawDL$Points$Timestamp,
                    value = RawDL$Points$Value$Numeric)
 
   # format times to POSIXct, fix offset
-  ts$timestamp <- as.POSIXct(ts$timestamp, format = "%Y-%m-%dT%H:%M:%S", tz = "UTC")
-  ts$timestamp <- ts$timestamp - (offset*60*60)
+  ts$datetime <- as.POSIXct(ts$datetime, format = "%Y-%m-%dT%H:%M:%S", tz = "UTC")
+  ts$datetime <- ts$datetime - (offset*60*60)
 
   #format approvals, grade times
   approvals <- RawDL$Approvals
@@ -109,14 +109,14 @@ aq_download <- function(loc_id,
     ts$grade_level <- NA
     ts$grade_description <- NA
     for (i in 1:nrow(grades)){
-      if (min(ts$timestamp) > grades$start_time[i]) { #if the grade is prior to the first ts point
-        ts[ts$timestamp == min(ts$timestamp),]$grade_level <- grades$level[i]
-        ts[ts$timestamp == min(ts$timestamp),]$grade_description <- grades$description[i]
-      } else if (nrow(ts[ts$timestamp == grades$start_time[i],]) !=0) { #if the times line up properly (are snapped to a point)
-        ts[ts$timestamp == grades$start_time[i],]$grade_level <- grades$level[i]
-        ts[ts$timestamp == grades$start_time[i],]$grade_description <- grades$description[i]
-      } else if (which.min(abs(ts$timestamp - grades$start_time[i])) != nrow(ts)){ #if the times do not line up with anything in ts (not snapped), but not after the ts end
-        index <- which.min(abs(ts$timestamp - grades$start_time[i])) + 1
+      if (min(ts$datetime) > grades$start_time[i]) { #if the grade is prior to the first ts point
+        ts[ts$datetime == min(ts$datetime),]$grade_level <- grades$level[i]
+        ts[ts$datetime == min(ts$datetime),]$grade_description <- grades$description[i]
+      } else if (nrow(ts[ts$datetime == grades$start_time[i],]) !=0) { #if the times line up properly (are snapped to a point)
+        ts[ts$datetime == grades$start_time[i],]$grade_level <- grades$level[i]
+        ts[ts$datetime == grades$start_time[i],]$grade_description <- grades$description[i]
+      } else if (which.min(abs(ts$datetime - grades$start_time[i])) != nrow(ts)){ #if the times do not line up with anything in ts (not snapped), but not after the ts end
+        index <- which.min(abs(ts$datetime - grades$start_time[i])) + 1
         ts[index,]$grade_level <- grades$level[i]
         ts[index,]$grade_description <- grades$description[i]
       } # and if the last grade start is after then end of the ts, do nothing with it!
@@ -125,14 +125,14 @@ aq_download <- function(loc_id,
     ts$approval_level <- NA
     ts$approval_description <- NA
     for (i in 1:nrow(approvals)){
-      if (min(ts$timestamp) > approvals$start_time[i]) { #if the approval is prior to the first ts point
-        ts[ts$timestamp == min(ts$timestamp),]$approval_level <- approvals$level[i]
-        ts[ts$timestamp == min(ts$timestamp),]$approval_description <- approvals$description[i]
-      } else if (nrow(ts[ts$timestamp == approvals$start_time[i],]) !=0) { #if the times line up properly (are snapped to a point)
-        ts[ts$timestamp == approvals$start_time[i],]$approval_level <- approvals$level[i]
-        ts[ts$timestamp == approvals$start_time[i],]$approval_description <- approvals$description[i]
-      } else if (which.min(abs(ts$timestamp - approvals$start_time[i])) != nrow(ts)){ #if the times do not line up with anything in ts (not snapped), but not after the ts end
-        index <- which.min(abs(ts$timestamp - approvals$start_time[i])) + 1
+      if (min(ts$datetime) > approvals$start_time[i]) { #if the approval is prior to the first ts point
+        ts[ts$datetime == min(ts$datetime),]$approval_level <- approvals$level[i]
+        ts[ts$datetime == min(ts$datetime),]$approval_description <- approvals$description[i]
+      } else if (nrow(ts[ts$datetime == approvals$start_time[i],]) !=0) { #if the times line up properly (are snapped to a point)
+        ts[ts$datetime == approvals$start_time[i],]$approval_level <- approvals$level[i]
+        ts[ts$datetime == approvals$start_time[i],]$approval_description <- approvals$description[i]
+      } else if (which.min(abs(ts$datetime - approvals$start_time[i])) != nrow(ts)){ #if the times do not line up with anything in ts (not snapped), but not after the ts end
+        index <- which.min(abs(ts$datetime - approvals$start_time[i])) + 1
         ts[index,]$approval_level <- approvals$level[i]
         ts[index,]$approval_description <- approvals$description[i]
       } # and if the last approval start is after then end of the ts, do nothing with it!
