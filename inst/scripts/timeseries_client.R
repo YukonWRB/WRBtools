@@ -1,10 +1,5 @@
-#This script was obtained from https://github.com/AquaticInformatics/examples/tree/master/TimeSeries/PublicApis/R and was current as of 2022-10-21. Last commit was PF-1444, dated to June 7, 2022.
-
 library(jsonlite)
 library(httr)
-
-# Sys.setenv(http_proxy="http://localhost:8888") # Enables Fiddler capturing of traffic
-# Sys.setenv(http_proxy="") # Disables Fiddler proxying
 
 # Create a simple AQUARIUS Time-Series API client.
 timeseriesClient <- setRefClass("timeseriesClient",

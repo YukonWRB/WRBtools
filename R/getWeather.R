@@ -28,10 +28,10 @@ getWeather <- function(station,
   #initial checks
   rlang::check_installed("remotes", reason = "to update dependencies for this function.")
   if (!rlang::is_installed("weathercan")) { #This is here because getWeather is not a 'depends' of this package; it is only necessary for this function and is therefore in "suggests"
-    print("Installing dependency 'weathercan'...")
+    message("Installing dependency 'weathercan'...")
     remotes::install_github("ropensci/weathercan")
     if (rlang::is_installed("weathercan")){
-      print("Package weathercan successfully installed.")
+      message("Package weathercan successfully installed.")
     } else {
       stop("Failed to install package weathercan. You could troubleshoot by running 'remotes::install_github('ropensci/weathercan')' by itself.")
     }
@@ -49,7 +49,7 @@ getWeather <- function(station,
 
   if (!is.null(save_path)){
     if (save_path %in% c("Choose", "choose")) {
-      print("Select the path to the folder where you want this data saved.")
+      message("Select the path to the folder where you want this data saved.")
       save_path <- as.character(utils::choose.dir(caption="Select Save Folder"))
     } else {
       if (!dir.exists(save_path)){
@@ -75,32 +75,32 @@ getWeather <- function(station,
   }
 
   #Match the input numbers to the proper ECCC station ID
-  stations <- weathercan::stations()
-    if (grepl("^[7]{1}", station)){ #Then WMO ID
-      station <- stations[stations$WMO_id==station & !is.na(stations$WMO_id) & stations$interval == interval,]
-    } else if (grepl("^[0-9]{4}[0-9A-Za-z]{3}$", station)){ #Climate ID
-      station <- stations[stations$climate_id==station & !is.na(stations$climate_id) & stations$interval == interval,]
-    } else if (grepl("^[0-6,8-9]{1}", station)){ #Station ID
-      station <- stations[stations$station_id==station & !is.na(stations$station_id) & stations$interval == interval,]
-    } else if (grepl("^[A-Za-z]{3}$", station)) { #TC ID
-      station <- stations[stations$TC_id==station & !is.na(stations$TC_id) & stations$interval == interval,]
-    } else if (grepl("^[A-Za-z]{4,}", station)){ #station name or part of
-      possibilities <- dplyr::filter(stations, grepl(station, station_name))
-      possible_names <- possibilities$station_name
-      possible_yrs <- paste0(possibilities$start, " to ", possibilities$end)
-      possible_coords <- paste0(substr(possibilities$lat, 1, 7), ", ", substr(possibilities$lon, 1, 9))
-      possible_interval <- possibilities$interval
-      print("The following ECCC stations are possible matches for your input:")
-      for (i in 1:nrow(possibilities)) {
-        cat(crayon::bold$blue$underline("Choice", i, ":"), possible_names[i], crayon::bold$green(" Interval"), possible_interval[i], crayon::bold$green(" Years"), possible_yrs[i], crayon::bold$green(" Coords"), possible_coords[i], "\n")
-      }
-      choice <- readline(prompt =
-                           writeLines(crayon::bold$red("\nChoose your desired station from the list and enter the number corresponding to the choice below:")))
-      station <- possibilities[choice,]
-      interval <- station$interval
+  stations <- suppressMessages(weathercan::stations())
+  if (grepl("^[7]{1}", station)){ #Then WMO ID
+    station <- stations[stations$WMO_id==station & !is.na(stations$WMO_id) & stations$interval == interval,]
+  } else if (grepl("^[0-9]{4}[0-9A-Za-z]{3}$", station)){ #Climate ID
+    station <- stations[stations$climate_id==station & !is.na(stations$climate_id) & stations$interval == interval,]
+  } else if (grepl("^[0-6,8-9]{1}", station)){ #Station ID
+    station <- stations[stations$station_id==station & !is.na(stations$station_id) & stations$interval == interval,]
+  } else if (grepl("^[A-Za-z]{3}$", station)) { #TC ID
+    station <- stations[stations$TC_id==station & !is.na(stations$TC_id) & stations$interval == interval,]
+  } else if (grepl("^[A-Za-z]{4,}", station)){ #station name or part of
+    possibilities <- dplyr::filter(stations, grepl(station, station_name))
+    possible_names <- possibilities$station_name
+    possible_yrs <- paste0(possibilities$start, " to ", possibilities$end)
+    possible_coords <- paste0(substr(possibilities$lat, 1, 7), ", ", substr(possibilities$lon, 1, 9))
+    possible_interval <- possibilities$interval
+    message("The following ECCC stations are possible matches for your input:")
+    for (i in 1:nrow(possibilities)) {
+      cat(crayon::bold$blue$underline("Choice", i, ":"), possible_names[i], crayon::bold$green(" Interval"), possible_interval[i], crayon::bold$green(" Years"), possible_yrs[i], crayon::bold$green(" Coords"), possible_coords[i], "\n")
     }
+    choice <- readline(prompt =
+                         writeLines(crayon::bold$red("\nChoose your desired station from the list and enter the number corresponding to the choice below:")))
+    station <- possibilities[choice,]
+    interval <- station$interval
+  }
   if (nrow(station) < 1){
-    stop("The station you requested could not be found in my internal tables. You could try again by typing the station name (partial is ok). If that fails, try updating the internal table by running weathercan::stations_dl().")
+    stop("The station you requested could not be found in my internal tables. You could try again by typing the station name (partial is ok). If that fails, try updating the internal stations table by running weathercan::stations_dl().")
   } else if (nrow(station) > 1){
     stop("Something strange happened: we've got more than one station selected here! Check your options, but if everything looks ok you should try typing in the station name (partial is ok) and selecting form the list.")
   }
