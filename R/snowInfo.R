@@ -306,7 +306,7 @@ snowInfo <- function(db_path ="default", locations = "all", inactive = FALSE, sa
                              "SNOW_WATER_EQUIV" = meanMaxSWE,
                              "DEPTH" = meanMaxDepth)
       plot_apr1 <- data.frame("SNOW_COURSE_ID" = "all_locs_Apr1",
-                              "SAMPLE_DATE" = as.Date(paste0(seq(min(yrs), min(yrs) + length(meanMaxSWE) - 1), "-04-01")),
+                              "SAMPLE_DATE" = as.Date(paste0(seq(min(yrs), min(yrs) + length(meanApr1SWE) - 1), "-04-01")),
                               "SNOW_WATER_EQUIV" = meanApr1SWE,
                               "DEPTH" = meanApr1Depth)
       new_all <- data.frame("SNOW_COURSE_ID" = "all_locs_max",
